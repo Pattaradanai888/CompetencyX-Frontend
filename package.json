@@ -1,0 +1,32 @@
+{
+  "name": "nuxt-app",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxt/eslint": "1.15.2",
+    "nuxt": "^4.4.2",
+    "vue": "^3.5.32",
+    "vue-router": "^5.0.4"
+  },
+  "devDependencies": {
+    "@nuxt/test-utils": "^4.0.2",
+    "@vue/test-utils": "^2.4.6",
+    "eslint": "^10.2.0",
+    "happy-dom": "^20.9.0",
+    "playwright-core": "^1.59.1",
+    "prettier": "^3.8.3",
+    "vitest": "^4.1.4",
+    "vue-mess-detector": "^0.68.0"
+  }
+}
