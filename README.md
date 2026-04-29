@@ -1,75 +1,63 @@
-# Nuxt Minimal Starter
+# CompetencyX Frontend
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Nuxt 4 frontend for the CompetencyX assessment flow. The app talks to the backend over HTTP using the public runtime config key `NUXT_PUBLIC_API_BASE`.
 
 ## Setup
 
-Make sure to install dependencies:
+Install dependencies with `pnpm`:
 
 ```bash
-# npm
-npm install
-
-# pnpm
 pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
 ```
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
+Create a local env file from the example:
 
 ```bash
-# npm
-npm run dev
+cp .env.example .env
+```
 
-# pnpm
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+## API Connection
+
+Set the backend base URL in `.env`:
+
+```env
+NUXT_PUBLIC_API_BASE=http://localhost:8000
+```
+
+The frontend API client prefixes all backend requests with this value. Current endpoints used by the app include:
+
+- `/api/catalog/roles/`
+- `/api/catalog/roles/:roleSlug/topics/`
+- `/api/assessment-sessions/`
+- `/api/assessment-sessions/:sessionId/`
+- `/api/assessment-sessions/:sessionId/answers/`
+- `/api/assessment-sessions/:sessionId/results/`
+- `/api/assessment-sessions/:sessionId/history/`
+
+## Development
+
+Start the frontend on `http://localhost:3000`:
+
+```bash
 pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
-## Production
+## Build
 
-Build the application for production:
+Create a production build:
 
 ```bash
-# npm
-npm run build
-
-# pnpm
 pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
 ```
 
-Locally preview production build:
+Preview the production build locally:
 
 ```bash
-# npm
-npm run preview
-
-# pnpm
 pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
 ```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
