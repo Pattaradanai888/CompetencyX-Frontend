@@ -1,3 +1,9 @@
+<script setup>
+useHead({
+  meta: [{ name: 'theme-color', content: '#f7f1e6' }],
+})
+</script>
+
 <template>
   <div class="isolate min-h-screen">
     <UApp>

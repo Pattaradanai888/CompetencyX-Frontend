@@ -5,10 +5,11 @@ import SessionOverview from '~/components/assessment/SessionOverview.vue'
 import { getErrorMessage } from '~/utils/api'
 import { isSessionComplete } from '~/utils/assessment'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
-import type { ApiError, QuestionOption } from '~/shared/types/assessment'
+import type { AnswerSubmitPayload, ApiError, LikertScaleValue, QuestionOption } from '~/shared/types/assessment'
 
 const route = useRoute('/assessment/[sessionId]')
 const { getSession, session, submitAnswer, isSubmitting } = useAssessmentSession()
+const prefersReduced = useReducedMotion()
 
 const pageError = ref<ApiError | null>(null)
 const questionShownAt = ref(Date.now())
@@ -37,7 +38,30 @@ async function loadSession() {
   }
 }
 
-async function handleSelect(option: QuestionOption) {
+type QuestionAnswerSelection =
+  | { kind: 'option'; option: QuestionOption }
+  | { kind: 'scale'; scaleValue: LikertScaleValue }
+
+function buildAnswerPayload(answer: QuestionAnswerSelection): AnswerSubmitPayload {
+  const basePayload = {
+    question_id: session.value!.current_question!.id,
+    response_time_ms: Math.max(Date.now() - questionShownAt.value, 0),
+  }
+
+  if (answer.kind === 'option') {
+    return {
+      ...basePayload,
+      option_id: answer.option.id,
+    }
+  }
+
+  return {
+    ...basePayload,
+    scale_value: answer.scaleValue,
+  }
+}
+
+async function handleSelect(answer: QuestionAnswerSelection) {
   if (!session.value?.current_question) {
     return
   }
@@ -45,11 +69,7 @@ async function handleSelect(option: QuestionOption) {
   pageError.value = null
 
   try {
-    const nextSession = await submitAnswer(route.params.sessionId, {
-      question_id: session.value.current_question.id,
-      option_id: option.id,
-      response_time_ms: Math.max(Date.now() - questionShownAt.value, 0),
-    })
+    const nextSession = await submitAnswer(route.params.sessionId, buildAnswerPayload(answer))
 
     if (!nextSession) {
       return
@@ -116,17 +136,17 @@ useSeoMeta({
     <div v-if="session" class="mt-6 grid gap-6 lg:grid-cols-[0.68fr_1.32fr] lg:items-start">
       <motion.div
         class="lg:sticky lg:top-6"
-        :initial="{ opacity: 0, x: -16 }"
+        :initial="prefersReduced ? { opacity: 1, x: 0 } : { opacity: 0, x: -16 }"
         :animate="{ opacity: 1, x: 0 }"
-        :transition="{ duration: 0.3 }"
+        :transition="prefersReduced ? { duration: 0 } : { duration: 0.3 }"
       >
         <SessionOverview :session="session" />
       </motion.div>
 
       <motion.div
-        :initial="{ opacity: 0, x: 16 }"
+        :initial="prefersReduced ? { opacity: 1, x: 0 } : { opacity: 0, x: 16 }"
         :animate="{ opacity: 1, x: 0 }"
-        :transition="{ duration: 0.34 }"
+        :transition="prefersReduced ? { duration: 0 } : { duration: 0.34 }"
       >
         <QuestionPanel
           :session="session"

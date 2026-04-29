@@ -12,6 +12,8 @@ defineProps<{
 const emit = defineEmits<{
   select: [roleSlug: string]
 }>()
+
+const prefersReduced = useReducedMotion()
 </script>
 
 <template>
@@ -21,9 +23,9 @@ const emit = defineEmits<{
     :class="compact ? 'rounded-[1.35rem] p-4' : 'rounded-[1.75rem] p-5 md:p-6'"
     :aria-label="`Choose ${role.name}`"
     :aria-pressed="selected ? 'true' : 'false'"
-    :while-hover="{ y: compact ? -2 : -4 }"
-    :while-press="{ scale: 0.99 }"
-    :transition="{ duration: 0.2 }"
+    :while-hover="prefersReduced ? {} : { y: compact ? -2 : -4 }"
+    :while-press="prefersReduced ? {} : { scale: 0.99 }"
+    :transition="prefersReduced ? { duration: 0 } : { duration: 0.2 }"
     @click="emit('select', role.slug)"
   >
     <div

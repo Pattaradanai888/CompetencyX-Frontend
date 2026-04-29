@@ -45,12 +45,19 @@ const baseSession: AssessmentSession = {
     id: 101,
     code: 'role-primary-interest',
     stage: 'role',
-    question_type: 'single_choice',
-    prompt: 'Which work sounds most interesting?',
+    question_type: 'likert_5',
+    prompt: 'I prefer solving open-ended technical problems.',
     help_text: '',
     role: null,
     topic: null,
-    options: [{ id: 201, key: 'backend', label: 'Designing APIs and backend services' }],
+    options: [],
+    response_scale: [
+      { key: 'strongly_agree', label: 'Strongly agree', value: 2 },
+      { key: 'agree', label: 'Agree', value: 1 },
+      { key: 'neutral', label: 'Neutral', value: 0 },
+      { key: 'disagree', label: 'Disagree', value: -1 },
+      { key: 'strongly_disagree', label: 'Strongly disagree', value: -2 },
+    ],
   },
 }
 
@@ -100,9 +107,58 @@ describe('assessment page', () => {
     const wrapper = await mountSuspended(AssessmentPage)
 
     await flushPromises()
-    expect(wrapper.text()).not.toContain('Choose the response that best matches you and continue to the next prompt.')
-    expect(wrapper.text()).toContain('Select the answer that fits best and move to the next prompt.')
-    await wrapper.get('button.option-card').trigger('click')
+    expect(wrapper.text()).toContain('Place the statement on the agreement scale and continue.')
+    expect(wrapper.text()).toContain('Strongly disagree')
+    expect(wrapper.text()).toContain('Strongly agree')
+    expect(
+      wrapper.findAll('label.likert-spectrum__node').map((node) => node.text().replace(/\s+/g, ' ').trim()),
+    ).toEqual([
+      'Strongly disagree',
+      'Disagree',
+      'Neutral',
+      'Agree',
+      'Strongly agree',
+    ])
+    await wrapper.get('input[value="2"]').setValue()
+
+    expect(submitAnswerMock).toHaveBeenCalledWith(
+      'session-1',
+      expect.objectContaining({
+        question_id: 101,
+        scale_value: 2,
+      }),
+    )
+    expect(navigateToMock).toHaveBeenCalledWith('/results/session-1')
+  })
+
+  it('keeps option-based skill submissions on option_id', async () => {
+    sessionState.value = makeSession({
+      current_question: {
+        ...baseSession.current_question!,
+        stage: 'skill',
+        question_type: 'single_choice',
+        prompt: 'Which skill topic do you want to practice next?',
+        options: [{ id: 201, key: 'backend', label: 'Designing APIs and backend services' }],
+        response_scale: [],
+      },
+    })
+    getSessionMock.mockResolvedValue(
+      makeSession({
+        current_question: {
+          ...baseSession.current_question!,
+          stage: 'skill',
+          question_type: 'single_choice',
+          prompt: 'Which skill topic do you want to practice next?',
+          options: [{ id: 201, key: 'backend', label: 'Designing APIs and backend services' }],
+          response_scale: [],
+        },
+      }),
+    )
+
+    const wrapper = await mountSuspended(AssessmentPage)
+
+    await flushPromises()
+    await wrapper.get('button.answer-option--choice').trigger('click')
 
     expect(submitAnswerMock).toHaveBeenCalledWith(
       'session-1',
@@ -120,6 +176,7 @@ describe('assessment page', () => {
         ...baseSession.current_question!,
         question_type: 'ranked_choice',
         help_text: 'Answer based on the topic you want to prioritize first.',
+        response_scale: [],
       },
     })
     getSessionMock.mockResolvedValue(makeSession({
@@ -127,6 +184,7 @@ describe('assessment page', () => {
         ...baseSession.current_question!,
         question_type: 'ranked_choice',
         help_text: 'Answer based on the topic you want to prioritize first.',
+        response_scale: [],
       },
     }))
 
@@ -137,6 +195,6 @@ describe('assessment page', () => {
     expect(wrapper.text()).toContain('Answer based on the topic you want to prioritize first.')
     expect(wrapper.text()).toContain('Pick the option that should carry the most weight in the next recommendation step.')
     expect(wrapper.text()).not.toContain('Choose the option that should carry the most weight for your next recommendation step.')
-    expect(wrapper.findAll('button.option-card')).toHaveLength(1)
+    expect(wrapper.findAll('button.answer-option--choice')).toHaveLength(0)
   })
 })

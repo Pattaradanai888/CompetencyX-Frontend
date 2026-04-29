@@ -71,8 +71,17 @@ function getCategoryForRole(slug: string): string {
   return ROLE_CATEGORIES[slug] || 'Other'
 }
 
-const searchQuery = ref('')
-const activeCategory = ref('All')
+const router = useRouter()
+const searchQuery = ref(typeof route.query.search === 'string' ? route.query.search : '')
+const activeCategory = ref(typeof route.query.category === 'string' ? route.query.category : 'All')
+
+watch([searchQuery, activeCategory, preferredRoleSlug], ([search, category, role]) => {
+  const query: Record<string, string> = {}
+  if (role) query.role = role
+  if (search) query.search = search
+  if (category !== 'All') query.category = category
+  router.replace({ path: '/assessment/start', query })
+}, { flush: 'post' })
 
 const availableCategories = computed(() => {
   const categories = new Set(
@@ -316,7 +325,7 @@ useSeoMeta({
                 type="text"
                 autocomplete="off"
                 placeholder="Search roles…"
-                class="w-full rounded-full border border-black/8 bg-white/75 py-2.5 pl-11 pr-4 text-sm text-[var(--cx-ink)] placeholder:text-[var(--cx-ink-soft)]/50 transition focus:border-[var(--cx-accent)]/40 focus:outline-none focus:ring-2 focus:ring-[var(--cx-accent-soft)]"
+                class="w-full rounded-full border border-black/8 bg-white/75 py-2.5 pl-11 pr-4 text-sm text-[var(--cx-ink)] placeholder:text-[var(--cx-ink-soft)]/50 transition focus-visible:border-[var(--cx-accent)]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cx-accent-soft)]"
               >
             </span>
           </label>
@@ -351,6 +360,7 @@ useSeoMeta({
 
         <div
           class="mt-6 grid max-h-[34rem] gap-3 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-3"
+          role="group"
           aria-label="Available roles"
         >
           <RoleCard
@@ -392,6 +402,7 @@ useSeoMeta({
             :disabled="isSubmitting"
             @click="handleStart"
           >
+            <span v-if="isSubmitting" class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true" />
             {{
               isSubmitting ? 'Preparing your assessment…' : 'Start assessment'
             }}

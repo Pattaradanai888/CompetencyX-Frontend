@@ -7,12 +7,13 @@ export type AssessmentPhase =
 
 export type AssessmentStatus = 'in_progress' | 'completed'
 export type QuestionStage = 'role' | 'skill'
-export type QuestionType = 'yes_no' | 'yes_no_maybe' | 'single_choice' | 'ranked_choice'
+export type QuestionType = 'yes_no' | 'yes_no_maybe' | 'single_choice' | 'ranked_choice' | 'likert_5'
 export type PathKind = 'preferred' | 'best_fit'
 export type PolicyType = 'rule_based' | 'bandit' | 'q_learning'
 export type ConfidenceIndicator = 'low' | 'medium' | 'high'
 export type RoleAlignmentStatus = 'unknown' | 'aligned' | 'mismatch' | 'ambiguous' | string
 export type RoleResolutionStatus = 'unknown' | 'in_progress' | 'resolved' | 'ambiguous' | string
+export type LikertScaleValue = -2 | -1 | 0 | 1 | 2
 
 export interface Role {
   id: number
@@ -46,6 +47,12 @@ export interface QuestionOption {
   display_order?: number
 }
 
+export interface ResponseScaleOption {
+  key: string
+  label: string
+  value: LikertScaleValue
+}
+
 export interface Question {
   id: number
   code: string
@@ -57,6 +64,7 @@ export interface Question {
   topic: string | null
   difficulty?: number
   options: QuestionOption[]
+  response_scale?: ResponseScaleOption[]
 }
 
 export interface SessionMilestones {
@@ -147,9 +155,10 @@ export interface AnswerHistory {
   question_prompt: string
   question_stage: string
   topic_slug: string | null
-  selected_option_id: number
-  selected_option_key: string
-  selected_option_label: string
+  selected_option_id: number | null
+  selected_option_key: string | null
+  selected_option_label: string | null
+  scale_value: LikertScaleValue | null
   response_time_ms?: number | null
   confidence_indicator?: ConfidenceIndicator | null
   responded_at: string
@@ -168,12 +177,23 @@ export interface SessionCreatePayload {
   profile?: Record<string, unknown>
 }
 
-export interface AnswerSubmitPayload {
+export interface BaseAnswerSubmitPayload {
   question_id: number
-  option_id: number
   response_time_ms?: number
   confidence_indicator?: ConfidenceIndicator
 }
+
+export interface OptionAnswerSubmitPayload extends BaseAnswerSubmitPayload {
+  option_id: number
+  scale_value?: never
+}
+
+export interface LikertAnswerSubmitPayload extends BaseAnswerSubmitPayload {
+  scale_value: LikertScaleValue
+  option_id?: never
+}
+
+export type AnswerSubmitPayload = OptionAnswerSubmitPayload | LikertAnswerSubmitPayload
 
 export interface ApiError {
   statusCode: number

@@ -29,6 +29,8 @@ export function getQuestionTypeLabel(questionType: QuestionType): string {
       return 'Yes / no'
     case 'yes_no_maybe':
       return 'Yes / no / maybe'
+    case 'likert_5':
+      return 'Agreement scale'
     case 'ranked_choice':
       return 'Priority pick'
     default:

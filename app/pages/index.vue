@@ -9,6 +9,7 @@ import type { Role } from '~/shared/types/assessment'
 const { apiBase } = useApiConnection()
 const { listRoles } = useCatalogApi()
 const { lastSessionId } = useAssessmentSession()
+const prefersReduced = useReducedMotion()
 
 const { data: roles, error } = await useAsyncData('catalog-roles', listRoles, {
   default: () => [] as Role[],
@@ -26,9 +27,9 @@ useSeoMeta({
   <main id="main-content" class="page-wrap">
     <motion.section
       class="grid gap-10 py-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-start"
-      :initial="{ opacity: 0, y: 20 }"
+      :initial="prefersReduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }"
       :animate="{ opacity: 1, y: 0 }"
-      :transition="{ duration: 0.45 }"
+      :transition="prefersReduced ? { duration: 0 } : { duration: 0.45 }"
     >
       <div>
         <p class="eyebrow">Adaptive roadmap intake</p>

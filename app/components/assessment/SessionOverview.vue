@@ -16,6 +16,7 @@ const isExpanded = ref(false)
       type="button"
       class="flex w-full items-center justify-between gap-3 text-left"
       :aria-expanded="isExpanded"
+      aria-controls="session-guidance-detail"
       @click="isExpanded = !isExpanded"
     >
       <div class="min-w-0">
@@ -28,7 +29,7 @@ const isExpanded = ref(false)
         class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/6 bg-white/80 text-[var(--cx-ink-soft)] transition-transform duration-300"
         :class="isExpanded ? 'rotate-180' : ''"
       >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </span>
@@ -45,6 +46,7 @@ const isExpanded = ref(false)
 
     <!-- Expandable detail panel -->
     <div
+      id="session-guidance-detail"
       class="grid transition-all duration-300 ease-in-out"
       :class="isExpanded ? 'mt-6 grid-rows-[1fr] opacity-100' : 'mt-0 grid-rows-[0fr] opacity-0'"
     >
