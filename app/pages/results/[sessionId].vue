@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { motion } from 'motion-v'
 import MasteryMeter from '~/components/results/MasteryMeter.vue'
-import RecommendationCard from '~/components/results/RecommendationCard.vue'
+const RecommendationCard = defineAsyncComponent(() => import('~/components/results/RecommendationCard.vue'))
 import {
   formatConfidencePercent,
   getAlignmentLabel,
@@ -56,10 +56,10 @@ useSeoMeta({
     <div class="assessment-stagebar mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-black/6 bg-white/60 px-4 py-3">
       <div class="flex flex-wrap items-center gap-3">
         <span class="eyebrow mb-0">Results dossier</span>
-        <span class="rounded-full border border-black/6 bg-[var(--cx-paper-strong)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--cx-ink-soft)]">
+        <span class="rounded-full border border-black/6 bg-[var(--cx-paper-strong)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--cx-ink-soft)]">
           Assessment complete
         </span>
-        <span class="rounded-full border border-[var(--cx-accent-soft)] bg-emerald-50/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--cx-accent)]">
+        <span class="rounded-full border border-[var(--cx-accent-soft)] bg-emerald-50/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--cx-accent)]">
           {{ getRoleResolutionLabel(results.role_resolution_status) }}
         </span>
       </div>
@@ -82,19 +82,19 @@ useSeoMeta({
         </p>
 
         <div class="mt-8 grid gap-4 md:grid-cols-3">
-          <div class="rounded-[1.5rem] border border-black/6 bg-white/72 p-4">
+          <div class="rounded-[1.35rem] border border-black/6 bg-white/72 p-4">
             <p class="eyebrow">Preferred role</p>
             <p class="mt-3 text-lg font-semibold text-[var(--cx-ink)]">
               {{ results.preferred_role?.name || 'Not specified' }}
             </p>
           </div>
-          <div class="rounded-[1.5rem] border border-black/6 bg-white/72 p-4">
+          <div class="rounded-[1.35rem] border border-black/6 bg-white/72 p-4">
             <p class="eyebrow">Best fit</p>
             <p class="mt-3 text-lg font-semibold text-[var(--cx-ink)]">
               {{ results.best_fit_role?.name || 'Still calibrating' }}
             </p>
           </div>
-          <div class="rounded-[1.5rem] border border-black/6 bg-white/72 p-4">
+          <div class="rounded-[1.35rem] border border-black/6 bg-white/72 p-4">
             <p class="eyebrow">Confidence</p>
             <p class="mt-3 text-lg font-semibold text-[var(--cx-ink)]">
               {{ formatConfidencePercent(results.best_fit_confidence) }}
@@ -132,7 +132,7 @@ useSeoMeta({
     <section class="mt-8 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
       <section class="paper-panel rounded-[2rem] p-6">
         <p class="eyebrow">Role fit analysis</p>
-        <h2 class="mt-4 font-display text-3xl text-[var(--cx-ink)]">Why this role rose to the top</h2>
+        <h2 class="mt-4 text-3xl font-bold text-[var(--cx-ink)]">Why this role rose to the top</h2>
         <div class="mt-6 space-y-3">
           <div
             v-for="role in rankedRoles"
@@ -148,7 +148,7 @@ useSeoMeta({
               </div>
               <div class="text-right">
                 <p class="text-sm font-semibold text-[var(--cx-ink)]">{{ formatConfidencePercent(role.fit_score) }}</p>
-                <p class="mt-1 text-xs uppercase tracking-[0.18em] text-[var(--cx-ink-soft)]">
+                <p class="mt-1 text-xs uppercase tracking-[0.08em] text-[var(--cx-ink-soft)]">
                   {{ formatConfidencePercent(role.fit_share) }} share
                 </p>
               </div>
@@ -158,14 +158,14 @@ useSeoMeta({
             v-if="!rankedRoles.length"
             class="rounded-[1.35rem] border border-black/6 bg-white/75 p-4 text-sm leading-6 text-[var(--cx-ink-soft)]"
           >
-            Ranked role insights are not available for this assessment yet.
+            Ranked role insights are not available for this assessment.
           </p>
         </div>
       </section>
 
       <section class="paper-panel rounded-[2rem] p-6">
         <p class="eyebrow">Gap topics</p>
-        <h2 class="mt-4 font-display text-3xl text-[var(--cx-ink)]">What to close next</h2>
+        <h2 class="mt-4 text-3xl font-bold text-[var(--cx-ink)]">What to close next</h2>
         <div class="mt-6 space-y-3">
           <div
             v-for="topic in gapTopics"
@@ -181,14 +181,14 @@ useSeoMeta({
             v-if="!gapTopics.length"
             class="rounded-[1.35rem] border border-black/6 bg-white/75 p-4 text-sm leading-6 text-[var(--cx-ink-soft)]"
           >
-            No focused gap topics are highlighted for this path yet.
+            No focused gap topics are highlighted for this path.
           </p>
         </div>
       </section>
 
       <section class="paper-panel rounded-[2rem] p-6">
         <p class="eyebrow">Mastery scores</p>
-        <h2 class="mt-4 font-display text-3xl text-[var(--cx-ink)]">Confidence-weighted topic readout</h2>
+        <h2 class="mt-4 text-3xl font-bold text-[var(--cx-ink)]">Confidence-weighted topic readout</h2>
         <div class="mt-6 space-y-3">
           <MasteryMeter
             v-for="item in masteryScores"
@@ -199,7 +199,7 @@ useSeoMeta({
             v-if="!masteryScores.length"
             class="rounded-[1.35rem] border border-black/6 bg-white/75 p-4 text-sm leading-6 text-[var(--cx-ink-soft)]"
           >
-            Topic confidence scores are not available for this assessment yet.
+            Topic confidence scores are not available for this assessment.
           </p>
         </div>
       </section>
@@ -207,7 +207,7 @@ useSeoMeta({
 
     <section class="mt-8 paper-panel rounded-[2rem] p-6">
       <p class="eyebrow">Pillar profile</p>
-      <h2 class="mt-4 font-display text-3xl text-[var(--cx-ink)]">Evidence behind the recommendation</h2>
+      <h2 class="mt-4 text-3xl font-bold text-[var(--cx-ink)]">Evidence behind the recommendation</h2>
       <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <div
           v-for="pillar in pillarProfile"
@@ -228,7 +228,7 @@ useSeoMeta({
           v-if="!pillarProfile.length"
           class="rounded-[1.35rem] border border-black/6 bg-white/75 p-4 text-sm leading-6 text-[var(--cx-ink-soft)]"
         >
-          Pillar-level explainability data is not available for this assessment yet.
+          Pillar-level explainability data is not available for this assessment.
         </p>
       </div>
     </section>

@@ -11,12 +11,12 @@ defineProps<{
   <div class="rounded-[1.5rem] border border-black/6 bg-white/70 p-4">
     <div class="flex items-center justify-between gap-4">
       <div class="min-w-0">
-        <p class="break-words text-sm font-semibold text-[var(--cx-ink)]">{{ mastery.topic_title }}</p>
-        <p class="mt-1 text-xs uppercase tracking-[0.18em] text-[var(--cx-ink-soft)]">
+        <p class="break-words text-sm font-semibold text-(--cx-ink)">{{ mastery.topic_title }}</p>
+        <p class="mt-1 text-xs uppercase tracking-[0.08em] text-(--cx-ink-soft)">
           Confidence {{ formatMasteryPercent(mastery.confidence_score) }}
         </p>
       </div>
-      <p class="data-value text-sm font-semibold text-[var(--cx-accent)]">
+      <p class="data-value text-sm font-semibold text-(--cx-accent)">
         {{ formatMasteryPercent(mastery.mastery_score) }}
       </p>
     </div>

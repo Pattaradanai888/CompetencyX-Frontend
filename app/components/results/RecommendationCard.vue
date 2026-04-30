@@ -9,15 +9,15 @@ defineProps<{
 </script>
 
 <template>
-  <section class="paper-panel rounded-[2rem] p-6">
+  <section class="paper-panel rounded-4xl p-6">
     <p class="eyebrow">{{ eyebrow }}</p>
-    <h3 class="mt-4 font-display text-2xl text-[var(--cx-ink)]">
+    <h3 class="mt-4 text-2xl font-bold text-(--cx-ink)">
       {{ getRecommendationHeadline(recommendation) }}
     </h3>
-    <p class="mt-3 break-words text-sm leading-7 text-[var(--cx-ink-soft)]">
-      {{ recommendation?.reason || 'A focused next topic is not available for this path yet.' }}
+    <p class="mt-3 wrap-break-word text-sm leading-7 text-(--cx-ink-soft)">
+      {{ recommendation?.reason || 'A focused next topic is not available for this path.' }}
     </p>
-    <div class="mt-5 flex flex-wrap gap-2 text-xs uppercase tracking-[0.18em] text-[var(--cx-ink-soft)]">
+    <div class="mt-5 flex flex-wrap gap-2 text-xs uppercase tracking-[0.08em] text-(--cx-ink-soft)">
       <span class="rounded-full border border-black/10 bg-white/80 px-3 py-1">
         {{ recommendation?.policy_type || 'Recommendation in review' }}
       </span>

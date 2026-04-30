@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { motion } from 'motion-v'
 import RoleCard from '~/components/catalog/RoleCard.vue'
-import { useApiConnection } from '~/composables/useApiConnection'
 import { useCatalogApi } from '~/composables/useCatalogApi'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
 import type { Role } from '~/shared/types/assessment'
 
-const { apiBase } = useApiConnection()
 const { listRoles } = useCatalogApi()
 const { lastSessionId } = useAssessmentSession()
 const prefersReduced = useReducedMotion()
@@ -26,18 +24,18 @@ useSeoMeta({
 <template>
   <main id="main-content" class="page-wrap">
     <motion.section
-      class="grid gap-10 py-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-start"
+      class="grid gap-12 py-12 lg:grid-cols-[1.2fr_0.8fr] lg:items-start"
       :initial="prefersReduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }"
       :animate="{ opacity: 1, y: 0 }"
       :transition="prefersReduced ? { duration: 0 } : { duration: 0.45 }"
     >
       <div>
-        <p class="eyebrow">Adaptive roadmap intake</p>
-        <h1 class="mt-5 max-w-4xl font-display text-5xl leading-[0.94] text-[var(--cx-ink)] md:text-7xl">
-          Find the role you are really converging toward, then surface the next topic that matters.
+        <p class="eyebrow">Competency assessment</p>
+        <h1 class="mt-5 max-w-4xl font-display text-4xl leading-[0.96] text-[var(--cx-ink)] sm:text-5xl md:text-7xl">
+          Discover the role that fits your actual skill shape, not just your title.
         </h1>
         <p class="mt-6 max-w-2xl text-base leading-8 text-[var(--cx-ink-soft)] md:text-lg">
-          CompetencyX guides you through one decision at a time, keeps the flow focused, and turns the finished assessment into a clear next-step roadmap.
+          One focused question at a time. A clear roadmap at the end.
         </p>
 
         <div class="mt-8 flex flex-wrap gap-4">
@@ -56,7 +54,7 @@ useSeoMeta({
           </NuxtLink>
         </div>
 
-        <div class="assessment-stagebar mt-10 grid gap-4 rounded-[2rem] border border-black/6 bg-white/56 p-4 sm:grid-cols-3">
+        <div class="assessment-stagebar mt-12 grid gap-4 rounded-[2rem] border border-black/6 bg-white/56 p-5 grid-cols-1 sm:grid-cols-3">
           <div class="glass-panel rounded-[1.5rem] p-4">
             <p class="eyebrow">Step 01</p>
             <p class="mt-3 font-semibold text-[var(--cx-ink)]">Choose a target role or skip it</p>
@@ -73,35 +71,51 @@ useSeoMeta({
       </div>
 
       <div class="paper-panel rounded-[2rem] p-6 md:p-8">
-        <p class="eyebrow">What this MVP covers</p>
+        <p class="eyebrow">How it works</p>
         <div class="mt-5 space-y-4 text-sm leading-7 text-[var(--cx-ink-soft)]">
           <p>
-            Each screen stays calm and deliberate: one prompt, one decision, and one clear next step without clutter or conflicting controls.
+            Every screen presents a single prompt with a clear next step. No clutter, no competing controls.
           </p>
           <p>
-            The current release stays tightly scoped around the core journey: choose a direction, complete the assessment, and review a concise recommendation dossier.
+            Your answers sharpen the recommendation in real time, building toward a focused role fit and learning roadmap.
           </p>
         </div>
         <div class="my-6 metric-rule" />
-        <p class="text-sm text-[var(--cx-ink-soft)]">
-          Local API endpoint:
-          <code class="rounded bg-black/5 px-2 py-1 text-[var(--cx-ink)]">{{ apiBase }}</code>
-        </p>
+        <ul class="space-y-3">
+          <li class="flex items-start gap-3 text-sm text-[var(--cx-ink-soft)]">
+            <span class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-(--cx-accent)/20 bg-(--cx-accent)/8 text-(--cx-accent)">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5.5L4 7.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </span>
+            <span>Adaptive question flow that adjusts to your answers</span>
+          </li>
+          <li class="flex items-start gap-3 text-sm text-[var(--cx-ink-soft)]">
+            <span class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-(--cx-accent)/20 bg-(--cx-accent)/8 text-(--cx-accent)">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5.5L4 7.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </span>
+            <span>Role fit analysis with confidence scoring</span>
+          </li>
+          <li class="flex items-start gap-3 text-sm text-[var(--cx-ink-soft)]">
+            <span class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-(--cx-accent)/20 bg-(--cx-accent)/8 text-(--cx-accent)">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M2 5.5L4 7.5L8 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </span>
+            <span>Personalized gap topics and next learning steps</span>
+          </li>
+        </ul>
         <p
           v-if="error"
           aria-live="polite"
           class="mt-4 rounded-[1.25rem] border border-amber-300/60 bg-amber-50/90 p-4 text-sm text-amber-950"
         >
-          Role previews are unavailable right now. You can still begin the assessment and try again from onboarding.
+          Role previews are unavailable right now. You can still begin the assessment.
         </p>
       </div>
     </motion.section>
 
-    <section class="mt-10">
+    <section class="mt-16">
       <div class="flex items-end justify-between gap-4">
         <div>
           <p class="eyebrow">Role preview</p>
-          <h2 class="mt-3 font-display text-3xl text-[var(--cx-ink)] md:text-4xl">
+          <h2 class="mt-3 text-3xl font-bold text-[var(--cx-ink)] md:text-4xl">
             Preview the paths you can calibrate against
           </h2>
         </div>

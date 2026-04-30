@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { motion } from 'motion-v'
 import QuestionPanel from '~/components/assessment/QuestionPanel.vue'
 import SessionOverview from '~/components/assessment/SessionOverview.vue'
 import { getErrorMessage } from '~/utils/api'
@@ -9,9 +8,9 @@ import type { AnswerSubmitPayload, ApiError, LikertScaleValue, QuestionOption } 
 
 const route = useRoute('/assessment/[sessionId]')
 const { getSession, session, submitAnswer, isSubmitting } = useAssessmentSession()
-const prefersReduced = useReducedMotion()
 
 const pageError = ref<ApiError | null>(null)
+const toast = useToast()
 const questionShownAt = ref(Date.now())
 
 await loadSession()
@@ -35,6 +34,7 @@ async function loadSession() {
     }
   } catch (error) {
     pageError.value = error as ApiError
+    toast.add({ title: 'Could not load session', description: getErrorMessage(error as ApiError), color: 'error' })
   }
 }
 
@@ -80,6 +80,7 @@ async function handleSelect(answer: QuestionAnswerSelection) {
     }
   } catch (error) {
     pageError.value = error as ApiError
+    toast.add({ title: 'Could not save answer', color: 'error' })
 
     if ((error as ApiError).statusCode === 400) {
       await loadSession()
@@ -108,7 +109,7 @@ useSeoMeta({
       <NuxtLink to="/assessment/start" class="editorial-link text-sm">
         Restart from onboarding
       </NuxtLink>
-      <span class="data-value text-sm text-[var(--cx-ink-soft)]">Session {{ route.params.sessionId }}</span>
+      <span class="data-value text-sm text-(--cx-ink-soft)">Session {{ route.params.sessionId }}</span>
     </div>
 
     <div
@@ -117,14 +118,14 @@ useSeoMeta({
     >
       <div class="flex flex-wrap items-center gap-3">
         <span class="eyebrow mb-0">Active assessment</span>
-        <span class="rounded-full border border-black/6 bg-[var(--cx-paper-strong)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--cx-ink-soft)]">
+        <span class="rounded-full border border-black/6 bg-(--cx-paper-strong) px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-(--cx-ink-soft)">
           {{ session.current_question?.stage === 'skill' ? 'Skill signal' : 'Role signal' }}
         </span>
-        <span class="rounded-full border border-[var(--cx-accent-soft)] bg-emerald-50/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--cx-accent)]">
+        <span class="rounded-full border border-(--cx-accent-soft) bg-emerald-50/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-(--cx-accent)">
           {{ isAwaitingResolution ? 'Awaiting resolution' : 'Decision ready' }}
         </span>
       </div>
-      <p class="text-sm text-[var(--cx-ink-soft)]">
+      <p class="text-sm text-(--cx-ink-soft)">
         {{
           session.current_question
             ? 'One prompt on screen at a time.'
@@ -134,20 +135,11 @@ useSeoMeta({
     </div>
 
     <div v-if="session" class="mt-6 grid gap-6 lg:grid-cols-[0.68fr_1.32fr] lg:items-start">
-      <motion.div
-        class="lg:sticky lg:top-6"
-        :initial="prefersReduced ? { opacity: 1, x: 0 } : { opacity: 0, x: -16 }"
-        :animate="{ opacity: 1, x: 0 }"
-        :transition="prefersReduced ? { duration: 0 } : { duration: 0.3 }"
-      >
+      <div class="lg:sticky lg:top-6 animate-fade-in-left">
         <SessionOverview :session="session" />
-      </motion.div>
+      </div>
 
-      <motion.div
-        :initial="prefersReduced ? { opacity: 1, x: 0 } : { opacity: 0, x: 16 }"
-        :animate="{ opacity: 1, x: 0 }"
-        :transition="prefersReduced ? { duration: 0 } : { duration: 0.34 }"
-      >
+      <div class="animate-fade-in-right">
         <QuestionPanel
           :session="session"
           :is-submitting="isSubmitting"
@@ -158,32 +150,51 @@ useSeoMeta({
           v-if="isAwaitingResolution"
           class="mt-4 flex justify-end"
         >
-          <UButton
-            color="neutral"
-            variant="soft"
-            :loading="isSubmitting"
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-full border border-(--cx-border) bg-white/80 px-4 py-2 text-sm font-semibold text-(--cx-ink) transition hover:-translate-y-0.5 hover:border-(--cx-accent)/35 disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="isSubmitting"
             @click="loadSession"
           >
+            <span v-if="isSubmitting" class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-(--cx-accent)" aria-hidden="true" />
             Refresh session state
-          </UButton>
+          </button>
         </div>
-      </motion.div>
+      </div>
     </div>
 
     <section
-      v-else
-      class="glass-panel mt-6 rounded-[2rem] p-8 text-center"
+      v-else-if="pageError"
+      class="glass-panel mt-6 rounded-4xl p-8 text-center"
     >
-      <p class="font-display text-3xl text-[var(--cx-ink)]">Session unavailable</p>
-      <p class="mt-4 text-sm leading-7 text-[var(--cx-ink-soft)]">
+      <p class="text-3xl font-bold text-(--cx-ink)">Session unavailable</p>
+      <p class="mt-4 text-sm leading-7 text-(--cx-ink-soft)">
         {{ responseErrorMessage || 'This assessment could not be opened. Return to onboarding to begin a new session.' }}
       </p>
       <NuxtLink
         to="/assessment/start"
-        class="mt-6 inline-flex rounded-full bg-[var(--cx-accent)] px-5 py-3 text-sm font-semibold text-white"
+        class="mt-6 inline-flex items-center justify-center rounded-full bg-(--cx-accent) px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition hover:-translate-y-0.5 hover:bg-emerald-800"
       >
         Return to start
       </NuxtLink>
     </section>
+
+    <div
+      v-else
+      class="mt-6 grid gap-6 lg:grid-cols-[0.68fr_1.32fr] lg:items-start"
+      aria-busy="true"
+      aria-label="Loading session"
+    >
+      <div class="space-y-4">
+        <div class="skeleton h-8 w-32 rounded-full" />
+        <div class="skeleton h-64 rounded-4xl" />
+      </div>
+      <div class="space-y-4">
+        <div class="skeleton h-8 w-48 rounded-full" />
+        <div class="skeleton h-48 rounded-[2.2rem]" />
+        <div class="skeleton h-20 rounded-[1.65rem]" />
+        <div class="skeleton h-20 rounded-[1.65rem]" />
+      </div>
+    </div>
   </main>
 </template>

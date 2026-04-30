@@ -10,7 +10,7 @@ const isExpanded = ref(false)
 </script>
 
 <template>
-  <aside class="paper-panel assessment-sidebar rounded-[2rem] p-6 md:p-7">
+  <aside class="paper-panel assessment-sidebar rounded-4xl p-6 md:p-7">
     <!-- Always-visible header with toggle -->
     <button
       type="button"
@@ -21,7 +21,7 @@ const isExpanded = ref(false)
     >
       <div class="min-w-0">
         <p class="eyebrow">Live guidance</p>
-        <h2 class="mt-2 font-display text-2xl text-[var(--cx-ink)]">
+        <h2 class="mt-2 text-2xl font-bold text-(--cx-ink)">
           {{ getQuestionStageLabel(session.current_question?.stage || 'role') }}
         </h2>
       </div>
@@ -36,7 +36,7 @@ const isExpanded = ref(false)
     </button>
 
     <!-- Compact one-liner always visible -->
-    <p class="mt-3 text-sm text-[var(--cx-ink-soft)]">
+    <p class="mt-3 text-sm text-(--cx-ink-soft)">
       Q{{ getTotalAnswered(session.milestones) }} answered
       <span class="mx-1.5 opacity-40">&middot;</span>
       {{ getAlignmentLabel(session.role_alignment_status) }}
@@ -51,7 +51,7 @@ const isExpanded = ref(false)
       :class="isExpanded ? 'mt-6 grid-rows-[1fr] opacity-100' : 'mt-0 grid-rows-[0fr] opacity-0'"
     >
       <div class="min-h-0 overflow-hidden">
-        <p class="text-sm leading-7 text-[var(--cx-ink-soft)]">
+        <p class="text-sm leading-7 text-(--cx-ink-soft)">
           {{ session.guidance_summary }}
         </p>
 
@@ -60,43 +60,43 @@ const isExpanded = ref(false)
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
           <div class="assessment-stat rounded-[1.35rem] border border-black/6 bg-white/72 p-4">
             <p class="eyebrow">Alignment</p>
-            <p class="mt-2 text-lg font-semibold text-[var(--cx-ink)]">
+            <p class="mt-2 text-lg font-semibold text-(--cx-ink)">
               {{ getAlignmentLabel(session.role_alignment_status) }}
             </p>
           </div>
           <div class="assessment-stat rounded-[1.35rem] border border-black/6 bg-white/72 p-4">
             <p class="eyebrow">Resolution</p>
-            <p class="mt-2 text-lg font-semibold text-[var(--cx-ink)]">
+            <p class="mt-2 text-lg font-semibold text-(--cx-ink)">
               {{ getRoleResolutionLabel(session.role_resolution_status) }}
             </p>
           </div>
           <div class="assessment-stat rounded-[1.35rem] border border-black/6 bg-white/72 p-4">
             <p class="eyebrow">Role answers</p>
-            <p class="mt-2 text-lg font-semibold text-[var(--cx-ink)]">
+            <p class="mt-2 text-lg font-semibold text-(--cx-ink)">
               <span class="data-value">{{ session.milestones.answered_role_questions }}</span>
             </p>
           </div>
           <div class="assessment-stat rounded-[1.35rem] border border-black/6 bg-white/72 p-4">
             <p class="eyebrow">Questions answered</p>
-            <p class="mt-2 text-lg font-semibold text-[var(--cx-ink)]">
+            <p class="mt-2 text-lg font-semibold text-(--cx-ink)">
               <span class="data-value">{{ getTotalAnswered(session.milestones) }}</span>
             </p>
           </div>
         </div>
 
         <div class="mt-6 rounded-[1.5rem] border border-black/6 bg-white/78 p-4">
-          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--cx-warm)]">
+          <p class="text-xs font-semibold uppercase tracking-[0.1em] text-(--cx-warm)">
             Current read
           </p>
-          <p class="mt-3 text-sm text-[var(--cx-ink-soft)]">
+          <p class="mt-3 text-sm text-(--cx-ink-soft)">
             Preferred role:
-            <span class="font-semibold text-[var(--cx-ink)]">
+            <span class="font-semibold text-(--cx-ink)">
               {{ session.preferred_role?.name || 'Undeclared' }}
             </span>
           </p>
-          <p class="mt-2 text-sm text-[var(--cx-ink-soft)]">
+          <p class="mt-2 text-sm text-(--cx-ink-soft)">
             Best fit:
-            <span class="font-semibold text-[var(--cx-ink)]">
+            <span class="font-semibold text-(--cx-ink)">
               {{ session.best_fit_role?.name || 'Emerging from your answers' }}
             </span>
           </p>

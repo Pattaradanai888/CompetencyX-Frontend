@@ -78,10 +78,10 @@ function handleOptionSelect(option: QuestionOption) {
 </script>
 
 <template>
-  <section class="glass-panel rounded-[2.2rem] p-6 md:p-8">
+  <section class="glass-panel rounded-[2.2rem] p-6 md:p-8" aria-live="polite">
     <div class="flex flex-wrap items-center gap-3">
       <span class="eyebrow">{{ getQuestionStageLabel(session.current_question?.stage || 'role') }}</span>
-      <span class="rounded-full border border-black/6 bg-white/78 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--cx-ink-soft)]">
+      <span class="rounded-full border border-black/6 bg-white/78 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-(--cx-ink-soft)">
         {{ getQuestionTypeLabel(session.current_question?.question_type || 'single_choice') }}
       </span>
     </div>
@@ -89,22 +89,22 @@ function handleOptionSelect(option: QuestionOption) {
     <div class="mt-5 rounded-[1.7rem] border border-black/6 bg-white/58 p-5 md:p-6">
       <p
         v-if="session.current_question"
-        class="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-[var(--cx-ink-soft)]"
+        class="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-(--cx-ink-soft)"
       >
         {{ questionModeCopy }}
       </p>
-      <h1 class="font-display text-3xl leading-tight text-[var(--cx-ink)] md:text-5xl">
+      <h1 class="font-display text-3xl leading-tight text-(--cx-ink) md:text-5xl">
         {{ session.current_question?.prompt || 'We are resolving your role signal.' }}
       </h1>
       <p
         v-if="session.current_question?.help_text"
-        class="mt-4 max-w-2xl break-words text-sm leading-7 text-[var(--cx-ink-soft)]"
+        class="mt-4 max-w-2xl wrap-break-word text-sm leading-7 text-(--cx-ink-soft)"
       >
         {{ session.current_question.help_text }}
       </p>
       <p
         v-else-if="!session.current_question"
-        class="mt-4 max-w-2xl text-sm leading-7 text-[var(--cx-ink-soft)]"
+        class="mt-4 max-w-2xl text-sm leading-7 text-(--cx-ink-soft)"
       >
         {{ session.guidance_summary }}
       </p>
@@ -159,20 +159,7 @@ function handleOptionSelect(option: QuestionOption) {
               <span class="likert-spectrum__orb-core" />
               <span class="likert-spectrum__orb-pulse" />
             </span>
-
-            <span class="likert-spectrum__label">
-              {{ option.label }}
-            </span>
           </label>
-        </div>
-
-        <div class="likert-spectrum__connector" aria-hidden="true">
-          <span
-            v-for="i in 4"
-            :key="i"
-            class="likert-spectrum__connector-segment"
-            :class="{ 'likert-spectrum__connector-segment--lit': activeScaleIndex >= i }"
-          />
         </div>
       </fieldset>
 
@@ -197,8 +184,8 @@ function handleOptionSelect(option: QuestionOption) {
               {{ index + 1 }}
             </div>
             <div class="min-w-0 flex-1">
-              <p class="break-words text-base font-semibold leading-7 text-[var(--cx-ink)] md:text-[1.05rem]">{{ option.label }}</p>
-              <p class="mt-1 text-sm leading-6 text-[var(--cx-ink-soft)]">
+              <p class="wrap-break-word text-base font-semibold leading-7 text-(--cx-ink) md:text-[1.05rem]">{{ option.label }}</p>
+              <p class="mt-1 text-sm leading-6 text-(--cx-ink-soft)">
                 Tap to lock this answer and continue.
               </p>
             </div>
@@ -220,8 +207,8 @@ function handleOptionSelect(option: QuestionOption) {
               : 'Single decision. Immediate next step.'
         }}
       </p>
-      <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--cx-ink-soft)]">
-        <span class="inline-flex h-2 w-2 rounded-full bg-[var(--cx-accent)]" />
+      <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-(--cx-ink-soft)">
+        <span class="inline-flex h-2 w-2 rounded-full bg-(--cx-accent)" />
         {{
           isLikertQuestion
             ? 'Agreement scale'
@@ -234,10 +221,10 @@ function handleOptionSelect(option: QuestionOption) {
 
     <div
       v-else
-      class="mt-8 rounded-[1.6rem] border border-black/6 bg-white/75 p-5 text-sm leading-7 text-[var(--cx-ink-soft)]"
+      class="mt-8 rounded-[1.6rem] border border-black/6 bg-white/75 p-5 text-sm leading-7 text-(--cx-ink-soft)"
     >
-      This session does not have an answerable question right now. Refresh the page to check whether the backend has
-      resolved the next step.
+      This session does not have an answerable question right now. Refresh the page to check whether the next step has
+      resolved.
     </div>
   </section>
 </template>
