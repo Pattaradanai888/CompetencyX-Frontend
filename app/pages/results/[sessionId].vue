@@ -27,6 +27,7 @@ if (sessionSnapshot.current_question || sessionSnapshot.status !== 'completed') 
 }
 
 const results = ref(initialResults)
+const survey2Button = ref<HTMLAnchorElement | null>(null)
 
 const masteryScores = computed(() => sortMasteryDescending(results.value?.mastery_scores ?? []))
 const gapTopics = computed(() => results.value?.preferred_role_gap_topics ?? [])
@@ -36,6 +37,11 @@ const rankedRoles = computed(() => sortRankedRolesDescending(results.value?.rank
 useSeoMeta({
   title: 'CompetencyX | Assessment results',
   description: 'Review your role fit, gap topics, and recommended next learning steps for the completed assessment.',
+})
+
+onMounted(async () => {
+  await nextTick()
+  survey2Button.value?.focus()
 })
 </script>
 
@@ -48,9 +54,18 @@ useSeoMeta({
       >
         Start a new assessment
       </NuxtLink>
-      <p class="text-sm text-[var(--cx-ink-soft)]">
-        Updated <NuxtTime :datetime="results.updated_at" relative />
-      </p>
+      <div class="flex items-center gap-4">
+        <NuxtLink
+          ref="survey2Button"
+          :to="`/survey2/${route.params.sessionId}`"
+          class="inline-flex items-center justify-center rounded-full border border-black/8 bg-white/80 px-4 py-2 text-sm font-semibold text-[var(--cx-ink)] transition hover:-translate-y-0.5 hover:border-[var(--cx-accent)]/35 hover:text-[var(--cx-accent)]"
+        >
+          Continue to Survey 2 roadmap
+        </NuxtLink>
+        <p class="text-sm text-[var(--cx-ink-soft)]">
+          Updated <NuxtTime :datetime="results.updated_at" relative />
+        </p>
+      </div>
     </div>
 
     <div class="assessment-stagebar mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-black/6 bg-white/60 px-4 py-3">

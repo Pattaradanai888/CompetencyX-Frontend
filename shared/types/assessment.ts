@@ -172,6 +172,12 @@ export interface AssessmentHistory {
   recommendations: Recommendation[]
 }
 
+export interface Survey2SessionState {
+  completed: boolean
+  answers: Record<string, number>
+  completed_at: string | null
+}
+
 export interface SessionCreatePayload {
   preferred_role_slug?: string
   profile?: Record<string, unknown>

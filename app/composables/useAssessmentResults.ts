@@ -1,4 +1,9 @@
-import type { AssessmentHistory, AssessmentInsights, AssessmentResult } from '~/shared/types/assessment'
+import type {
+  AssessmentHistory,
+  AssessmentInsights,
+  AssessmentResult,
+  Survey2SessionState,
+} from '~/shared/types/assessment'
 
 export function useAssessmentResults() {
   const { apiFetch } = useApiClient()
@@ -15,9 +20,22 @@ export function useAssessmentResults() {
     return await apiFetch<AssessmentHistory>(`/api/assessment-sessions/${sessionId}/history/`)
   }
 
+  async function getSurvey2State(sessionId: string) {
+    return await apiFetch<Survey2SessionState>(`/api/assessment-sessions/${sessionId}/survey2/`)
+  }
+
+  async function saveSurvey2State(sessionId: string, payload: Survey2SessionState) {
+    return await apiFetch<Survey2SessionState>(`/api/assessment-sessions/${sessionId}/survey2/`, {
+      method: 'POST',
+      body: payload,
+    })
+  }
+
   return {
     getHistory,
     getInsights,
     getResults,
+    getSurvey2State,
+    saveSurvey2State,
   }
 }

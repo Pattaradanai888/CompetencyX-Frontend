@@ -1,0 +1,140 @@
+import type { AnswerHistory, AssessmentHistory, AssessmentResult, PillarInsight } from '~/shared/types/assessment'
+
+export interface RadarDimension {
+  key: string
+  label: string
+  value: number
+  track: 'psp' | 'sdlc'
+}
+
+export interface Survey2Evaluation {
+  dimensions: RadarDimension[]
+  strengths: string[]
+  growthAreas: string[]
+  personalitySignals: string[]
+}
+
+function clamp(value: number): number {
+  return Math.max(0, Math.min(1, value))
+}
+
+function average(values: number[]): number {
+  if (!values.length) {
+    return 0
+  }
+
+  return values.reduce((sum, value) => sum + value, 0) / values.length
+}
+
+function normalizeScaleValue(scaleValue: number | null): number | null {
+  if (scaleValue === null || Number.isNaN(scaleValue)) {
+    return null
+  }
+
+  return clamp((scaleValue + 2) / 4)
+}
+
+function matchTopic(answer: AnswerHistory, keywords: string[]) {
+  const topic = (answer.topic_slug ?? '').toLowerCase()
+  return keywords.some((keyword) => topic.includes(keyword))
+}
+
+function getTopicScore(answers: AnswerHistory[], keywords: string[]) {
+  const matchedScores = answers
+    .filter((answer) => matchTopic(answer, keywords))
+    .map((answer) => normalizeScaleValue(answer.scale_value))
+    .filter((score): score is number => score !== null)
+
+  return average(matchedScores)
+}
+
+function pillarScore(pillars: PillarInsight[], key: string) {
+  const pillar = pillars.find((item) => item.key === key)
+  return clamp(pillar?.normalized_score ?? 0)
+}
+
+function summarizeDimensions(dimensions: RadarDimension[]) {
+  const ordered = [...dimensions].sort((left, right) => right.value - left.value)
+  const strengths = ordered.slice(0, 3).map((item) => item.label)
+  const growthAreas = ordered.slice(-3).map((item) => item.label)
+  return { strengths, growthAreas }
+}
+
+function buildPersonalitySignals(result: AssessmentResult, dimensions: RadarDimension[]) {
+  const topRole = result.best_fit_role?.name ?? result.preferred_role?.name ?? 'your current target role'
+  const highest = [...dimensions].sort((left, right) => right.value - left.value).slice(0, 2).map((item) => item.label)
+
+  return [
+    `Best-fit trajectory currently aligns with ${topRole}.`,
+    `Strong natural signal in ${highest.join(' and ')}.`,
+    result.role_alignment_status === 'aligned'
+      ? 'Profile indicates stable role confidence and consistency.'
+      : 'Profile suggests exploration mode before locking a final path.',
+  ]
+}
+
+export function buildSurvey2Evaluation(result: AssessmentResult, history: AssessmentHistory | null): Survey2Evaluation {
+  const answers = history?.answers ?? []
+  const pillars = result.pillar_profile ?? []
+
+  const dimensions: RadarDimension[] = [
+    {
+      key: 'psp-planning',
+      label: 'PSP Planning',
+      value: clamp(average([pillarScore(pillars, 'planning_discipline'), getTopicScore(answers, ['planning', 'estimation'])])),
+      track: 'psp',
+    },
+    {
+      key: 'psp-quality',
+      label: 'PSP Quality Discipline',
+      value: clamp(average([pillarScore(pillars, 'quality_focus'), getTopicScore(answers, ['quality', 'defect', 'review'])])),
+      track: 'psp',
+    },
+    {
+      key: 'sdlc-requirements',
+      label: 'Requirements Analysis',
+      value: clamp(average([pillarScore(pillars, 'analysis'), getTopicScore(answers, ['requirement', 'analysis'])])),
+      track: 'sdlc',
+    },
+    {
+      key: 'sdlc-design',
+      label: 'System Design & Architecture',
+      value: clamp(average([pillarScore(pillars, 'architecture'), getTopicScore(answers, ['design', 'architecture'])])),
+      track: 'sdlc',
+    },
+    {
+      key: 'sdlc-development',
+      label: 'Development / Coding',
+      value: clamp(average([pillarScore(pillars, 'implementation'), getTopicScore(answers, ['coding', 'development', 'implementation'])])),
+      track: 'sdlc',
+    },
+    {
+      key: 'sdlc-testing',
+      label: 'Testing & QA',
+      value: clamp(average([pillarScore(pillars, 'testing'), getTopicScore(answers, ['testing', 'qa'])])),
+      track: 'sdlc',
+    },
+    {
+      key: 'sdlc-deployment',
+      label: 'Deployment & Release',
+      value: clamp(average([pillarScore(pillars, 'delivery'), getTopicScore(answers, ['deploy', 'release', 'delivery'])])),
+      track: 'sdlc',
+    },
+    {
+      key: 'sdlc-maintenance',
+      label: 'Maintenance & Support',
+      value: clamp(average([pillarScore(pillars, 'operations'), getTopicScore(answers, ['maintenance', 'support', 'operations'])])),
+      track: 'sdlc',
+    },
+  ]
+
+  const { strengths, growthAreas } = summarizeDimensions(dimensions)
+  const personalitySignals = buildPersonalitySignals(result, dimensions)
+
+  return {
+    dimensions,
+    strengths,
+    growthAreas,
+    personalitySignals,
+  }
+}
