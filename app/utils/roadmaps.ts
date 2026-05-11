@@ -1,4 +1,9 @@
-import type { AnswerHistory, AssessmentHistory, AssessmentResult, PillarInsight } from '~/shared/types/assessment'
+import type {
+  AnswerHistory,
+  AssessmentHistory,
+  AssessmentResult,
+  PillarInsight,
+} from '~/shared/types/assessment'
 
 export interface RadarDimension {
   key: string
@@ -7,7 +12,7 @@ export interface RadarDimension {
   track: 'psp' | 'sdlc'
 }
 
-export interface Survey2Evaluation {
+export interface RoadmapsEvaluation {
   dimensions: RadarDimension[]
   strengths: string[]
   growthAreas: string[]
@@ -54,15 +59,26 @@ function pillarScore(pillars: PillarInsight[], key: string) {
 }
 
 function summarizeDimensions(dimensions: RadarDimension[]) {
-  const ordered = [...dimensions].sort((left, right) => right.value - left.value)
+  const ordered = [...dimensions].sort(
+    (left, right) => right.value - left.value,
+  )
   const strengths = ordered.slice(0, 3).map((item) => item.label)
   const growthAreas = ordered.slice(-3).map((item) => item.label)
   return { strengths, growthAreas }
 }
 
-function buildPersonalitySignals(result: AssessmentResult, dimensions: RadarDimension[]) {
-  const topRole = result.best_fit_role?.name ?? result.preferred_role?.name ?? 'your current target role'
-  const highest = [...dimensions].sort((left, right) => right.value - left.value).slice(0, 2).map((item) => item.label)
+function buildPersonalitySignals(
+  result: AssessmentResult,
+  dimensions: RadarDimension[],
+) {
+  const topRole =
+    result.best_fit_role?.name ??
+    result.preferred_role?.name ??
+    'your current target role'
+  const highest = [...dimensions]
+    .sort((left, right) => right.value - left.value)
+    .slice(0, 2)
+    .map((item) => item.label)
 
   return [
     `Best-fit trajectory currently aligns with ${topRole}.`,
@@ -73,7 +89,10 @@ function buildPersonalitySignals(result: AssessmentResult, dimensions: RadarDime
   ]
 }
 
-export function buildSurvey2Evaluation(result: AssessmentResult, history: AssessmentHistory | null): Survey2Evaluation {
+export function buildRoadmapsEvaluation(
+  result: AssessmentResult,
+  history: AssessmentHistory | null,
+): RoadmapsEvaluation {
   const answers = history?.answers ?? []
   const pillars = result.pillar_profile ?? []
 
@@ -81,49 +100,89 @@ export function buildSurvey2Evaluation(result: AssessmentResult, history: Assess
     {
       key: 'psp-planning',
       label: 'PSP Planning',
-      value: clamp(average([pillarScore(pillars, 'planning_discipline'), getTopicScore(answers, ['planning', 'estimation'])])),
+      value: clamp(
+        average([
+          pillarScore(pillars, 'planning_discipline'),
+          getTopicScore(answers, ['planning', 'estimation']),
+        ]),
+      ),
       track: 'psp',
     },
     {
       key: 'psp-quality',
       label: 'PSP Quality Discipline',
-      value: clamp(average([pillarScore(pillars, 'quality_focus'), getTopicScore(answers, ['quality', 'defect', 'review'])])),
+      value: clamp(
+        average([
+          pillarScore(pillars, 'quality_focus'),
+          getTopicScore(answers, ['quality', 'defect', 'review']),
+        ]),
+      ),
       track: 'psp',
     },
     {
       key: 'sdlc-requirements',
       label: 'Requirements Analysis',
-      value: clamp(average([pillarScore(pillars, 'analysis'), getTopicScore(answers, ['requirement', 'analysis'])])),
+      value: clamp(
+        average([
+          pillarScore(pillars, 'analysis'),
+          getTopicScore(answers, ['requirement', 'analysis']),
+        ]),
+      ),
       track: 'sdlc',
     },
     {
       key: 'sdlc-design',
       label: 'System Design & Architecture',
-      value: clamp(average([pillarScore(pillars, 'architecture'), getTopicScore(answers, ['design', 'architecture'])])),
+      value: clamp(
+        average([
+          pillarScore(pillars, 'architecture'),
+          getTopicScore(answers, ['design', 'architecture']),
+        ]),
+      ),
       track: 'sdlc',
     },
     {
       key: 'sdlc-development',
       label: 'Development / Coding',
-      value: clamp(average([pillarScore(pillars, 'implementation'), getTopicScore(answers, ['coding', 'development', 'implementation'])])),
+      value: clamp(
+        average([
+          pillarScore(pillars, 'implementation'),
+          getTopicScore(answers, ['coding', 'development', 'implementation']),
+        ]),
+      ),
       track: 'sdlc',
     },
     {
       key: 'sdlc-testing',
       label: 'Testing & QA',
-      value: clamp(average([pillarScore(pillars, 'testing'), getTopicScore(answers, ['testing', 'qa'])])),
+      value: clamp(
+        average([
+          pillarScore(pillars, 'testing'),
+          getTopicScore(answers, ['testing', 'qa']),
+        ]),
+      ),
       track: 'sdlc',
     },
     {
       key: 'sdlc-deployment',
       label: 'Deployment & Release',
-      value: clamp(average([pillarScore(pillars, 'delivery'), getTopicScore(answers, ['deploy', 'release', 'delivery'])])),
+      value: clamp(
+        average([
+          pillarScore(pillars, 'delivery'),
+          getTopicScore(answers, ['deploy', 'release', 'delivery']),
+        ]),
+      ),
       track: 'sdlc',
     },
     {
       key: 'sdlc-maintenance',
       label: 'Maintenance & Support',
-      value: clamp(average([pillarScore(pillars, 'operations'), getTopicScore(answers, ['maintenance', 'support', 'operations'])])),
+      value: clamp(
+        average([
+          pillarScore(pillars, 'operations'),
+          getTopicScore(answers, ['maintenance', 'support', 'operations']),
+        ]),
+      ),
       track: 'sdlc',
     },
   ]

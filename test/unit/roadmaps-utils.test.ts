@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { buildSurvey2Evaluation } from '../../app/utils/survey2'
-import type { AssessmentHistory, AssessmentResult } from '../../shared/types/assessment'
+import { buildRoadmapsEvaluation } from '../../app/utils/roadmaps'
+import type {
+  AssessmentHistory,
+  AssessmentResult,
+} from '../../shared/types/assessment'
 
 const baseResult: AssessmentResult = {
   id: 'session-2',
@@ -18,14 +21,62 @@ const baseResult: AssessmentResult = {
   role_resolution_status: 'resolved',
   guidance_summary: 'Summary',
   pillar_profile: [
-    { key: 'planning_discipline', label: 'Planning', raw_score: 8, normalized_score: 0.8, evidence_count: 6 },
-    { key: 'quality_focus', label: 'Quality', raw_score: 7, normalized_score: 0.7, evidence_count: 5 },
-    { key: 'analysis', label: 'Analysis', raw_score: 8, normalized_score: 0.8, evidence_count: 5 },
-    { key: 'architecture', label: 'Architecture', raw_score: 9, normalized_score: 0.9, evidence_count: 6 },
-    { key: 'implementation', label: 'Implementation', raw_score: 6, normalized_score: 0.6, evidence_count: 4 },
-    { key: 'testing', label: 'Testing', raw_score: 7, normalized_score: 0.7, evidence_count: 4 },
-    { key: 'delivery', label: 'Delivery', raw_score: 5, normalized_score: 0.5, evidence_count: 4 },
-    { key: 'operations', label: 'Operations', raw_score: 4, normalized_score: 0.4, evidence_count: 3 },
+    {
+      key: 'planning_discipline',
+      label: 'Planning',
+      raw_score: 8,
+      normalized_score: 0.8,
+      evidence_count: 6,
+    },
+    {
+      key: 'quality_focus',
+      label: 'Quality',
+      raw_score: 7,
+      normalized_score: 0.7,
+      evidence_count: 5,
+    },
+    {
+      key: 'analysis',
+      label: 'Analysis',
+      raw_score: 8,
+      normalized_score: 0.8,
+      evidence_count: 5,
+    },
+    {
+      key: 'architecture',
+      label: 'Architecture',
+      raw_score: 9,
+      normalized_score: 0.9,
+      evidence_count: 6,
+    },
+    {
+      key: 'implementation',
+      label: 'Implementation',
+      raw_score: 6,
+      normalized_score: 0.6,
+      evidence_count: 4,
+    },
+    {
+      key: 'testing',
+      label: 'Testing',
+      raw_score: 7,
+      normalized_score: 0.7,
+      evidence_count: 4,
+    },
+    {
+      key: 'delivery',
+      label: 'Delivery',
+      raw_score: 5,
+      normalized_score: 0.5,
+      evidence_count: 4,
+    },
+    {
+      key: 'operations',
+      label: 'Operations',
+      raw_score: 4,
+      normalized_score: 0.4,
+      evidence_count: 3,
+    },
   ],
   ranked_roles: [],
   preferred_role_gap_topics: [],
@@ -82,24 +133,30 @@ const history: AssessmentHistory = {
   ],
 }
 
-describe('survey2 evaluation builder', () => {
+describe('roadmaps evaluation builder', () => {
   it('builds PSP + SDLC dimensions and summaries from results/history', () => {
-    const evaluation = buildSurvey2Evaluation(baseResult, history)
+    const evaluation = buildRoadmapsEvaluation(baseResult, history)
 
     expect(evaluation.dimensions).toHaveLength(8)
     expect(evaluation.strengths.length).toBe(3)
     expect(evaluation.growthAreas.length).toBe(3)
     expect(evaluation.personalitySignals[0]).toContain('System Architect')
 
-    const design = evaluation.dimensions.find((item) => item.key === 'sdlc-design')
-    const maintenance = evaluation.dimensions.find((item) => item.key === 'sdlc-maintenance')
+    const design = evaluation.dimensions.find(
+      (item) => item.key === 'sdlc-design',
+    )
+    const maintenance = evaluation.dimensions.find(
+      (item) => item.key === 'sdlc-maintenance',
+    )
 
     expect(design?.value).toBeGreaterThan(maintenance?.value ?? 0)
   })
 
   it('falls back safely when no answer history exists', () => {
-    const evaluation = buildSurvey2Evaluation(baseResult, null)
-    expect(evaluation.dimensions.every((item) => item.value >= 0 && item.value <= 1)).toBe(true)
+    const evaluation = buildRoadmapsEvaluation(baseResult, null)
+    expect(
+      evaluation.dimensions.every((item) => item.value >= 0 && item.value <= 1),
+    ).toBe(true)
     expect(evaluation.personalitySignals.length).toBe(3)
   })
 })

@@ -2,30 +2,66 @@ import type {
   AssessmentHistory,
   AssessmentInsights,
   AssessmentResult,
-  Survey2SessionState,
+  ApiError,
+  RoadmapsCatalog,
+  RoadmapsSessionState,
 } from '~/shared/types/assessment'
 
 export function useAssessmentResults() {
   const { apiFetch } = useApiClient()
 
   async function getResults(sessionId: string) {
-    return await apiFetch<AssessmentResult>(`/api/assessment-sessions/${sessionId}/results/`)
+    return await apiFetch<AssessmentResult>(
+      `/api/assessment-sessions/${sessionId}/results/`,
+    )
   }
 
   async function getInsights(sessionId: string) {
-    return await apiFetch<AssessmentInsights>(`/api/assessment-sessions/${sessionId}/insights/`)
+    return await apiFetch<AssessmentInsights>(
+      `/api/assessment-sessions/${sessionId}/insights/`,
+    )
   }
 
   async function getHistory(sessionId: string) {
-    return await apiFetch<AssessmentHistory>(`/api/assessment-sessions/${sessionId}/history/`)
+    return await apiFetch<AssessmentHistory>(
+      `/api/assessment-sessions/${sessionId}/history/`,
+    )
   }
 
-  async function getSurvey2State(sessionId: string) {
-    return await apiFetch<Survey2SessionState>(`/api/assessment-sessions/${sessionId}/survey2/`)
+  async function fetchRoadmapsEndpoint<T>(
+    sessionId: string,
+    suffix = '',
+    options?: Parameters<typeof apiFetch<T>>[1],
+  ) {
+    const roadmapsPath = `/api/assessment-sessions/${sessionId}/roadmaps/${suffix}`
+
+    try {
+      return await apiFetch<T>(roadmapsPath, options)
+    } catch (error) {
+      if ((error as ApiError).statusCode !== 404) {
+        throw error
+      }
+
+      return await apiFetch<T>(
+        `/api/assessment-sessions/${sessionId}/survey2/${suffix}`,
+        options,
+      )
+    }
   }
 
-  async function saveSurvey2State(sessionId: string, payload: Survey2SessionState) {
-    return await apiFetch<Survey2SessionState>(`/api/assessment-sessions/${sessionId}/survey2/`, {
+  async function getRoadmapsState(sessionId: string) {
+    return await fetchRoadmapsEndpoint<RoadmapsSessionState>(sessionId)
+  }
+
+  async function getRoadmapsCatalog(sessionId: string) {
+    return await fetchRoadmapsEndpoint<RoadmapsCatalog>(sessionId, 'catalog/')
+  }
+
+  async function saveRoadmapsState(
+    sessionId: string,
+    payload: RoadmapsSessionState,
+  ) {
+    return await fetchRoadmapsEndpoint<RoadmapsSessionState>(sessionId, '', {
       method: 'POST',
       body: payload,
     })
@@ -35,7 +71,8 @@ export function useAssessmentResults() {
     getHistory,
     getInsights,
     getResults,
-    getSurvey2State,
-    saveSurvey2State,
+    getRoadmapsCatalog,
+    getRoadmapsState,
+    saveRoadmapsState,
   }
 }

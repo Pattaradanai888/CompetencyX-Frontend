@@ -7,12 +7,27 @@ export type AssessmentPhase =
 
 export type AssessmentStatus = 'in_progress' | 'completed'
 export type QuestionStage = 'role' | 'skill'
-export type QuestionType = 'yes_no' | 'yes_no_maybe' | 'single_choice' | 'ranked_choice' | 'likert_5'
+export type QuestionType =
+  | 'yes_no'
+  | 'yes_no_maybe'
+  | 'single_choice'
+  | 'ranked_choice'
+  | 'likert_5'
 export type PathKind = 'preferred' | 'best_fit'
 export type PolicyType = 'rule_based' | 'bandit' | 'q_learning'
 export type ConfidenceIndicator = 'low' | 'medium' | 'high'
-export type RoleAlignmentStatus = 'unknown' | 'aligned' | 'mismatch' | 'ambiguous' | string
-export type RoleResolutionStatus = 'unknown' | 'in_progress' | 'resolved' | 'ambiguous' | string
+export type RoleAlignmentStatus =
+  | 'unknown'
+  | 'aligned'
+  | 'mismatch'
+  | 'ambiguous'
+  | string
+export type RoleResolutionStatus =
+  | 'unknown'
+  | 'in_progress'
+  | 'resolved'
+  | 'ambiguous'
+  | string
 export type LikertScaleValue = -2 | -1 | 0 | 1 | 2
 
 export interface Role {
@@ -128,8 +143,10 @@ export interface TopicMastery {
   updated_at: string
 }
 
-export interface AssessmentResult
-  extends Omit<AssessmentSession, 'current_question'> {
+export interface AssessmentResult extends Omit<
+  AssessmentSession,
+  'current_question'
+> {
   pillar_profile: PillarInsight[]
   ranked_roles: RankedRoleInsight[]
   preferred_role_gap_topics: RoadmapTopic[]
@@ -172,10 +189,36 @@ export interface AssessmentHistory {
   recommendations: Recommendation[]
 }
 
-export interface Survey2SessionState {
+export interface RoadmapsSessionState {
   completed: boolean
   answers: Record<string, number>
   completed_at: string | null
+}
+
+export interface RoadmapsScaleOption {
+  label: string
+  value: number
+}
+
+export interface RoadmapsCatalogDimension {
+  key: string
+  label: string
+  track: 'psp' | 'sdlc'
+  low_score_action: string
+}
+
+export interface RoadmapsCatalogQuestion {
+  id: string
+  prompt: string
+  dimension_key: string
+}
+
+export interface RoadmapsCatalog {
+  version: string
+  scale: RoadmapsScaleOption[]
+  dimensions: RoadmapsCatalogDimension[]
+  questions: RoadmapsCatalogQuestion[]
+  role_guidance: string[]
 }
 
 export interface SessionCreatePayload {
@@ -199,7 +242,9 @@ export interface LikertAnswerSubmitPayload extends BaseAnswerSubmitPayload {
   option_id?: never
 }
 
-export type AnswerSubmitPayload = OptionAnswerSubmitPayload | LikertAnswerSubmitPayload
+export type AnswerSubmitPayload =
+  | OptionAnswerSubmitPayload
+  | LikertAnswerSubmitPayload
 
 export interface ApiError {
   statusCode: number
