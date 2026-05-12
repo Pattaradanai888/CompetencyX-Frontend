@@ -4,10 +4,16 @@ import SessionOverview from '~/components/assessment/SessionOverview.vue'
 import { getErrorMessage } from '~/utils/api'
 import { isSessionComplete } from '~/utils/assessment'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
-import type { AnswerSubmitPayload, ApiError, LikertScaleValue, QuestionOption } from '~/shared/types/assessment'
+import type {
+  AnswerSubmitPayload,
+  ApiError,
+  LikertScaleValue,
+  QuestionOption,
+} from '~/shared/types/assessment'
 
 const route = useRoute('/assessment/[sessionId]')
-const { getSession, session, submitAnswer, isSubmitting } = useAssessmentSession()
+const { getSession, session, submitAnswer, isSubmitting } =
+  useAssessmentSession()
 
 const pageError = ref<ApiError | null>(null)
 const toast = useToast()
@@ -34,7 +40,11 @@ async function loadSession() {
     }
   } catch (error) {
     pageError.value = error as ApiError
-    toast.add({ title: 'Could not load session', description: getErrorMessage(error as ApiError), color: 'error' })
+    toast.add({
+      title: 'Could not load session',
+      description: getErrorMessage(error as ApiError),
+      color: 'error',
+    })
   }
 }
 
@@ -42,7 +52,9 @@ type QuestionAnswerSelection =
   | { kind: 'option'; option: QuestionOption }
   | { kind: 'scale'; scaleValue: LikertScaleValue }
 
-function buildAnswerPayload(answer: QuestionAnswerSelection): AnswerSubmitPayload {
+function buildAnswerPayload(
+  answer: QuestionAnswerSelection,
+): AnswerSubmitPayload {
   const basePayload = {
     question_id: session.value!.current_question!.id,
     response_time_ms: Math.max(Date.now() - questionShownAt.value, 0),
@@ -69,7 +81,10 @@ async function handleSelect(answer: QuestionAnswerSelection) {
   pageError.value = null
 
   try {
-    const nextSession = await submitAnswer(route.params.sessionId, buildAnswerPayload(answer))
+    const nextSession = await submitAnswer(
+      route.params.sessionId,
+      buildAnswerPayload(answer),
+    )
 
     if (!nextSession) {
       return
@@ -92,14 +107,15 @@ const responseErrorMessage = computed(() => getErrorMessage(pageError.value))
 const isAwaitingResolution = computed(() => {
   return Boolean(
     session.value &&
-      !session.value.current_question &&
-      !isSessionComplete(session.value),
+    !session.value.current_question &&
+    !isSessionComplete(session.value),
   )
 })
 
 useSeoMeta({
   title: 'CompetencyX | Active assessment',
-  description: 'Answer the assessment questions one at a time and review your live guidance as the session progresses.',
+  description:
+    'Answer the assessment questions one at a time and review your live guidance as the session progresses.',
 })
 </script>
 
@@ -109,23 +125,33 @@ useSeoMeta({
       <NuxtLink to="/assessment/start" class="editorial-link text-sm">
         Restart from onboarding
       </NuxtLink>
-      <span class="data-value text-sm text-(--cx-ink-soft)">Session {{ route.params.sessionId }}</span>
+      <span class="data-value text-sm text-ink-soft"
+        >Session {{ route.params.sessionId }}</span
+      >
     </div>
 
     <div
       v-if="session"
-      class="assessment-stagebar mt-6 flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-black/6 bg-white/60 px-4 py-3"
+      class="assessment-stagebar mt-6 flex flex-wrap items-center justify-between gap-3 border border-border-subtle bg-surface-muted px-4 py-3"
     >
       <div class="flex flex-wrap items-center gap-3">
         <span class="eyebrow mb-0">Active assessment</span>
-        <span class="rounded-full border border-black/6 bg-(--cx-paper-strong) px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-(--cx-ink-soft)">
-          {{ session.current_question?.stage === 'skill' ? 'Skill signal' : 'Role signal' }}
+        <span
+          class="rounded-full border border-border-subtle bg-paper-strong px-3 py-1 text-[0.72rem] font-bold uppercase tracking-[0.08em] text-ink-soft"
+        >
+          {{
+            session.current_question?.stage === 'skill'
+              ? 'Skill signal'
+              : 'Role signal'
+          }}
         </span>
-        <span class="rounded-full border border-(--cx-accent-soft) bg-emerald-50/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-(--cx-accent)">
+        <span
+          class="rounded-full border border-accent-soft bg-emerald-50/80 px-3 py-1 text-[0.72rem] font-bold uppercase tracking-[0.08em] text-accent"
+        >
           {{ isAwaitingResolution ? 'Awaiting resolution' : 'Decision ready' }}
         </span>
       </div>
-      <p class="text-sm text-(--cx-ink-soft)">
+      <p class="text-sm text-ink-soft">
         {{
           session.current_question
             ? 'One prompt on screen at a time.'
@@ -134,7 +160,10 @@ useSeoMeta({
       </p>
     </div>
 
-    <div v-if="session" class="mt-6 grid gap-6 lg:grid-cols-[0.68fr_1.32fr] lg:items-start">
+    <div
+      v-if="session"
+      class="mt-6 grid gap-6 lg:grid-cols-[0.68fr_1.32fr] lg:items-start"
+    >
       <div class="lg:sticky lg:top-6 animate-fade-in-left">
         <SessionOverview :session="session" />
       </div>
@@ -146,34 +175,35 @@ useSeoMeta({
           :response-error="responseErrorMessage"
           @select="handleSelect"
         />
-        <div
-          v-if="isAwaitingResolution"
-          class="mt-4 flex justify-end"
-        >
+        <div v-if="isAwaitingResolution" class="mt-4 flex justify-end">
           <button
             type="button"
-            class="inline-flex items-center justify-center rounded-full border border-(--cx-border) bg-white/80 px-4 py-2 text-sm font-semibold text-(--cx-ink) transition hover:-translate-y-0.5 hover:border-(--cx-accent)/35 disabled:cursor-not-allowed disabled:opacity-50"
+            class="inline-flex items-center justify-center rounded-full border border-ink/12 bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/35 disabled:cursor-not-allowed disabled:opacity-50"
             :disabled="isSubmitting"
             @click="loadSession"
           >
-            <span v-if="isSubmitting" class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-(--cx-accent)" aria-hidden="true" />
+            <span
+              v-if="isSubmitting"
+              class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-accent"
+              aria-hidden="true"
+            />
             Refresh session state
           </button>
         </div>
       </div>
     </div>
 
-    <section
-      v-else-if="pageError"
-      class="glass-panel mt-6 rounded-4xl p-8 text-center"
-    >
-      <p class="text-3xl font-bold text-(--cx-ink)">Session unavailable</p>
-      <p class="mt-4 text-sm leading-7 text-(--cx-ink-soft)">
-        {{ responseErrorMessage || 'This assessment could not be opened. Return to onboarding to begin a new session.' }}
+    <section v-else-if="pageError" class="glass-panel mt-6 p-8 text-center">
+      <p class="text-3xl font-bold text-ink">Session unavailable</p>
+      <p class="mt-4 text-sm leading-7 text-ink-soft">
+        {{
+          responseErrorMessage ||
+          'This assessment could not be opened. Return to onboarding to begin a new session.'
+        }}
       </p>
       <NuxtLink
         to="/assessment/start"
-        class="mt-6 inline-flex items-center justify-center rounded-full bg-(--cx-accent) px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition hover:-translate-y-0.5 hover:bg-emerald-800"
+        class="mt-6 inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-accent-shadow transition hover:-translate-y-0.5 hover:bg-accent-hover"
       >
         Return to start
       </NuxtLink>
@@ -187,13 +217,13 @@ useSeoMeta({
     >
       <div class="space-y-4">
         <div class="skeleton h-8 w-32 rounded-full" />
-        <div class="skeleton h-64 rounded-4xl" />
+        <div class="skeleton h-48 rounded-xl" />
       </div>
       <div class="space-y-4">
         <div class="skeleton h-8 w-48 rounded-full" />
-        <div class="skeleton h-48 rounded-[2.2rem]" />
-        <div class="skeleton h-20 rounded-[1.65rem]" />
-        <div class="skeleton h-20 rounded-[1.65rem]" />
+        <div class="skeleton h-48 rounded-xl" />
+        <div class="skeleton h-16 rounded-md" />
+        <div class="skeleton h-16 rounded-md" />
       </div>
     </div>
   </main>

@@ -11,7 +11,9 @@ import type {
   TopicMastery,
 } from '~/shared/types/assessment'
 
-export function isSessionComplete(session: AssessmentSession | AssessmentResult): boolean {
+export function isSessionComplete(
+  session: AssessmentSession | AssessmentResult,
+): boolean {
   return (
     session.status === 'completed' ||
     session.phase === 'recommendation_ready' ||
@@ -38,7 +40,9 @@ export function getQuestionTypeLabel(questionType: QuestionType): string {
   }
 }
 
-export function getAlignmentTone(status: RoleAlignmentStatus): 'neutral' | 'success' | 'warning' {
+export function getAlignmentTone(
+  status: RoleAlignmentStatus,
+): 'neutral' | 'success' | 'warning' {
   if (status === 'aligned') {
     return 'success'
   }
@@ -83,7 +87,9 @@ export function getRoleResolutionLabel(status: RoleResolutionStatus): string {
 }
 
 export function getTotalAnswered(milestones: SessionMilestones): number {
-  return milestones.answered_role_questions + milestones.answered_skill_questions
+  return (
+    milestones.answered_role_questions + milestones.answered_skill_questions
+  )
 }
 
 export function formatConfidencePercent(value?: number | null): string {
@@ -94,7 +100,9 @@ export function formatConfidencePercent(value?: number | null): string {
   return `${Math.round(value * 100)}%`
 }
 
-export function getRecommendationHeadline(recommendation: Recommendation | null): string {
+export function getRecommendationHeadline(
+  recommendation: Recommendation | null,
+): string {
   if (!recommendation) {
     return 'Recommendation in progress'
   }
@@ -102,8 +110,14 @@ export function getRecommendationHeadline(recommendation: Recommendation | null)
   return recommendation.topic_title || 'No next topic recommended yet'
 }
 
-export function hasTopicRecommendation(recommendation: Recommendation | null): boolean {
-  return Boolean(recommendation?.topic_id && recommendation.topic_slug && recommendation.topic_title)
+export function hasTopicRecommendation(
+  recommendation: Recommendation | null,
+): boolean {
+  return Boolean(
+    recommendation?.topic_id &&
+    recommendation.topic_slug &&
+    recommendation.topic_title,
+  )
 }
 
 export function formatMasteryPercent(value?: number | null): string {
@@ -114,12 +128,18 @@ export function formatMasteryPercent(value?: number | null): string {
   return `${Math.round(value * 100)}%`
 }
 
-export function sortTopicsByDisplayOrder<T extends { display_order?: number | null }>(items: T[]): T[] {
-  return [...items].sort((left, right) => (left.display_order ?? 0) - (right.display_order ?? 0))
+export function sortTopicsByDisplayOrder<
+  T extends { display_order?: number | null },
+>(items: T[]): T[] {
+  return [...items].sort(
+    (left, right) => (left.display_order ?? 0) - (right.display_order ?? 0),
+  )
 }
 
 export function sortMasteryDescending(items: TopicMastery[]): TopicMastery[] {
-  return [...items].sort((left, right) => (right.mastery_score ?? 0) - (left.mastery_score ?? 0))
+  return [...items].sort(
+    (left, right) => (right.mastery_score ?? 0) - (left.mastery_score ?? 0),
+  )
 }
 
 export function sortRankedRolesDescending(

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import SkillSpiderChart from '~/components/results/SkillSpiderChart.vue'
 import { useAssessmentResults } from '~/composables/useAssessmentResults'
 import { buildRoadmapsEvaluation } from '~/utils/roadmaps'
 import type { RadarDimension } from '~/utils/roadmaps'
@@ -19,16 +18,16 @@ const {
 } = useAssessmentResults()
 const toast = useToast()
 
-const result = await getResults(route.params.sessionId)
-const history = await getHistory(route.params.sessionId).catch(() => null)
-const roadmapsCatalog = await getRoadmapsCatalog(route.params.sessionId)
-const roadmapsState = await getRoadmapsState(route.params.sessionId).catch(
-  () => ({
+const [result, history, roadmapsCatalog, roadmapsState] = await Promise.all([
+  getResults(route.params.sessionId),
+  getHistory(route.params.sessionId).catch(() => null),
+  getRoadmapsCatalog(route.params.sessionId),
+  getRoadmapsState(route.params.sessionId).catch(() => ({
     completed: false,
     answers: {},
     completed_at: null,
-  }),
-)
+  })),
+])
 const evaluation = computed(() => buildRoadmapsEvaluation(result, history))
 
 const topRoadmapTopics = computed(() =>
@@ -103,12 +102,19 @@ function getQuestionInfluence(question: RoadmapQuestion): number | null {
   return normalizeRoadmapsAnswer(raw)
 }
 
+const catalogByKey = computed(
+  () =>
+    new Map(
+      roadmapsCatalog.dimensions.map((item: { key: string }) => [
+        item.key,
+        item,
+      ]),
+    ),
+)
+
 const blendedDimensions = computed<RadarDimension[]>(() => {
   const baseByKey = new Map(
     evaluation.value.dimensions.map((item) => [item.key, item]),
-  )
-  const catalogByKey = new Map(
-    roadmapsCatalog.dimensions.map((item) => [item.key, item]),
   )
 
   return evaluation.value.dimensions.map((dimension) => {
@@ -124,7 +130,7 @@ const blendedDimensions = computed<RadarDimension[]>(() => {
 
     const capabilityValue = clampCapabilityRatio(questionScore)
     const base = baseByKey.get(dimension.key) ?? dimension
-    const catalogDimension = catalogByKey.get(dimension.key)
+    const catalogDimension = catalogByKey.value.get(dimension.key)
 
     return {
       ...base,
@@ -135,35 +141,29 @@ const blendedDimensions = computed<RadarDimension[]>(() => {
   })
 })
 
-const recalculatedStrengths = computed(() => {
-  return [...blendedDimensions.value]
-    .sort((left, right) => right.value - left.value)
+const sortedDimensionsDesc = computed(() =>
+  [...blendedDimensions.value].sort((left, right) => right.value - left.value),
+)
+
+const recalculatedStrengths = computed(() =>
+  sortedDimensionsDesc.value.slice(0, 3).map((item) => item.label),
+)
+
+const recalculatedGrowthAreas = computed(() =>
+  [...sortedDimensionsDesc.value]
+    .reverse()
     .slice(0, 3)
-    .map((item) => item.label)
-})
+    .map((item) => item.label),
+)
 
-const recalculatedGrowthAreas = computed(() => {
-  return [...blendedDimensions.value]
-    .sort((left, right) => left.value - right.value)
-    .slice(0, 3)
-    .map((item) => item.label)
-})
-
-const recommendedActions = computed(() => {
-  const catalogByKey = new Map(
-    roadmapsCatalog.dimensions.map((item) => [item.key, item]),
-  )
-
-  return [...blendedDimensions.value]
-    .sort((left, right) => left.value - right.value)
-    .slice(0, 4)
-    .map((dimension) => ({
-      dimension: dimension.label,
-      action:
-        catalogByKey.get(dimension.key)?.low_score_action ??
-        'Practice this area while completing your next roadmap topic.',
-    }))
-})
+const recommendedActions = computed(() =>
+  sortedDimensionsDesc.value.slice(-4).map((dimension) => ({
+    dimension: dimension.label,
+    action:
+      catalogByKey.value.get(dimension.key)?.low_score_action ??
+      'Practice this area while completing your next roadmap topic.',
+  })),
+)
 
 async function submitRoadmaps() {
   if (!hasAnsweredAll.value) {
@@ -321,19 +321,15 @@ useSeoMeta({
       >
         Back to Survey 1 results
       </NuxtLink>
-      <p class="text-sm text-(--cx-ink-soft)">
-        Session {{ route.params.sessionId }}
-      </p>
+      <p class="text-sm text-ink-soft">Session {{ route.params.sessionId }}</p>
     </div>
 
-    <section class="glass-panel mt-6 rounded-[2.2rem] p-6 md:p-8">
+    <section class="glass-panel mt-6 p-6 md:p-8">
       <p class="eyebrow">Roadmaps</p>
-      <h1
-        class="mt-4 font-display text-4xl leading-tight text-(--cx-ink) md:text-6xl"
-      >
+      <h1 class="mt-4 font-display text-4xl leading-tight text-ink md:text-6xl">
         PSP + SDLC capability roadmap
       </h1>
-      <p class="mt-4 max-w-3xl text-sm leading-7 text-(--cx-ink-soft)">
+      <p class="mt-4 max-w-3xl text-sm leading-7 text-ink-soft">
         This profile uses your Survey 1 answers and a role-aware PSP + SDLC
         execution check to map the habits, delivery steps, and roadmap focus
         areas that fit your current software engineering direction.
@@ -342,7 +338,7 @@ useSeoMeta({
         <button
           v-if="isRoadmapsComplete"
           type="button"
-          class="inline-flex items-center justify-center rounded-full border border-black/8 bg-white/80 px-4 py-2 text-sm font-semibold text-(--cx-ink) transition hover:-translate-y-0.5 hover:border-(--cx-accent)/35 hover:text-(--cx-accent)"
+          class="inline-flex items-center justify-center rounded-full border border-border-subtle bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/35 hover:text-accent"
           @click="exportRoadmapReport"
         >
           Download roadmap report
@@ -350,7 +346,7 @@ useSeoMeta({
         <button
           v-if="isRoadmapsComplete"
           type="button"
-          class="inline-flex items-center justify-center rounded-full border border-black/8 bg-white/80 px-4 py-2 text-sm font-semibold text-(--cx-ink) transition hover:-translate-y-0.5 hover:border-(--cx-accent)/35 hover:text-(--cx-accent)"
+          class="inline-flex items-center justify-center rounded-full border border-border-subtle bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/35 hover:text-accent"
           @click="exportSpiderChartSvg"
         >
           Download spider chart
@@ -360,32 +356,30 @@ useSeoMeta({
 
     <section
       v-if="!isRoadmapsComplete"
-      class="glass-panel mt-8 rounded-[2.2rem] p-6 md:p-8"
+      class="glass-panel mt-8 p-6 md:p-8"
       aria-live="polite"
     >
       <div class="flex flex-wrap items-center gap-3">
         <span class="eyebrow">Skill assessment</span>
         <span
-          class="rounded-full border border-black/6 bg-white/78 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-(--cx-ink-soft)"
+          class="rounded-full border border-border-subtle bg-surface-elevated px-3 py-1 text-[0.72rem] font-bold uppercase tracking-[0.08em] text-ink-soft"
         >
           Agreement scale
         </span>
       </div>
 
       <div
-        class="mt-5 rounded-[1.7rem] border border-black/6 bg-white/58 p-5 md:p-6"
+        class="mt-5 rounded-lg border border-border-subtle bg-surface-muted p-5 md:p-6"
       >
         <p
-          class="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-(--cx-ink-soft)"
+          class="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-ink-soft"
         >
           Rate concrete execution behaviors to generate your Roadmaps profile.
         </p>
-        <h2
-          class="font-display text-3xl leading-tight text-(--cx-ink) md:text-5xl"
-        >
+        <h2 class="font-display text-3xl leading-tight text-ink md:text-5xl">
           Answer before viewing your roadmap
         </h2>
-        <p class="mt-4 text-sm text-(--cx-ink-soft)">
+        <p class="mt-4 text-sm text-ink-soft">
           Question {{ currentQuestionIndex + 1 }} of
           {{ roadmapQuestions.length }}
         </p>
@@ -393,10 +387,10 @@ useSeoMeta({
 
       <div v-if="activeQuestion" class="mt-8">
         <div
-          class="rounded-[1.65rem] border border-black/6 bg-white/72 p-4 md:p-5"
+          class="rounded-md border border-border-subtle bg-surface-card p-4 md:p-5"
         >
           <p
-            class="text-base font-semibold leading-7 text-(--cx-ink) md:text-[1.05rem]"
+            class="text-base font-semibold leading-7 text-ink md:text-[1.05rem]"
           >
             {{ activeQuestion.prompt }}
           </p>
@@ -405,11 +399,11 @@ useSeoMeta({
               v-for="option in answerScale"
               :key="`${activeQuestion.id}-${option.value}`"
               type="button"
-              class="answer-option answer-option--scale rounded-[1.25rem] px-3 py-3 text-xs font-semibold uppercase tracking-[0.04em] transition"
+              class="answer-option answer-option--scale rounded-md px-3 py-3 text-xs font-semibold uppercase tracking-[0.04em] transition"
               :class="
                 activeQuestionAnswer === option.value
-                  ? 'is-selected text-(--cx-accent)'
-                  : 'text-(--cx-ink-soft)'
+                  ? 'is-selected text-accent'
+                  : 'text-ink-soft'
               "
               @click="selectAnswer(option.value)"
             >
@@ -420,7 +414,7 @@ useSeoMeta({
       </div>
 
       <div
-        class="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-black/6 pt-5"
+        class="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-5"
       >
         <p class="status-copy">
           {{
@@ -432,7 +426,7 @@ useSeoMeta({
         <div class="flex items-center gap-3">
           <button
             type="button"
-            class="inline-flex items-center justify-center rounded-full border border-black/8 bg-white/80 px-5 py-3 text-sm font-semibold text-(--cx-ink) transition hover:-translate-y-0.5 hover:border-(--cx-accent)/35 hover:text-(--cx-accent) disabled:cursor-not-allowed disabled:opacity-60"
+            class="inline-flex items-center justify-center rounded-full border border-border-subtle bg-surface-elevated px-5 py-3 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/35 hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="currentQuestionIndex === 0"
             @click="goToPreviousQuestion"
           >
@@ -440,7 +434,7 @@ useSeoMeta({
           </button>
           <button
             type="button"
-            class="inline-flex items-center justify-center rounded-full bg-(--cx-accent) px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition hover:-translate-y-0.5 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+            class="inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-accent-shadow transition hover:-translate-y-0.5 hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="
               !Number.isFinite(activeQuestionAnswer ?? NaN) || isSavingRoadmaps
             "
@@ -459,19 +453,17 @@ useSeoMeta({
     </section>
 
     <section v-else class="mt-8 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-      <section class="paper-panel rounded-[2rem] p-6">
+      <section class="paper-panel p-6 md:p-8">
         <p class="eyebrow">Spider chart</p>
-        <h2 class="mt-4 text-3xl font-bold text-(--cx-ink)">
-          Current capability map
-        </h2>
+        <h2 class="mt-4 text-3xl font-bold text-ink">Current capability map</h2>
         <div id="roadmaps-spider-chart" class="mt-6">
-          <SkillSpiderChart :dimensions="blendedDimensions" />
+          <LazySkillSpiderChart :dimensions="blendedDimensions" />
         </div>
       </section>
 
-      <section class="paper-panel rounded-[2rem] p-6">
+      <section class="paper-panel p-6 md:p-8">
         <p class="eyebrow">Profile read</p>
-        <h2 class="mt-4 text-3xl font-bold text-(--cx-ink)">
+        <h2 class="mt-4 text-3xl font-bold text-ink">
           Knowledge + personality fit
         </h2>
 
@@ -479,7 +471,7 @@ useSeoMeta({
           <p
             v-for="signal in evaluation.personalitySignals"
             :key="signal"
-            class="rounded-[1.35rem] border border-black/6 bg-white/75 p-4 text-sm leading-6 text-(--cx-ink-soft)"
+            class="rounded-md border border-border-subtle bg-surface-card p-4 text-sm leading-6 text-ink-soft"
           >
             {{ signal }}
           </p>
@@ -489,24 +481,28 @@ useSeoMeta({
           <p
             v-for="guidance in roadmapsCatalog.role_guidance"
             :key="guidance"
-            class="rounded-[1.35rem] border border-black/6 bg-emerald-50/75 p-4 text-sm leading-6 text-(--cx-ink)"
+            class="rounded-md border border-border-subtle bg-emerald-50/80 p-4 text-sm leading-6 text-ink"
           >
             {{ guidance }}
           </p>
         </div>
 
         <div class="mt-6 grid gap-4 md:grid-cols-2">
-          <div class="rounded-[1.35rem] border border-black/6 bg-white/75 p-4">
+          <div
+            class="rounded-md border border-border-subtle bg-surface-card p-4"
+          >
             <p class="eyebrow">Strongest now</p>
-            <ul class="mt-3 space-y-2 text-sm text-(--cx-ink)">
+            <ul class="mt-3 space-y-2 text-sm text-ink">
               <li v-for="strength in recalculatedStrengths" :key="strength">
                 {{ strength }}
               </li>
             </ul>
           </div>
-          <div class="rounded-[1.35rem] border border-black/6 bg-white/75 p-4">
+          <div
+            class="rounded-md border border-border-subtle bg-surface-card p-4"
+          >
             <p class="eyebrow">Develop next</p>
-            <ul class="mt-3 space-y-2 text-sm text-(--cx-ink)">
+            <ul class="mt-3 space-y-2 text-sm text-ink">
               <li v-for="gap in recalculatedGrowthAreas" :key="gap">
                 {{ gap }}
               </li>
@@ -516,52 +512,43 @@ useSeoMeta({
       </section>
     </section>
 
-    <section
-      v-if="isRoadmapsComplete"
-      class="mt-8 paper-panel rounded-[2rem] p-6"
-    >
+    <section v-if="isRoadmapsComplete" class="mt-8 paper-panel p-6 md:p-8">
       <p class="eyebrow">PSP + SDLC actions</p>
-      <h2 class="mt-4 text-3xl font-bold text-(--cx-ink)">
+      <h2 class="mt-4 text-3xl font-bold text-ink">
         Recommended execution steps
       </h2>
       <div class="mt-6 grid gap-3 md:grid-cols-2">
         <div
           v-for="item in recommendedActions"
           :key="item.dimension"
-          class="rounded-[1.35rem] border border-black/6 bg-white/75 p-4"
+          class="rounded-md border border-border-subtle bg-surface-card p-4"
         >
-          <p
-            class="text-xs font-extrabold uppercase tracking-[0.08em] text-(--cx-warm)"
-          >
+          <p class="eyebrow">
             {{ item.dimension }}
           </p>
-          <p class="mt-2 text-sm leading-6 text-(--cx-ink-soft)">
+          <p class="mt-2 text-sm leading-6 text-ink-soft">
             {{ item.action }}
           </p>
         </div>
       </div>
     </section>
 
-    <section class="mt-8 paper-panel rounded-[2rem] p-6">
+    <section class="mt-8 paper-panel p-6 md:p-8">
       <p class="eyebrow">Roadmap actions</p>
-      <h2 class="mt-4 text-3xl font-bold text-(--cx-ink)">
+      <h2 class="mt-4 text-3xl font-bold text-ink">
         Recommended learning sequence
       </h2>
       <div class="mt-6 grid gap-3 md:grid-cols-2">
         <div
           v-for="(topic, index) in topRoadmapTopics"
           :key="topic.id"
-          class="rounded-[1.35rem] border border-black/6 bg-white/75 p-4"
+          class="rounded-md border border-border-subtle bg-surface-card p-4"
         >
-          <p
-            class="text-xs font-extrabold uppercase tracking-[0.08em] text-(--cx-warm)"
-          >
-            Phase {{ index + 1 }}
-          </p>
-          <p class="mt-2 text-sm font-semibold text-(--cx-ink)">
+          <p class="eyebrow">Phase {{ index + 1 }}</p>
+          <p class="mt-2 text-sm font-semibold text-ink">
             {{ topic.title }}
           </p>
-          <p class="mt-2 text-sm leading-6 text-(--cx-ink-soft)">
+          <p class="mt-2 text-sm leading-6 text-ink-soft">
             {{
               topic.description ||
               'This topic is prioritized from your preferred-role gap profile.'

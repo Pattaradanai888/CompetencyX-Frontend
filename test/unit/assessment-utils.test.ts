@@ -9,7 +9,12 @@ import {
   isSessionComplete,
   sortMasteryDescending,
 } from '../../app/utils/assessment'
-import type { AssessmentResult, AssessmentSession, Recommendation, TopicMastery } from '../../shared/types/assessment'
+import type {
+  AssessmentResult,
+  AssessmentSession,
+  Recommendation,
+  TopicMastery,
+} from '../../shared/types/assessment'
 
 const baseSession: AssessmentSession = {
   id: 'session-1',
@@ -98,7 +103,9 @@ describe('assessment utils', () => {
       created_at: '2026-04-17T04:00:00Z',
     }
 
-    expect(getRecommendationHeadline(emptyRecommendation)).toBe('No next topic recommended yet')
+    expect(getRecommendationHeadline(emptyRecommendation)).toBe(
+      'No next topic recommended yet',
+    )
     expect(hasTopicRecommendation(emptyRecommendation)).toBe(false)
 
     const mastery: TopicMastery[] = [
@@ -120,6 +127,8 @@ describe('assessment utils', () => {
       },
     ]
 
-    expect(sortMasteryDescending(mastery).map((item) => item.topic_slug)).toEqual(['sql', 'api-design'])
+    expect(
+      sortMasteryDescending(mastery).map((item) => item.topic_slug),
+    ).toEqual(['sql', 'api-design'])
   })
 })

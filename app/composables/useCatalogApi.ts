@@ -9,7 +9,9 @@ export function useCatalogApi() {
   }
 
   async function listRoleTopics(roleSlug: string) {
-    const topics = await apiFetch<RoadmapTopic[]>(`/api/catalog/roles/${roleSlug}/topics/`)
+    const topics = await apiFetch<RoadmapTopic[]>(
+      `/api/catalog/roles/${roleSlug}/topics/`,
+    )
     return sortTopicsByDisplayOrder(topics)
   }
 

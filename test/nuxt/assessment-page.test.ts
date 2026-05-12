@@ -61,7 +61,9 @@ const baseSession: AssessmentSession = {
   },
 }
 
-function makeSession(overrides: Partial<AssessmentSession> = {}): AssessmentSession {
+function makeSession(
+  overrides: Partial<AssessmentSession> = {},
+): AssessmentSession {
   return {
     ...baseSession,
     ...overrides,
@@ -72,7 +74,9 @@ function makeSession(overrides: Partial<AssessmentSession> = {}): AssessmentSess
         : {
             ...baseSession.current_question!,
             ...overrides.current_question,
-            options: overrides.current_question?.options ?? [...baseSession.current_question!.options],
+            options: overrides.current_question?.options ?? [
+              ...baseSession.current_question!.options,
+            ],
           },
   }
 }
@@ -90,7 +94,11 @@ describe('assessment page', () => {
       phase: 'recommendation_ready',
       best_fit_confidence: 0.81,
       preferred_role: null,
-      best_fit_role: { id: 1, slug: 'backend-engineer', name: 'Backend Engineer' },
+      best_fit_role: {
+        id: 1,
+        slug: 'backend-engineer',
+        name: 'Backend Engineer',
+      },
       profile: null,
       started_at: '2026-04-17T04:00:00Z',
       updated_at: '2026-04-17T04:02:00Z',
@@ -107,11 +115,15 @@ describe('assessment page', () => {
     const wrapper = await mountSuspended(AssessmentPage)
 
     await flushPromises()
-    expect(wrapper.text()).toContain('Place the statement on the agreement scale and continue.')
+    expect(wrapper.text()).toContain(
+      'Place the statement on the agreement scale and continue.',
+    )
     expect(wrapper.text()).toContain('Strongly disagree')
     expect(wrapper.text()).toContain('Strongly agree')
     expect(
-      wrapper.findAll('label.likert-spectrum__node').map((node) => node.text().replace(/\s+/g, ' ').trim()),
+      wrapper
+        .findAll('label.likert-spectrum__node')
+        .map((node) => node.text().replace(/\s+/g, ' ').trim()),
     ).toEqual([
       'Strongly disagree',
       'Disagree',
@@ -138,7 +150,13 @@ describe('assessment page', () => {
         stage: 'skill',
         question_type: 'single_choice',
         prompt: 'Which skill topic do you want to practice next?',
-        options: [{ id: 201, key: 'backend', label: 'Designing APIs and backend services' }],
+        options: [
+          {
+            id: 201,
+            key: 'backend',
+            label: 'Designing APIs and backend services',
+          },
+        ],
         response_scale: [],
       },
     })
@@ -149,7 +167,13 @@ describe('assessment page', () => {
           stage: 'skill',
           question_type: 'single_choice',
           prompt: 'Which skill topic do you want to practice next?',
-          options: [{ id: 201, key: 'backend', label: 'Designing APIs and backend services' }],
+          options: [
+            {
+              id: 201,
+              key: 'backend',
+              label: 'Designing APIs and backend services',
+            },
+          ],
           response_scale: [],
         },
       }),
@@ -179,22 +203,30 @@ describe('assessment page', () => {
         response_scale: [],
       },
     })
-    getSessionMock.mockResolvedValue(makeSession({
-      current_question: {
-        ...baseSession.current_question!,
-        question_type: 'ranked_choice',
-        help_text: 'Answer based on the topic you want to prioritize first.',
-        response_scale: [],
-      },
-    }))
+    getSessionMock.mockResolvedValue(
+      makeSession({
+        current_question: {
+          ...baseSession.current_question!,
+          question_type: 'ranked_choice',
+          help_text: 'Answer based on the topic you want to prioritize first.',
+          response_scale: [],
+        },
+      }),
+    )
 
     const wrapper = await mountSuspended(AssessmentPage)
 
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Answer based on the topic you want to prioritize first.')
-    expect(wrapper.text()).toContain('Pick the option that should carry the most weight in the next recommendation step.')
-    expect(wrapper.text()).not.toContain('Choose the option that should carry the most weight for your next recommendation step.')
+    expect(wrapper.text()).toContain(
+      'Answer based on the topic you want to prioritize first.',
+    )
+    expect(wrapper.text()).toContain(
+      'Pick the option that should carry the most weight in the next recommendation step.',
+    )
+    expect(wrapper.text()).not.toContain(
+      'Choose the option that should carry the most weight for your next recommendation step.',
+    )
     expect(wrapper.findAll('button.answer-option--choice')).toHaveLength(0)
   })
 })

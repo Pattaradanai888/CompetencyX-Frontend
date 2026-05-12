@@ -9,16 +9,25 @@ const route = useRoute('/assessment/start')
 const { listRoleTopics, listRoles } = useCatalogApi()
 const { createSession, isSubmitting, lastSessionId } = useAssessmentSession()
 
-const preferredRoleSlug = useLocalStorage<string | null>(
-  'competencyx:preferred-role',
-  null,
-)
+const PREFERRED_ROLE_KEY = 'competencyx:preferred-role'
+
+const preferredRoleSlug = ref<string | null>(null)
 const pageError = ref<ApiError | null>(null)
 const toast = useToast()
 
 if (typeof route.query.role === 'string') {
   preferredRoleSlug.value = route.query.role
+  if (import.meta.client) {
+    localStorage.setItem(PREFERRED_ROLE_KEY, route.query.role)
+  }
 }
+
+onMounted(() => {
+  const stored = localStorage.getItem(PREFERRED_ROLE_KEY)
+  if (stored) {
+    preferredRoleSlug.value = stored
+  }
+})
 
 const { data: roles } = await useAsyncData('start-roles', listRoles, {
   default: () => [] as Role[],
@@ -73,16 +82,24 @@ function getCategoryForRole(slug: string): string {
 }
 
 const router = useRouter()
-const searchQuery = ref(typeof route.query.search === 'string' ? route.query.search : '')
-const activeCategory = ref(typeof route.query.category === 'string' ? route.query.category : 'All')
+const searchQuery = ref(
+  typeof route.query.search === 'string' ? route.query.search : '',
+)
+const activeCategory = ref(
+  typeof route.query.category === 'string' ? route.query.category : 'All',
+)
 
-watch([searchQuery, activeCategory, preferredRoleSlug], ([search, category, role]) => {
-  const query: Record<string, string> = {}
-  if (role) query.role = role
-  if (search) query.search = search
-  if (category !== 'All') query.category = category
-  router.replace({ path: '/assessment/start', query })
-}, { flush: 'post' })
+watch(
+  [searchQuery, activeCategory, preferredRoleSlug],
+  ([search, category, role]) => {
+    const query: Record<string, string> = {}
+    if (role) query.role = role
+    if (search) query.search = search
+    if (category !== 'All') query.category = category
+    router.replace({ path: '/assessment/start', query })
+  },
+  { flush: 'post' },
+)
 
 const availableCategories = computed(() => {
   const categories = new Set(
@@ -143,8 +160,18 @@ function clearFilters() {
   activeCategory.value = 'All'
 }
 
+function selectPreferredRole(slug: string) {
+  preferredRoleSlug.value = slug
+  if (import.meta.client) {
+    localStorage.setItem(PREFERRED_ROLE_KEY, slug)
+  }
+}
+
 function clearPreferredRole() {
   preferredRoleSlug.value = null
+  if (import.meta.client) {
+    localStorage.removeItem(PREFERRED_ROLE_KEY)
+  }
 }
 
 async function handleStart() {
@@ -160,7 +187,11 @@ async function handleStart() {
     await navigateTo(`/assessment/${session.id}`)
   } catch (error) {
     pageError.value = error as ApiError
-    toast.add({ title: 'Could not start assessment', description: getErrorMessage(error as ApiError) ?? undefined, color: 'error' })
+    toast.add({
+      title: 'Could not start assessment',
+      description: getErrorMessage(error as ApiError) ?? undefined,
+      color: 'error',
+    })
   }
 }
 
@@ -180,7 +211,7 @@ useSeoMeta({
       <NuxtLink
         v-if="lastSessionId"
         :to="`/assessment/${lastSessionId}`"
-        class="inline-flex items-center justify-center rounded-full border border-(--cx-border) bg-white/85 px-4 py-2 text-sm font-semibold text-(--cx-ink) shadow-sm transition hover:-translate-y-0.5 hover:border-(--cx-accent)/35 hover:text-(--cx-accent)"
+        class="inline-flex items-center justify-center rounded-full border border-ink/12 bg-white/85 px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:-translate-y-0.5 hover:border-accent/35 hover:text-accent"
       >
         Resume previous session
       </NuxtLink>
@@ -196,7 +227,7 @@ useSeoMeta({
         <div class="flex flex-wrap items-center justify-between gap-4">
           <p class="eyebrow">Onboarding</p>
           <p
-            class="rounded-full border border-(--cx-accent-soft) bg-emerald-50/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-(--cx-accent)"
+            class="rounded-full border border-accent-soft bg-emerald-50/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-accent"
             aria-live="polite"
           >
             {{ selectedRole ? 'Role selected' : 'Open discovery' }}
@@ -205,65 +236,59 @@ useSeoMeta({
 
         <h1
           id="onboarding-title"
-          class="mt-4 max-w-4xl font-display text-4xl leading-tight text-(--cx-ink) md:text-5xl"
+          class="mt-4 max-w-4xl font-display text-4xl leading-tight text-ink md:text-5xl"
         >
           Choose a role target, or let the assessment find the strongest signal.
         </h1>
-        <p class="mt-4 max-w-2xl text-sm leading-7 text-(--cx-ink-soft)">
+        <p class="mt-4 max-w-2xl text-sm leading-7 text-ink-soft">
           A preferred role frames the roadmap preview. The final recommendation
           still comes from your answers, so leaving this open is a valid
           starting point.
         </p>
 
         <ol
-          class="assessment-stagebar mt-6 grid gap-3 rounded-[1.6rem] border border-black/6 bg-white/60 p-3 sm:grid-cols-3"
+          class="assessment-stagebar mt-6 grid gap-3 border border-border-subtle bg-surface-muted p-3 sm:grid-cols-3"
           aria-label="Assessment onboarding steps"
         >
           <li
             v-for="(step, index) in onboardingSteps"
             :key="step"
-            class="rounded-[1.2rem] border border-black/6 bg-(--cx-paper-strong)/80 p-3"
+            class="rounded-sm border border-border-subtle bg-paper-strong p-3"
           >
-            <p
-              class="text-[0.68rem] font-extrabold uppercase tracking-[0.08em] text-(--cx-warm)"
-            >
-              Step {{ index + 1 }}
-            </p>
-            <p
-              class="mt-2 text-sm font-semibold leading-6 text-(--cx-ink)"
-            >
+            <p class="eyebrow">Step {{ index + 1 }}</p>
+            <p class="mt-2 text-sm font-semibold leading-6 text-ink">
               {{ step }}
             </p>
           </li>
         </ol>
 
         <div
-          class="mt-6 rounded-[1.6rem] border border-black/6 bg-white/65 p-4"
+          class="mt-6 rounded-lg border border-border-subtle bg-surface-muted p-4"
           aria-live="polite"
         >
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div class="min-w-0">
               <p
-                class="text-xs font-extrabold uppercase tracking-[0.08em] text-(--cx-ink-soft)"
+                class="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-soft"
               >
                 Current target
               </p>
               <p
-                class="mt-1 wrap-break-word text-2xl font-bold leading-tight text-(--cx-ink)"
+                class="mt-1 wrap-break-word text-2xl font-bold leading-tight text-ink"
               >
                 {{ selectedRoleName }}
               </p>
             </div>
             <button
               type="button"
-              class="inline-flex items-center justify-center rounded-full border border-(--cx-border) bg-white/80 px-4 py-2 text-sm font-semibold text-(--cx-ink) transition hover:-translate-y-0.5 hover:border-(--cx-accent)/35 disabled:cursor-not-allowed disabled:opacity-50"
+              class="inline-flex items-center justify-center rounded-full border border-ink/12 bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/35 disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="!selectedRole"
               @click="clearPreferredRole"
             >
               Continue without a preferred role
             </button>
           </div>
-          <p class="mt-3 text-sm leading-6 text-(--cx-ink-soft)">
+          <p class="mt-3 text-sm leading-6 text-ink-soft">
             {{
               selectedRole
                 ? 'You can change the target before starting. The assessment will still compare it with the best-fit role.'
@@ -275,13 +300,10 @@ useSeoMeta({
         <div class="mt-6 space-y-4" aria-labelledby="role-filter-title">
           <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2
-                id="role-filter-title"
-                class="text-2xl font-bold text-(--cx-ink)"
-              >
+              <h2 id="role-filter-title" class="text-2xl font-bold text-ink">
                 Role chooser
               </h2>
-              <p class="mt-1 text-sm text-(--cx-ink-soft)">
+              <p class="mt-1 text-sm text-ink-soft">
                 Search by title, discipline, or description.
               </p>
             </div>
@@ -300,7 +322,7 @@ useSeoMeta({
             <span class="relative block">
               <svg
                 aria-hidden="true"
-                class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-(--cx-ink-soft)/60"
+                class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink-soft/60"
                 width="16"
                 height="16"
                 viewBox="0 0 16 16"
@@ -327,8 +349,8 @@ useSeoMeta({
                 type="text"
                 autocomplete="off"
                 placeholder="Search roles…"
-                class="w-full rounded-full border border-black/8 bg-white/75 py-2.5 pl-11 pr-4 text-sm text-(--cx-ink) placeholder:text-(--cx-ink-soft)/50 transition focus-visible:border-(--cx-accent)/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--cx-accent-soft)"
-              >
+                class="w-full rounded-full border border-border-subtle bg-surface-card py-2.5 pl-11 pr-4 text-sm text-ink placeholder:text-ink-soft/50 transition focus-visible:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+              />
             </span>
           </label>
 
@@ -346,8 +368,8 @@ useSeoMeta({
               class="rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.06em] transition"
               :class="
                 activeCategory === category
-                  ? 'border-(--cx-accent)/50 bg-(--cx-accent)/10 text-(--cx-accent)'
-                  : 'border-black/8 bg-white/70 text-(--cx-ink-soft) hover:border-black/15 hover:text-(--cx-ink)'
+                  ? 'border-accent/50 bg-accent/10 text-accent'
+                  : 'border-border-subtle bg-surface-card text-ink-soft hover:border-ink/12 hover:text-ink'
               "
               @click="activeCategory = category"
             >
@@ -355,7 +377,7 @@ useSeoMeta({
             </button>
           </div>
 
-          <p class="text-xs text-(--cx-ink-soft)" aria-live="polite">
+          <p class="text-xs text-ink-soft" aria-live="polite">
             {{ resultSummary }}
           </p>
         </div>
@@ -374,13 +396,13 @@ useSeoMeta({
               role.slug === preferredRoleSlug ? topics.length : undefined
             "
             compact
-            @select="preferredRoleSlug = role.slug"
+            @select="selectPreferredRole"
           />
         </div>
 
         <p
           v-if="!filteredRoles.length && roles.length"
-          class="mt-6 rounded-[1.35rem] border border-black/6 bg-white/70 p-4 text-sm text-(--cx-ink-soft)"
+          class="mt-6 rounded-md border border-border-subtle bg-surface-card p-4 text-sm text-ink-soft"
           aria-live="polite"
         >
           No roles match your search. Try a different keyword or clear the
@@ -391,7 +413,7 @@ useSeoMeta({
           v-if="pageError"
           aria-live="polite"
           role="alert"
-          class="mt-6 rounded-[1.5rem] border border-rose-300/50 bg-rose-50/90 p-4 text-sm text-rose-900"
+          class="cx-error-panel mt-6 p-4 text-sm"
         >
           {{ getErrorMessage(pageError) }} Please try starting again.
         </div>
@@ -399,11 +421,15 @@ useSeoMeta({
         <div class="mt-8 flex flex-wrap items-center gap-4">
           <button
             type="button"
-            class="inline-flex items-center justify-center rounded-full bg-(--cx-accent) px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition hover:-translate-y-0.5 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+            class="inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-accent-shadow transition hover:-translate-y-0.5 hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="isSubmitting"
             @click="handleStart"
           >
-            <span v-if="isSubmitting" class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true" />
+            <span
+              v-if="isSubmitting"
+              class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
+              aria-hidden="true"
+            />
             {{
               isSubmitting ? 'Preparing your assessment…' : 'Start assessment'
             }}
@@ -412,7 +438,7 @@ useSeoMeta({
             v-if="isSubmitting"
             aria-live="polite"
             role="status"
-            class="text-sm text-(--cx-ink-soft)"
+            class="text-sm text-ink-soft"
           >
             Setting up your first question…
           </p>
@@ -426,13 +452,13 @@ useSeoMeta({
         <p class="eyebrow">Roadmap preview</p>
         <h2
           id="roadmap-preview-title"
-          class="mt-4 text-3xl font-bold leading-tight text-(--cx-ink)"
+          class="mt-4 text-3xl font-bold leading-tight text-ink"
         >
           {{
             selectedRole?.name || 'Choose a path to preview its learning arc'
           }}
         </h2>
-        <p class="mt-4 text-sm leading-7 text-(--cx-ink-soft)">
+        <p class="mt-4 text-sm leading-7 text-ink-soft">
           {{
             selectedRole
               ? selectedRole.description ||
@@ -463,12 +489,12 @@ useSeoMeta({
           <li
             v-for="topic in topics.slice(0, 6)"
             :key="topic.id"
-            class="rounded-[1.35rem] border border-black/6 bg-white/74 p-4"
+            class="rounded-md border border-border-subtle bg-surface-card p-4"
           >
-            <p class="text-sm font-semibold text-(--cx-ink)">
+            <p class="text-sm font-semibold text-ink">
               {{ topic.title }}
             </p>
-            <p class="mt-2 text-sm leading-6 text-(--cx-ink-soft)">
+            <p class="mt-2 text-sm leading-6 text-ink-soft">
               {{
                 topic.description ||
                 'This topic appears in the roadmap preview for the selected role.'
@@ -479,15 +505,15 @@ useSeoMeta({
 
         <p
           v-else-if="selectedRole"
-          class="mt-6 rounded-[1.35rem] border border-black/6 bg-white/70 p-4 text-sm text-(--cx-ink-soft)"
+          class="mt-6 rounded-md border border-border-subtle bg-surface-card p-4 text-sm text-ink-soft"
         >
-          No roadmap preview is available for this role. You can still
-          continue and review the full recommendation at the end.
+          No roadmap preview is available for this role. You can still continue
+          and review the full recommendation at the end.
         </p>
 
         <p
           v-else
-          class="mt-6 rounded-[1.35rem] border border-black/6 bg-white/70 p-4 text-sm text-(--cx-ink-soft)"
+          class="mt-6 rounded-md border border-border-subtle bg-surface-card p-4 text-sm text-ink-soft"
         >
           Select a role to preview roadmap topics, or start the assessment
           without a preferred role.

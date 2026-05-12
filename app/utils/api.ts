@@ -9,12 +9,15 @@ export function normalizeApiError(error: unknown): ApiError {
   }
 
   return {
-    statusCode: source?.response?.status ?? source?.statusCode ?? source?.status ?? 500,
+    statusCode:
+      source?.response?.status ?? source?.statusCode ?? source?.status ?? 500,
     data: source?.data ?? { detail: 'Unexpected API error.' },
   }
 }
 
-export function getErrorMessage(error: ApiError | null | undefined): string | null {
+export function getErrorMessage(
+  error: ApiError | null | undefined,
+): string | null {
   if (!error) {
     return null
   }

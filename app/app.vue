@@ -1,6 +1,14 @@
 <script setup>
 useHead({
-  meta: [{ name: 'theme-color', content: '#f7f1e6' }],
+  titleTemplate: '%s | CompetencyX',
+  meta: [
+    { name: 'theme-color', content: '#f7f1e6' },
+    {
+      name: 'description',
+      content:
+        'Adaptive competency assessment with personalized role roadmaps.',
+    },
+  ],
 })
 </script>
 
@@ -9,7 +17,7 @@ useHead({
     <UApp>
       <a href="#main-content" class="skip-link">Skip to main content</a>
       <NuxtRouteAnnouncer />
-      <NuxtLoadingIndicator color="var(--cx-accent)" />
+      <NuxtLoadingIndicator color="var(--color-accent)" />
       <div class="app-shell">
         <div class="ambient-orb ambient-orb-one" />
         <div class="ambient-orb ambient-orb-two" />

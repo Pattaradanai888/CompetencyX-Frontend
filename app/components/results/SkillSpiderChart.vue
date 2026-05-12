@@ -103,23 +103,23 @@ const axes = computed(() => {
 </script>
 
 <template>
-  <div class="rounded-[2rem] border border-black/8 bg-white/80 p-4">
+  <div class="rounded-xl border border-border-subtle bg-surface-elevated p-4">
     <div class="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
       <p
-        class="text-xs font-semibold uppercase tracking-[0.08em] text-(--cx-ink-soft)"
+        class="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft"
       >
         Capability scale
       </p>
-      <p class="text-xs font-semibold text-(--cx-ink)">1 low / 10 high</p>
+      <p class="text-xs font-semibold text-ink">1 low / 10 high</p>
     </div>
     <div
-      class="mb-2 flex flex-wrap items-center gap-2 rounded-2xl border border-black/6 bg-white/70 px-3 py-2"
+      class="mb-2 flex flex-wrap items-center gap-2 rounded-2xl border border-border-subtle bg-surface-card px-3 py-2"
       aria-hidden="true"
     >
       <span
         v-for="step in ringSteps"
         :key="`scale-chip-${step}`"
-        class="rounded-full bg-emerald-50 px-2.5 py-1 text-[0.68rem] font-bold text-(--cx-accent)"
+        class="rounded-full bg-emerald-50 px-2.5 py-1 text-[0.68rem] font-bold text-accent"
       >
         {{ Math.round(step * scaleMax) }}
       </span>
@@ -143,7 +143,7 @@ const axes = computed(() => {
               .join(' ')
           "
           fill="none"
-          stroke="rgba(29, 42, 39, 0.14)"
+          stroke="var(--color-ink)"
           stroke-width="1"
         />
       </g>
@@ -164,7 +164,7 @@ const axes = computed(() => {
       <polygon
         :points="polygonPoints"
         fill="rgba(29, 107, 87, 0.26)"
-        stroke="rgba(29, 107, 87, 0.92)"
+        stroke="var(--color-accent)"
         stroke-width="2"
       />
 
@@ -174,7 +174,7 @@ const axes = computed(() => {
         :cx="axis.node.x"
         :cy="axis.node.y"
         r="4"
-        fill="rgba(29, 107, 87, 1)"
+        fill="var(--color-accent)"
       />
 
       <g>
@@ -186,7 +186,7 @@ const axes = computed(() => {
           text-anchor="middle"
           dominant-baseline="middle"
           font-size="11"
-          fill="#1d6b57"
+          fill="var(--color-accent)"
           font-weight="800"
         >
           {{ axis.score }}/10
@@ -202,7 +202,7 @@ const axes = computed(() => {
           :text-anchor="axis.textAnchor"
           dominant-baseline="middle"
           font-size="11"
-          fill="#1d2a27"
+          fill="var(--color-ink)"
           font-weight="700"
         >
           <tspan
