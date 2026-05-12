@@ -21,13 +21,11 @@ export type RoleAlignmentStatus =
   | 'aligned'
   | 'mismatch'
   | 'ambiguous'
-  | string
 export type RoleResolutionStatus =
   | 'unknown'
   | 'in_progress'
   | 'resolved'
   | 'ambiguous'
-  | string
 export type LikertScaleValue = -2 | -1 | 0 | 1 | 2
 
 export interface Role {

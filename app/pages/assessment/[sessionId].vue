@@ -19,7 +19,7 @@ const pageError = ref<ApiError | null>(null)
 const toast = useToast()
 const questionShownAt = ref(Date.now())
 
-await loadSession()
+await useAsyncData(`assessment-session-${route.params.sessionId}`, loadSession)
 
 watch(
   () => session.value?.current_question?.id,

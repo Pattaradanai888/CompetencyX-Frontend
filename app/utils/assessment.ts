@@ -92,13 +92,15 @@ export function getTotalAnswered(milestones: SessionMilestones): number {
   )
 }
 
-export function formatConfidencePercent(value?: number | null): string {
+function formatPercent(value?: number | null): string {
   if (typeof value !== 'number' || Number.isNaN(value)) {
     return '0%'
   }
 
   return `${Math.round(value * 100)}%`
 }
+
+export const formatConfidencePercent = formatPercent
 
 export function getRecommendationHeadline(
   recommendation: Recommendation | null,
@@ -120,13 +122,7 @@ export function hasTopicRecommendation(
   )
 }
 
-export function formatMasteryPercent(value?: number | null): string {
-  if (typeof value !== 'number' || Number.isNaN(value)) {
-    return '0%'
-  }
-
-  return `${Math.round(value * 100)}%`
-}
+export const formatMasteryPercent = formatPercent
 
 export function sortTopicsByDisplayOrder<
   T extends { display_order?: number | null },

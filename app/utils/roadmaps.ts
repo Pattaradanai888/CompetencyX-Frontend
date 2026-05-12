@@ -19,7 +19,7 @@ export interface RoadmapsEvaluation {
   personalitySignals: string[]
 }
 
-function clamp(value: number): number {
+export function clamp(value: number): number {
   return Math.max(0, Math.min(1, value))
 }
 

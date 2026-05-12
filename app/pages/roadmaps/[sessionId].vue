@@ -18,21 +18,36 @@ const {
 } = useAssessmentResults()
 const toast = useToast()
 
-const [result, history, roadmapsCatalog, roadmapsState] = await Promise.all([
-  getResults(route.params.sessionId),
-  getHistory(route.params.sessionId).catch(() => null),
-  getRoadmapsCatalog(route.params.sessionId),
-  getRoadmapsState(route.params.sessionId).catch(() => ({
-    completed: false,
-    answers: {},
-    completed_at: null,
-  })),
-])
+const { data: _roadmapsData } = await useAsyncData(
+  `roadmaps-${route.params.sessionId}`,
+  async () => {
+    const [result, history, roadmapsCatalog, roadmapsState] = await Promise.all(
+      [
+        getResults(route.params.sessionId),
+        getHistory(route.params.sessionId).catch(() => null),
+        getRoadmapsCatalog(route.params.sessionId),
+        getRoadmapsState(route.params.sessionId).catch(() => ({
+          completed: false,
+          answers: {},
+          completed_at: null,
+        })),
+      ],
+    )
+    return { result, history, roadmapsCatalog, roadmapsState }
+  },
+)
+
+const result = _roadmapsData.value!.result
+const history = _roadmapsData.value!.history
+const roadmapsCatalog = _roadmapsData.value!.roadmapsCatalog
+const roadmapsState = _roadmapsData.value!.roadmapsState
+
 const evaluation = computed(() => buildRoadmapsEvaluation(result, history))
 
 const topRoadmapTopics = computed(() =>
   result.preferred_role_gap_topics.slice(0, 6),
 )
+
 const isRoadmapsComplete = ref(roadmapsState.completed)
 
 type RoadmapQuestion = {
@@ -79,17 +94,13 @@ const activeQuestionAnswer = computed(() => {
   return roadmapAnswers.value[activeQuestion.value.id] ?? null
 })
 
-function clampCapabilityRatio(value: number): number {
-  return Math.max(0, Math.min(1, value))
-}
-
 function normalizeRoadmapsAnswer(raw: number): number {
   if (answerScaleMax === answerScaleMin) {
     return 1
   }
 
   const ratio = (raw - answerScaleMin) / (answerScaleMax - answerScaleMin)
-  const scoreOutOfTen = 1 + clampCapabilityRatio(ratio) * 9
+  const scoreOutOfTen = 1 + clamp(ratio) * 9
   return scoreOutOfTen / 10
 }
 
@@ -128,7 +139,7 @@ const blendedDimensions = computed<RadarDimension[]>(() => {
       ? influences.reduce((sum, value) => sum + value, 0) / influences.length
       : dimension.value
 
-    const capabilityValue = clampCapabilityRatio(questionScore)
+    const capabilityValue = clamp(questionScore)
     const base = baseByKey.get(dimension.key) ?? dimension
     const catalogDimension = catalogByKey.value.get(dimension.key)
 

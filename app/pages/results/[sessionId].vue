@@ -8,6 +8,8 @@ import {
 } from '~/utils/assessment'
 import { useAssessmentResults } from '~/composables/useAssessmentResults'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
+import { getErrorMessage } from '~/utils/api'
+import type { ApiError } from '~/shared/types/assessment'
 
 const RecommendationCard = defineAsyncComponent(
   () => import('~/components/results/RecommendationCard.vue'),
@@ -16,26 +18,43 @@ const RecommendationCard = defineAsyncComponent(
 const route = useRoute('/results/[sessionId]')
 const { getResults } = useAssessmentResults()
 const { getSession } = useAssessmentSession()
+const toast = useToast()
 
-const [sessionSnapshot, resultsAttempt] = await Promise.all([
-  getSession(route.params.sessionId),
-  getResults(route.params.sessionId).catch(() => null),
-])
+const { data: _fetchData, error: fetchError } = await useAsyncData(
+  `results-${route.params.sessionId}`,
+  async () => {
+    const [sessionSnapshot, resultsAttempt] = await Promise.all([
+      getSession(route.params.sessionId),
+      getResults(route.params.sessionId).catch((error) => {
+        const apiError = error as ApiError
+        if (apiError.statusCode === 404) return null
+        throw error
+      }),
+    ])
+    return { sessionSnapshot, resultsAttempt }
+  },
+)
 
-let initialResults = null
+const sessionSnapshot = _fetchData.value?.sessionSnapshot
 
-if (
-  sessionSnapshot.current_question ||
-  sessionSnapshot.status !== 'completed'
-) {
-  await navigateTo(
-    `/assessment/${sessionSnapshot.id ?? route.params.sessionId}`,
-  )
-} else {
-  initialResults = resultsAttempt
+if (fetchError.value) {
+  toast.add({
+    title: 'Could not load results',
+    description: getErrorMessage(fetchError.value as ApiError) ?? undefined,
+    color: 'error',
+  })
 }
 
-const results = ref(initialResults)
+if (
+  sessionSnapshot?.current_question ||
+  sessionSnapshot?.status !== 'completed'
+) {
+  await navigateTo(
+    `/assessment/${sessionSnapshot?.id ?? route.params.sessionId}`,
+  )
+}
+
+const results = ref(_fetchData.value?.resultsAttempt ?? null)
 const roadmapsButton = ref<HTMLAnchorElement | null>(null)
 
 const masteryScores = computed(() =>

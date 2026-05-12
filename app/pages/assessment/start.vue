@@ -221,7 +221,7 @@ useSeoMeta({
       class="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(21rem,0.92fr)] lg:items-start"
     >
       <section
-        class="glass-panel rounded-[2.2rem] p-6 md:p-8"
+        class="glass-panel p-6 md:p-8"
         aria-labelledby="onboarding-title"
       >
         <div class="flex flex-wrap items-center justify-between gap-4">
