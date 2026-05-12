@@ -2,8 +2,8 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   css: ['~/assets/css/main.css'],
-  devtools: { enabled: false },
-  modules: ['@nuxt/ui', '@vueuse/nuxt', 'motion-v/nuxt'],
+  devtools: { enabled: true },
+  modules: ['@nuxt/ui', '@nuxt/eslint', '@vueuse/nuxt', 'motion-v/nuxt'],
   app: {
     head: {
       link: [
