@@ -1,12 +1,20 @@
 <script setup lang="ts">
+import { motion } from 'motion-v'
 import { useAssessmentResults } from '~/composables/useAssessmentResults'
+import {
+  sortMasteryDescending,
+  sortTopicsByDisplayOrder,
+} from '~/utils/assessment'
 import { buildRoadmapsEvaluation } from '~/utils/roadmaps'
 import type { RadarDimension } from '~/utils/roadmaps'
+import MasteryMeter from '~/components/results/MasteryMeter.vue'
 import SkillSpiderChart from '~/components/results/SkillSpiderChart.vue'
 import { getErrorMessage } from '~/utils/api'
 import type {
   ApiError,
   AssessmentSession,
+  PillarInsight,
+  RoadmapTopic,
   RoadmapsCatalogQuestion,
 } from '~/shared/types/assessment'
 
@@ -20,6 +28,10 @@ const {
 } = useAssessmentResults()
 const toast = useToast()
 const { getSession } = useAssessmentSession()
+const prefersReduced = useReducedMotion()
+const isGuidanceExpanded = ref(false)
+const AUTO_ADVANCE_DELAY_MS = 220
+let autoAdvanceTimer: ReturnType<typeof setTimeout> | null = null
 
 const { data: _roadmapsData } = await useAsyncData(
   `roadmaps-${route.params.sessionId}`,
@@ -28,12 +40,14 @@ const { data: _roadmapsData } = await useAsyncData(
       () => null as AssessmentSession | null,
     )
 
-    const assessmentResult = await getResults(route.params.sessionId).catch((error) => {
-      if ((error as ApiError).statusCode === 409) {
-        return null
-      }
-      throw error
-    })
+    const assessmentResult = await getResults(route.params.sessionId).catch(
+      (error) => {
+        if ((error as ApiError).statusCode === 409) {
+          return null
+        }
+        throw error
+      },
+    )
 
     const [result, history, roadmapsCatalog, roadmapsState] = await Promise.all(
       [
@@ -86,11 +100,7 @@ const baseDimensions = computed<RadarDimension[]>(() => {
   )
 
   return roadmapsCatalog.dimensions.map(
-    (dimension: {
-      key: string
-      label: string
-      track: 'psp' | 'sdlc'
-    }) => {
+    (dimension: { key: string; label: string; track: 'psp' | 'sdlc' }) => {
       const existing = fromEvaluation.get(dimension.key)
       return {
         key: dimension.key,
@@ -101,10 +111,6 @@ const baseDimensions = computed<RadarDimension[]>(() => {
     },
   )
 })
-
-const topRoadmapTopics = computed(() =>
-  result?.preferred_role_gap_topics.slice(0, 6) ?? [],
-)
 
 const isRoadmapsComplete = ref(roadmapsState.completed)
 
@@ -134,6 +140,7 @@ const answerScaleMax = answerScaleValues.length
 const roadmapAnswers = ref<Record<string, number>>({ ...roadmapsState.answers })
 const currentQuestionIndex = ref(0)
 const isSavingRoadmaps = ref(false)
+const isAutoAdvancing = ref(false)
 const RL_EPSILON = 0.18
 
 const hasAnsweredAll = computed(() => {
@@ -152,6 +159,10 @@ const activeQuestionAnswer = computed(() => {
 
   return roadmapAnswers.value[activeQuestion.value.id] ?? null
 })
+
+function clamp(value: number): number {
+  return Math.max(0, Math.min(1, value))
+}
 
 function normalizeRoadmapsAnswer(raw: number): number {
   if (answerScaleMax === answerScaleMin) {
@@ -183,7 +194,9 @@ const catalogByKey = computed(
 )
 
 const blendedDimensions = computed<RadarDimension[]>(() => {
-  const baseByKey = new Map(baseDimensions.value.map((item) => [item.key, item]))
+  const baseByKey = new Map(
+    baseDimensions.value.map((item) => [item.key, item]),
+  )
 
   return baseDimensions.value.map((dimension) => {
     const matchingQuestions = roadmapQuestions.filter(
@@ -230,7 +243,9 @@ function getDimensionMastery(dimensionKey: string): number {
     return 0.5
   }
 
-  const normalized = matchingAnswers.map((value) => normalizeRoadmapsAnswer(value))
+  const normalized = matchingAnswers.map((value) =>
+    normalizeRoadmapsAnswer(value),
+  )
   const average =
     normalized.reduce((sum, value) => sum + value, 0) / normalized.length
   return clamp(average)
@@ -261,15 +276,18 @@ function pickNextQuestionWithRl(): RoadmapQuestion | null {
     return unanswered[Math.floor(Math.random() * unanswered.length)] ?? null
   }
 
-  return unanswered.reduce((best, current) => {
-    if (!best) {
-      return current
-    }
+  return unanswered.reduce(
+    (best, current) => {
+      if (!best) {
+        return current
+      }
 
-    return scoreAdaptiveCandidate(current) > scoreAdaptiveCandidate(best)
-      ? current
-      : best
-  }, null as RoadmapQuestion | null)
+      return scoreAdaptiveCandidate(current) > scoreAdaptiveCandidate(best)
+        ? current
+        : best
+    },
+    null as RoadmapQuestion | null,
+  )
 }
 
 function setCurrentQuestionById(questionId: string | null) {
@@ -278,7 +296,9 @@ function setCurrentQuestionById(questionId: string | null) {
     return
   }
 
-  const nextIndex = roadmapQuestions.findIndex((question) => question.id === questionId)
+  const nextIndex = roadmapQuestions.findIndex(
+    (question) => question.id === questionId,
+  )
   currentQuestionIndex.value = nextIndex === -1 ? 0 : nextIndex
 }
 
@@ -295,15 +315,6 @@ const recalculatedGrowthAreas = computed(() =>
     .reverse()
     .slice(0, 3)
     .map((item) => item.label),
-)
-
-const recommendedActions = computed(() =>
-  sortedDimensionsDesc.value.slice(-4).map((dimension) => ({
-    dimension: dimension.label,
-    action:
-      catalogByKey.value.get(dimension.key)?.low_score_action ??
-      'Practice this area while completing your next roadmap topic.',
-  })),
 )
 
 const overallCapabilityScore = computed(() => {
@@ -323,11 +334,85 @@ const roadmapsProgressPercent = computed(() => {
   )
 })
 
+const answeredPromptCount = computed(() => {
+  return roadmapQuestions.filter((question) =>
+    Number.isFinite(roadmapAnswers.value[question.id]),
+  ).length
+})
+
+const activeQuestionNumber = computed(() => {
+  if (!activeQuestion.value) {
+    return Math.min(answeredPromptCount.value + 1, roadmapQuestions.length || 1)
+  }
+
+  const currentIndex = roadmapQuestions.findIndex(
+    (question) => question.id === activeQuestion.value?.id,
+  )
+
+  return currentIndex === -1 ? 1 : currentIndex + 1
+})
+
+const selectedScaleOption = computed(() => {
+  if (!Number.isFinite(activeQuestionAnswer.value ?? Number.NaN)) {
+    return null
+  }
+
+  return (
+    answerScale.find((option) => option.value === activeQuestionAnswer.value) ??
+    null
+  )
+})
+
+const phase2GuidanceTitle = computed(() => {
+  return preferredRoleName.value
+    ? `${preferredRoleName.value} track`
+    : 'Skill calibration'
+})
+
+const phase2ProgressSummary = computed(() => {
+  const calibrationState = hasAnsweredAll.value
+    ? 'Ready to review'
+    : answeredPromptCount.value
+      ? 'Building confidence'
+      : 'Still calibrating'
+  const progressState = isSavingRoadmaps.value ? 'Saving' : 'In progress'
+
+  return `Q${answeredPromptCount.value} answered • ${calibrationState} • ${progressState}`
+})
+
+const phase2Microcopy = computed(() => {
+  if (isSavingRoadmaps.value) {
+    return 'Saving your assessment signal and preparing the next step.'
+  }
+
+  if (isAutoAdvancing.value && selectedScaleOption.value) {
+    return `${selectedScaleOption.value.label}. Moving to the next statement.`
+  }
+
+  if (selectedScaleOption.value) {
+    return `${selectedScaleOption.value.label}.`
+  }
+
+  return 'Select one response to continue automatically.'
+})
+
+const phase2PromptContext = computed(() => {
+  if (!activeQuestion.value) {
+    return 'We are preparing the next calibration prompt.'
+  }
+
+  return 'Place the statement on the agreement scale and continue.'
+})
+
 const readinessStatus = computed(() => {
   if (overallCapabilityScore.value >= 78) return 'Role ready'
   if (overallCapabilityScore.value >= 58) return 'Project ready'
   return 'Foundation building'
 })
+
+const topRoadmapTopics = computed(() =>
+  sortTopicsByDisplayOrder(result?.preferred_role_gap_topics ?? []).slice(0, 6),
+)
 
 const suggestedTechnologies = computed(() => {
   const roleName = result?.best_fit_role?.name?.toLowerCase() ?? ''
@@ -472,8 +557,7 @@ const recommendedRoadmapActions = computed(() => {
     if (roleName.includes('frontend')) roleActionPrefix = 'UI delivery focus'
     else if (roleName.includes('backend'))
       roleActionPrefix = 'Service reliability focus'
-    else if (roleName.includes('data'))
-      roleActionPrefix = 'Data trust focus'
+    else if (roleName.includes('data')) roleActionPrefix = 'Data trust focus'
     else if (roleName.includes('devops'))
       roleActionPrefix = 'Platform stability focus'
 
@@ -532,6 +616,148 @@ const recommendedResources = computed(() => {
   ]
 })
 
+const displayPersonalitySignals = computed(() => {
+  if (evaluation.value.personalitySignals.length) {
+    return evaluation.value.personalitySignals
+  }
+
+  const roleName = survey2RoleTitle.value
+  return [
+    `Current profile is calibrated for ${roleName}.`,
+    `Survey 2 scores reflect execution habits across PSP and SDLC dimensions.`,
+    'Use low-scoring dimensions as immediate next-improvement priorities.',
+  ]
+})
+
+const personalityPillars = computed(() => result?.pillar_profile ?? [])
+
+const topPersonalityPillars = computed(() =>
+  [...personalityPillars.value]
+    .sort((left, right) => right.normalized_score - left.normalized_score)
+    .slice(0, 4),
+)
+
+const personalityFitScore = computed(() => {
+  if (!personalityPillars.value.length) return 0
+  const total = personalityPillars.value.reduce(
+    (sum, pillar) => sum + pillar.normalized_score,
+    0,
+  )
+  return Math.round((total / personalityPillars.value.length) * 100)
+})
+
+const topMasteryScores = computed(() =>
+  sortMasteryDescending(result?.mastery_scores ?? []).slice(0, 4),
+)
+
+const trackHighlights = computed(() => {
+  const tracks = [
+    {
+      key: 'psp',
+      label: 'PSP discipline',
+      description: 'Planning, quality discipline, and engineering consistency.',
+    },
+    {
+      key: 'sdlc',
+      label: 'SDLC delivery',
+      description:
+        'Execution across analysis, build, testing, release, and support.',
+    },
+  ] as const
+
+  return tracks.map((track) => {
+    const dimensions = blendedDimensions.value.filter(
+      (dimension) => dimension.track === track.key,
+    )
+    const average = dimensions.length
+      ? Math.round(
+          (dimensions.reduce((sum, dimension) => sum + dimension.value, 0) /
+            dimensions.length) *
+            100,
+        )
+      : 0
+
+    return {
+      ...track,
+      average,
+      strongest:
+        [...dimensions].sort((left, right) => right.value - left.value)[0]
+          ?.label ?? 'Not enough signal yet',
+    }
+  })
+})
+
+const strongestDimensionCards = computed(() =>
+  sortedDimensionsDesc.value.slice(0, 4).map((dimension) => ({
+    ...dimension,
+    percent: Math.round(dimension.value * 100),
+  })),
+)
+
+const growthDimensionCards = computed(() =>
+  [...sortedDimensionsDesc.value]
+    .reverse()
+    .slice(0, 4)
+    .map((dimension) => ({
+      ...dimension,
+      percent: Math.round(dimension.value * 100),
+    })),
+)
+
+function getTopicDifficultyLabel(topic: RoadmapTopic): string {
+  const raw = topic.difficulty
+
+  if (typeof raw === 'string' && raw.trim()) {
+    return raw
+  }
+
+  if (typeof raw === 'number') {
+    if (raw <= 2) return 'Foundation'
+    if (raw <= 4) return 'Intermediate'
+    return 'Advanced'
+  }
+
+  return 'Targeted'
+}
+
+function getTopicDuration(topic: RoadmapTopic): string {
+  const raw = topic.difficulty
+
+  if (typeof raw === 'number') {
+    if (raw <= 2) return '1 to 2 weeks'
+    if (raw <= 4) return '2 to 4 weeks'
+    return '4 to 6 weeks'
+  }
+
+  return 'Focused sprint'
+}
+
+function getTopicTags(topic: RoadmapTopic): string[] {
+  const tags = ['Role gap']
+
+  if (topic.prerequisites?.length) {
+    tags.push(
+      topic.prerequisites.length === 1
+        ? '1 prerequisite'
+        : `${topic.prerequisites.length} prerequisites`,
+    )
+  }
+
+  if (topic.parent_id !== null) {
+    tags.push('Follow-on')
+  }
+
+  return tags
+}
+
+function formatPercent(value: number): string {
+  return `${Math.round(value)}%`
+}
+
+function formatPillarPercent(pillar: PillarInsight): string {
+  return formatPercent(pillar.normalized_score * 100)
+}
+
 async function submitRoadmaps() {
   if (!hasAnsweredAll.value) {
     return
@@ -567,11 +793,22 @@ async function submitRoadmaps() {
 }
 
 function selectAnswer(value: number) {
-  if (!activeQuestion.value) {
+  if (!activeQuestion.value || isSavingRoadmaps.value || isAutoAdvancing.value) {
     return
   }
 
+  if (autoAdvanceTimer) {
+    clearTimeout(autoAdvanceTimer)
+  }
+
   roadmapAnswers.value[activeQuestion.value.id] = value
+  isAutoAdvancing.value = true
+
+  autoAdvanceTimer = setTimeout(() => {
+    isAutoAdvancing.value = false
+    autoAdvanceTimer = null
+    goToNextQuestion()
+  }, AUTO_ADVANCE_DELAY_MS)
 }
 
 function goToPreviousQuestion() {
@@ -585,7 +822,7 @@ function goToPreviousQuestion() {
 function goToNextQuestion() {
   if (
     !activeQuestion.value ||
-    !Number.isFinite(activeQuestionAnswer.value ?? NaN)
+    !Number.isFinite(activeQuestionAnswer.value ?? Number.NaN)
   ) {
     return
   }
@@ -605,89 +842,11 @@ onMounted(() => {
   }
 })
 
-const displayPersonalitySignals = computed(() => {
-  if (evaluation.value.personalitySignals.length) {
-    return evaluation.value.personalitySignals
+onBeforeUnmount(() => {
+  if (autoAdvanceTimer) {
+    clearTimeout(autoAdvanceTimer)
   }
-
-  const roleName = survey2RoleTitle.value
-  return [
-    `Current profile is calibrated for ${roleName}.`,
-    `Survey 2 scores reflect execution habits across PSP and SDLC dimensions.`,
-    'Use low-scoring dimensions as immediate next-improvement priorities.',
-  ]
 })
-
-function downloadFile(filename: string, content: string, mimeType: string) {
-  const blob = new Blob([content], { type: mimeType })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  link.click()
-  URL.revokeObjectURL(url)
-}
-
-function exportRoadmapReport() {
-  const exportDimensions = isRoadmapsComplete.value
-    ? blendedDimensions.value
-    : evaluation.value.dimensions
-  const exportStrengths = isRoadmapsComplete.value
-    ? recalculatedStrengths.value
-    : evaluation.value.strengths
-  const exportGrowthAreas = isRoadmapsComplete.value
-    ? recalculatedGrowthAreas.value
-    : evaluation.value.growthAreas
-
-  const lines = [
-    'CompetencyX Roadmaps - PSP + SDLC Roadmap',
-    `Session: ${route.params.sessionId}`,
-    `Best fit role: ${result?.best_fit_role?.name ?? 'N/A'}`,
-    '',
-    'Strengths:',
-    ...exportStrengths.map((item) => `- ${item}`),
-    '',
-    'Growth Areas:',
-    ...exportGrowthAreas.map((item) => `- ${item}`),
-    '',
-    'Personality Signals:',
-    ...evaluation.value.personalitySignals.map((item) => `- ${item}`),
-    '',
-    'Role Guidance:',
-    ...roadmapsCatalog.role_guidance.map((item) => `- ${item}`),
-    '',
-    'Recommended Actions:',
-    ...recommendedRoadmapActions.value.map(
-      (item) => `- ${item.dimension}: ${item.action}`,
-    ),
-    '',
-    'Dimension Scores:',
-    ...exportDimensions.map(
-      (item) => `- ${item.label}: ${Math.round(item.value * 10)}/10`,
-    ),
-  ]
-
-  downloadFile(
-    `roadmaps-report-${route.params.sessionId}.txt`,
-    lines.join('\n'),
-    'text/plain;charset=utf-8',
-  )
-}
-
-function exportSpiderChartSvg() {
-  const svgElement = document.querySelector('#roadmaps-spider-chart svg')
-
-  if (!svgElement) {
-    return
-  }
-
-  const svgMarkup = new XMLSerializer().serializeToString(svgElement)
-  downloadFile(
-    `roadmaps-spider-${route.params.sessionId}.svg`,
-    svgMarkup,
-    'image/svg+xml;charset=utf-8',
-  )
-}
 
 useSeoMeta({
   title: 'CompetencyX | Roadmaps',
@@ -697,7 +856,10 @@ useSeoMeta({
 </script>
 
 <template>
-  <main id="main-content" class="page-wrap">
+  <main
+    id="main-content"
+    :class="['page-wrap', !isRoadmapsComplete ? 'phase2-assessment-page' : '']"
+  >
     <div class="flex flex-wrap items-center justify-between gap-4">
       <NuxtLink
         :to="`/results/${route.params.sessionId}`"
@@ -708,7 +870,7 @@ useSeoMeta({
       <p class="text-sm text-ink-soft">Session {{ route.params.sessionId }}</p>
     </div>
 
-    <section class="glass-panel mt-6 p-6 md:p-8">
+    <section v-if="isRoadmapsComplete" class="glass-panel mt-6 p-6 md:p-8">
       <p class="eyebrow">
         {{
           isRoadmapsComplete ? 'Final result dashboard' : 'Phase 2 assessment'
@@ -742,320 +904,771 @@ useSeoMeta({
           Discovery result: {{ bestFitRoleName }}
         </span>
       </div>
-      <div v-if="isRoadmapsComplete" class="mt-6 grid gap-3 md:grid-cols-3">
-        <div class="metric-card p-4">
-          <p class="eyebrow">Overall score</p>
-          <p class="mt-3 data-value text-4xl font-black text-ink">
-            {{ overallCapabilityScore }}%
-          </p>
-        </div>
-        <div class="metric-card p-4">
-          <p class="eyebrow">Readiness status</p>
-          <p class="mt-3 text-2xl font-black text-ink">
-            {{ readinessStatus }}
-          </p>
-        </div>
-        <div class="metric-card p-4">
-          <p class="eyebrow">Best-fit role</p>
-          <p class="mt-3 text-2xl font-black text-ink">
-            {{ survey2RoleTitle }}
-          </p>
-        </div>
-      </div>
-      <div class="mt-6 flex flex-wrap items-center gap-3">
-        <button
-          v-if="isRoadmapsComplete"
-          type="button"
-          class="inline-flex items-center justify-center rounded-full border border-border-subtle bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/35 hover:text-accent"
-          @click="exportRoadmapReport"
-        >
-          Download roadmap report
-        </button>
-        <button
-          v-if="isRoadmapsComplete"
-          type="button"
-          class="inline-flex items-center justify-center rounded-full border border-border-subtle bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/35 hover:text-accent"
-          @click="exportSpiderChartSvg"
-        >
-          Download spider chart
-        </button>
-      </div>
     </section>
 
     <section
       v-if="!isRoadmapsComplete"
-      class="glass-panel mt-8 p-6 md:p-8"
+      class="mt-8 grid gap-6 lg:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)] lg:items-start"
       aria-live="polite"
     >
-      <div class="flex flex-wrap items-center gap-3">
-        <span class="eyebrow">Skill assessment</span>
-        <span
-          class="rounded-full border border-border-subtle bg-surface-elevated px-3 py-1 text-[0.72rem] font-bold uppercase tracking-[0.08em] text-ink-soft"
-        >
-          Question {{ currentQuestionIndex + 1 }} of
-          {{ roadmapQuestions.length }}
-        </span>
-      </div>
-
-      <div
-        class="mt-5 rounded-lg border border-border-subtle bg-surface-muted p-5 md:p-6"
-      >
-        <p
-          class="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-ink-soft"
-        >
-          Rate concrete execution behaviors to generate your Roadmaps profile.
-        </p>
-        <h2 class="font-display text-3xl leading-tight text-ink md:text-5xl">
-          Answer before viewing your roadmap
-        </h2>
-        <p class="mt-4 text-sm text-ink-soft">
-          Keep this practical: answer based on what you can do today without
-          outside help.
-        </p>
-        <div
-          class="mt-5 h-2 overflow-hidden rounded-full bg-ink/10"
-          role="progressbar"
-          aria-label="Phase 2 progress"
-          :aria-valuenow="roadmapsProgressPercent"
-          aria-valuemin="0"
-          aria-valuemax="100"
-        >
-          <div
-            class="h-full rounded-full bg-[linear-gradient(90deg,var(--color-accent),var(--color-blueprint))] transition-all duration-500"
-            :style="{ width: `${roadmapsProgressPercent}%` }"
-          />
-        </div>
-      </div>
-
-      <div v-if="activeQuestion" class="mt-8">
-        <div
-          class="rounded-md border border-border-subtle bg-surface-card p-4 md:p-5"
-        >
-          <p
-            class="text-base font-semibold leading-7 text-ink md:text-[1.05rem]"
+      <aside class="lg:sticky lg:top-8">
+        <section class="phase2-guidance-card">
+          <button
+            type="button"
+            class="phase2-guidance-card__toggle"
+            :aria-expanded="isGuidanceExpanded"
+            aria-controls="phase2-guidance-body"
+            @click="isGuidanceExpanded = !isGuidanceExpanded"
           >
-            {{ activeQuestion.prompt }}
-          </p>
-          <div class="mt-3 grid gap-2 sm:grid-cols-5">
-            <button
-              v-for="option in answerScale"
-              :key="`${activeQuestion.id}-${option.value}`"
-              type="button"
-              class="answer-option answer-option--scale rounded-md px-3 py-3 text-xs font-semibold uppercase tracking-[0.04em] transition"
-              :class="
-                activeQuestionAnswer === option.value
-                  ? 'is-selected text-accent'
-                  : 'text-ink-soft'
-              "
-              @click="selectAnswer(option.value)"
+            <div class="min-w-0">
+              <p class="phase2-guidance-card__label">Live guidance</p>
+              <h2 class="phase2-guidance-card__title">
+                {{ phase2GuidanceTitle }}
+              </h2>
+              <p class="phase2-guidance-card__meta">
+                {{ phase2ProgressSummary }}
+              </p>
+            </div>
+            <span
+              class="phase2-guidance-card__icon"
+              :class="isGuidanceExpanded ? 'rotate-180' : ''"
+              aria-hidden="true"
             >
-              {{ option.label }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div
-        class="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-5"
-      >
-        <p class="status-copy">
-          {{
-            hasAnsweredAll
-              ? 'All prompts answered. Ready to evaluate.'
-              : 'Complete every prompt to unlock results.'
-          }}
-        </p>
-        <div class="flex items-center gap-3">
-          <button
-            type="button"
-            class="inline-flex items-center justify-center rounded-full border border-border-subtle bg-surface-elevated px-5 py-3 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/35 hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="currentQuestionIndex === 0"
-            @click="goToPreviousQuestion"
-          >
-            Previous
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M4 6L8 10L12 6"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
           </button>
-          <button
-            type="button"
-            class="inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-accent-shadow transition hover:-translate-y-0.5 hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="
-              !Number.isFinite(activeQuestionAnswer ?? NaN) || isSavingRoadmaps
+
+          <div
+            id="phase2-guidance-body"
+            class="grid transition-all duration-300 ease-out"
+            :class="
+              isGuidanceExpanded
+                ? 'mt-6 grid-rows-[1fr] opacity-100'
+                : 'mt-0 grid-rows-[0fr] opacity-0'
             "
-            @click="goToNextQuestion"
           >
-            {{
-              currentQuestionIndex === roadmapQuestions.length - 1
-                ? isSavingRoadmaps
-                  ? 'Saving...'
-                  : 'Show roadmap results'
-                : 'Next question'
-            }}
-          </button>
-        </div>
-      </div>
-    </section>
+            <div class="min-h-0 overflow-hidden">
+              <p class="phase2-guidance-card__copy">
+                Answer calmly and literally. This pass measures present-day
+                execution strength, not aspiration.
+              </p>
 
-    <section v-if="isRoadmapsComplete" class="mt-8 paper-panel p-6 md:p-8">
-      <p class="eyebrow">Spider chart</p>
-      <h2 class="mt-4 text-3xl font-bold text-ink">Current capability map</h2>
-      <p class="mt-3 max-w-3xl text-sm leading-7 text-ink-soft">
-        This chart starts from your Survey 1 profile and updates as you answer
-        Survey 2.
-      </p>
-      <div id="roadmaps-spider-chart" class="mt-6 mx-auto max-w-4xl">
-        <SkillSpiderChart
-          v-if="hasRoadmapChartData"
-          :dimensions="blendedDimensions"
-        />
-        <p
-          v-else
-          class="rounded-md border border-border-subtle bg-surface-card p-4 text-sm leading-6 text-ink-soft"
-        >
-          Roadmap chart data is not available for this session yet.
-        </p>
-      </div>
-    </section>
+              <div class="phase2-guidance-card__meter">
+                <div class="phase2-guidance-card__meter-head">
+                  <span>Assessment progress</span>
+                  <span>{{ roadmapsProgressPercent }}%</span>
+                </div>
+                <div
+                  class="phase2-guidance-card__progress"
+                  role="progressbar"
+                  aria-label="Phase 2 progress"
+                  :aria-valuenow="roadmapsProgressPercent"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                >
+                  <div
+                    class="phase2-guidance-card__progress-fill"
+                    :style="{ width: `${roadmapsProgressPercent}%` }"
+                  />
+                </div>
+              </div>
 
-    <section v-if="isRoadmapsComplete" class="mt-8 paper-panel p-6 md:p-8">
-      <p class="eyebrow">Profile read</p>
-      <h2 class="mt-4 text-3xl font-bold text-ink">
-        Knowledge + personality fit
-      </h2>
+              <div class="phase2-guidance-card__facts">
+                <div class="phase2-guidance-card__fact">
+                  <span class="phase2-guidance-card__fact-label">Phase</span>
+                  <span class="phase2-guidance-card__fact-value">
+                    Skill assessment
+                  </span>
+                </div>
+                <div class="phase2-guidance-card__fact">
+                  <span class="phase2-guidance-card__fact-label">Question</span>
+                  <span class="phase2-guidance-card__fact-value">
+                    {{ phase2PromptContext }}
+                  </span>
+                </div>
+                <div class="phase2-guidance-card__fact">
+                  <span class="phase2-guidance-card__fact-label"
+                    >Known role</span
+                  >
+                  <span class="phase2-guidance-card__fact-value">
+                    {{ preferredRoleName || 'Open discovery path' }}
+                  </span>
+                </div>
+              </div>
 
-      <div class="mt-6 space-y-3">
-        <p
-          v-for="signal in displayPersonalitySignals"
-          :key="signal"
-          class="rounded-md border border-border-subtle bg-surface-card p-4 text-sm leading-6 text-ink-soft"
-        >
-          {{ signal }}
-        </p>
-      </div>
+              <p class="phase2-guidance-card__footnote">
+                Your roadmap stays hidden until this calibration step is
+                complete.
+              </p>
+            </div>
+          </div>
+        </section>
+      </aside>
 
-      <div class="mt-6 space-y-3">
-        <p
-          v-for="guidance in roadmapsCatalog.role_guidance"
-          :key="guidance"
-          class="rounded-md border border-border-subtle bg-accent/10 p-4 text-sm leading-6 text-ink"
-        >
-          {{ guidance }}
-        </p>
-      </div>
-
-      <div class="mt-6 grid gap-4 md:grid-cols-2">
-        <div class="rounded-md border border-border-subtle bg-surface-card p-4">
-          <p class="eyebrow">Strongest now</p>
-          <ul class="mt-3 space-y-2 text-sm text-ink">
-            <li v-for="strength in recalculatedStrengths" :key="strength">
-              {{ strength }}
-            </li>
-          </ul>
-        </div>
-        <div class="rounded-md border border-border-subtle bg-surface-card p-4">
-          <p class="eyebrow">Develop next</p>
-          <ul class="mt-3 space-y-2 text-sm text-ink">
-            <li v-for="gap in recalculatedGrowthAreas" :key="gap">
-              {{ gap }}
-            </li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <section v-if="isRoadmapsComplete" class="mt-8 paper-panel p-6 md:p-8">
-      <p class="eyebrow">PSP + SDLC actions</p>
-      <h2 class="mt-4 text-3xl font-bold text-ink">
-        Recommended execution steps
-      </h2>
-      <div class="mt-6 grid gap-3 md:grid-cols-2">
-        <div
-          v-for="item in recommendedRoadmapActions"
-          :key="item.dimension"
-          class="rounded-md border border-border-subtle bg-surface-card p-4"
-        >
-          <p class="eyebrow">
-            {{ item.dimension }}
-          </p>
-          <p class="mt-2 text-sm leading-6 text-ink-soft">
-            {{ item.action }}
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <section v-if="isRoadmapsComplete" class="mt-8 grid gap-6 lg:grid-cols-3">
-      <section class="paper-panel p-6 md:p-8">
-        <p class="eyebrow">Technologies</p>
-        <h2 class="mt-4 text-3xl font-bold text-ink">Learn next</h2>
-        <div class="mt-6 flex flex-wrap gap-2">
-          <span
-            v-for="technology in suggestedTechnologies"
-            :key="technology"
-            class="rounded-sm border border-border-subtle bg-surface-card px-3 py-2 text-sm font-bold text-ink"
-          >
-            {{ technology }}
+      <section class="phase2-panel">
+        <div class="phase2-panel__chips">
+          <span class="phase2-panel__eyebrow">Skill assessment</span>
+          <span class="phase2-panel__chip phase2-panel__chip--soft">
+            Agreement scale
           </span>
         </div>
-      </section>
 
-      <section class="paper-panel p-6 md:p-8 lg:col-span-2">
-        <p class="eyebrow">Suggested projects</p>
-        <h2 class="mt-4 text-3xl font-bold text-ink">Build for evidence</h2>
-        <div class="mt-6 grid gap-3 md:grid-cols-3">
-          <div
-            v-for="project in suggestedProjects"
-            :key="project.title"
-            class="metric-card p-4"
-          >
-            <p class="text-sm font-bold text-ink">{{ project.title }}</p>
-            <p class="mt-2 text-sm leading-6 text-ink-soft">
-              {{ project.copy }}
+        <motion.div
+          v-if="activeQuestion"
+          class="phase2-question-shell"
+          :key="activeQuestion.id"
+          :initial="
+            prefersReduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 18 }
+          "
+          :animate="{ opacity: 1, y: 0 }"
+          :transition="prefersReduced ? { duration: 0 } : { duration: 0.28 }"
+        >
+          <div class="phase2-question-card">
+            <div class="phase2-question-card__frame">
+              <p class="phase2-question-card__prompt-label">
+                {{ phase2PromptContext }}
+              </p>
+              <h2 class="phase2-question-card__prompt">
+                {{ activeQuestion.prompt }}
+              </h2>
+            </div>
+
+            <fieldset
+              class="phase2-scale"
+              :disabled="isSavingRoadmaps || isAutoAdvancing"
+            >
+              <legend class="sr-only">
+                Choose a value from strongly disagree to strongly agree
+              </legend>
+
+              <div class="phase2-scale__caption">
+                <span>Strongly disagree</span>
+                <span>Strongly agree</span>
+              </div>
+
+              <div class="phase2-scale__track">
+                <span class="phase2-scale__rail" aria-hidden="true" />
+
+                <button
+                  v-for="option in answerScale"
+                  :key="`${activeQuestion.id}-${option.value}`"
+                  type="button"
+                  class="phase2-scale__option"
+                  :class="
+                    activeQuestionAnswer === option.value
+                      ? 'phase2-scale__option--selected'
+                      : ''
+                  "
+                  :aria-pressed="activeQuestionAnswer === option.value"
+                  :aria-label="option.label"
+                  :disabled="isSavingRoadmaps || isAutoAdvancing"
+                  @click="selectAnswer(option.value)"
+                >
+                  <span class="phase2-scale__orb" aria-hidden="true">
+                    <span class="phase2-scale__orb-core" />
+                  </span>
+                  <span class="phase2-scale__option-label">
+                    {{ option.label }}
+                  </span>
+                </button>
+              </div>
+            </fieldset>
+          </div>
+
+          <div class="phase2-panel__footer">
+            <p class="phase2-panel__microcopy">
+              {{ phase2Microcopy }}
             </p>
+            <div class="phase2-panel__actions">
+              <button
+                type="button"
+                class="phase2-button phase2-button--ghost"
+                :disabled="currentQuestionIndex === 0"
+                @click="goToPreviousQuestion"
+              >
+                Previous
+              </button>
+            </div>
+          </div>
+        </motion.div>
+
+        <div v-else class="phase2-question-card phase2-question-card--empty">
+          <p class="phase2-question-card__prompt-label">Preparing prompt</p>
+          <h2
+            class="phase2-question-card__prompt phase2-question-card__prompt--compact"
+          >
+            We are resolving the next calibration question.
+          </h2>
+          <p class="phase2-panel__lead mt-4">
+            Refreshing the session should surface the next prompt without losing
+            your progress.
+          </p>
+        </div>
+      </section>
+    </section>
+
+    <template v-if="isRoadmapsComplete">
+      <section class="result-spotlight mt-24 overflow-hidden p-6 md:p-10">
+        <div class="grid gap-8 xl:grid-cols-[1.1fr_0.9fr] xl:items-start">
+          <div>
+            <div
+              class="inline-flex items-center gap-2 rounded-full border border-accent/15 bg-accent/10 px-4 py-2 text-sm font-bold text-accent"
+            >
+              <span aria-hidden="true">✓</span>
+              Assessment complete
+            </div>
+
+            <h2
+              class="mt-6 max-w-4xl font-display text-4xl leading-tight text-ink md:text-6xl"
+            >
+              {{ survey2RoleTitle }} readiness, organized into a clear growth
+              plan.
+            </h2>
+            <p
+              class="mt-5 max-w-2xl text-sm leading-8 text-ink-soft md:text-base"
+            >
+              This view separates your profile summary, fit signals, learning
+              sequence, and supporting analytics so the next actions are easy to
+              scan.
+            </p>
+
+            <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:max-w-3xl">
+              <article class="paper-panel p-6">
+                <p class="eyebrow">Personality result</p>
+                <h3 class="mt-3 text-2xl font-bold text-ink">
+                  {{ survey2RoleTitle }}
+                </h3>
+                <p class="mt-2 text-sm leading-7 text-ink-soft">
+                  {{ displayPersonalitySignals[0] }}
+                </p>
+
+                <div class="mt-6 grid gap-3">
+                  <div
+                    class="rounded-2xl border border-border-subtle bg-surface-card px-4 py-3"
+                  >
+                    <p
+                      class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
+                    >
+                      Personality fit
+                    </p>
+                    <div class="mt-2 flex items-end justify-between gap-3">
+                      <p class="data-value text-3xl font-black text-ink">
+                        {{ personalityFitScore }}%
+                      </p>
+                      <p class="text-xs font-semibold text-ink-soft">
+                        Based on pillar profile
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    v-for="pillar in topPersonalityPillars.slice(0, 3)"
+                    :key="pillar.key"
+                    class="rounded-2xl border border-border-subtle bg-surface-card px-4 py-3"
+                  >
+                    <div class="flex items-center justify-between gap-3">
+                      <p class="text-sm font-semibold text-ink">
+                        {{ pillar.label }}
+                      </p>
+                      <p class="data-value text-sm font-bold text-accent">
+                        {{ formatPillarPercent(pillar) }}
+                      </p>
+                    </div>
+                    <div class="mt-3 h-2 rounded-full bg-ink/8">
+                      <div
+                        class="h-2 rounded-full bg-[linear-gradient(90deg,var(--color-blueprint),var(--color-accent))]"
+                        :style="{
+                          width: `${Math.round(pillar.normalized_score * 100)}%`,
+                        }"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="paper-panel p-6">
+                <p class="eyebrow">Hero metrics</p>
+                <div class="mt-4 grid gap-3">
+                  <div class="metric-card p-4">
+                    <p
+                      class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
+                    >
+                      Overall readiness
+                    </p>
+                    <p class="mt-2 data-value text-4xl font-black text-ink">
+                      {{ overallCapabilityScore }}%
+                    </p>
+                  </div>
+                  <div class="metric-card p-4">
+                    <p
+                      class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
+                    >
+                      Readiness status
+                    </p>
+                    <p class="mt-2 text-2xl font-black text-ink">
+                      {{ readinessStatus }}
+                    </p>
+                  </div>
+                  <div class="metric-card p-4">
+                    <p
+                      class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
+                    >
+                      Strongest now
+                    </p>
+                    <p class="mt-2 text-sm leading-7 text-ink-soft">
+                      {{ recalculatedStrengths.join(' • ') }}
+                    </p>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <div class="grid gap-4">
+            <div class="paper-panel p-5 md:p-6">
+              <p class="eyebrow">Capability map</p>
+              <h3 class="mt-3 font-display text-3xl text-ink">
+                Profile centerpiece
+              </h3>
+              <p class="mt-2 max-w-md text-sm leading-7 text-ink-soft">
+                The map keeps your current execution shape visible while the
+                rest of the page focuses on interpretation and next steps.
+              </p>
+              <div class="mt-6">
+                <SkillSpiderChart :dimensions="blendedDimensions" />
+              </div>
+            </div>
           </div>
         </div>
       </section>
-    </section>
 
-    <section v-if="isRoadmapsComplete" class="mt-8 paper-panel p-6 md:p-8">
-      <p class="eyebrow">Roadmap actions</p>
-      <h2 class="mt-4 text-3xl font-bold text-ink">
-        Recommended learning sequence
-      </h2>
-      <div class="mt-6 grid gap-3 md:grid-cols-2">
-        <div
-          v-for="(topic, index) in topRoadmapTopics"
-          :key="topic.id"
-          class="rounded-md border border-border-subtle bg-surface-card p-4"
-        >
-          <p class="eyebrow">Phase {{ index + 1 }}</p>
-          <p class="mt-2 text-sm font-semibold text-ink">
-            {{ topic.title }}
-          </p>
-          <p class="mt-2 text-sm leading-6 text-ink-soft">
-            {{
-              topic.description ||
-              'This topic is prioritized from your preferred-role gap profile.'
-            }}
+      <section class="section-band mt-24 py-12 md:py-16">
+        <div class="mx-auto max-w-6xl">
+          <div class="max-w-3xl">
+            <p class="eyebrow">Section 2</p>
+            <h2 class="mt-4 font-display text-4xl text-ink md:text-5xl">
+              Knowledge + personality fit
+            </h2>
+            <p
+              class="mt-4 max-w-2xl text-sm leading-8 text-ink-soft md:text-base"
+            >
+              Separate the execution signal from the personality signal so the
+              fit story is readable at a glance.
+            </p>
+          </div>
+
+          <div class="mt-10 grid gap-6 xl:grid-cols-2">
+            <article class="paper-panel p-6 md:p-8">
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p class="eyebrow">Knowledge fit</p>
+                  <h3 class="mt-3 text-2xl font-bold text-ink">
+                    Capability alignment
+                  </h3>
+                </div>
+                <div class="text-right">
+                  <p class="data-value text-4xl font-black text-ink">
+                    {{ overallCapabilityScore }}%
+                  </p>
+                  <p
+                    class="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft"
+                  >
+                    current readiness
+                  </p>
+                </div>
+              </div>
+
+              <p class="mt-4 max-w-xl text-sm leading-7 text-ink-soft">
+                Your knowledge fit blends Survey 1 signals with Survey 2
+                execution evidence across PSP and SDLC dimensions.
+              </p>
+
+              <div class="mt-8 grid gap-4 sm:grid-cols-2">
+                <div
+                  v-for="track in trackHighlights"
+                  :key="track.key"
+                  class="metric-card p-5"
+                >
+                  <div class="flex items-end justify-between gap-3">
+                    <div>
+                      <p class="text-sm font-bold text-ink">
+                        {{ track.label }}
+                      </p>
+                      <p class="mt-1 text-xs leading-6 text-ink-soft">
+                        {{ track.description }}
+                      </p>
+                    </div>
+                    <p class="data-value text-2xl font-black text-accent">
+                      {{ track.average }}%
+                    </p>
+                  </div>
+                  <div class="mt-4 h-2 rounded-full bg-ink/8">
+                    <div
+                      class="h-2 rounded-full bg-[linear-gradient(90deg,var(--color-accent),var(--color-blueprint))]"
+                      :style="{ width: `${track.average}%` }"
+                    />
+                  </div>
+                  <p
+                    class="mt-3 text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft"
+                  >
+                    Strongest: {{ track.strongest }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="mt-8 space-y-4">
+                <div
+                  v-for="dimension in strongestDimensionCards.slice(0, 3)"
+                  :key="dimension.key"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <p class="text-sm font-semibold text-ink">
+                      {{ dimension.label }}
+                    </p>
+                    <p class="data-value text-sm font-bold text-accent">
+                      {{ dimension.percent }}%
+                    </p>
+                  </div>
+                  <div class="mt-2 h-2 rounded-full bg-ink/8">
+                    <div
+                      class="h-2 rounded-full bg-[linear-gradient(90deg,var(--color-blueprint),var(--color-accent))]"
+                      :style="{ width: `${dimension.percent}%` }"
+                    />
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="paper-panel p-6 md:p-8">
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p class="eyebrow">Personality fit</p>
+                  <h3 class="mt-3 text-2xl font-bold text-ink">
+                    Behavioral alignment
+                  </h3>
+                </div>
+                <div class="text-right">
+                  <p class="data-value text-4xl font-black text-ink">
+                    {{ personalityFitScore }}%
+                  </p>
+                  <p
+                    class="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft"
+                  >
+                    profile coherence
+                  </p>
+                </div>
+              </div>
+
+              <p class="mt-4 max-w-xl text-sm leading-7 text-ink-soft">
+                This card translates your personality radar and role guidance
+                into concise signals instead of long narrative blocks.
+              </p>
+
+              <div class="mt-8 space-y-3">
+                <div
+                  v-for="signal in displayPersonalitySignals"
+                  :key="signal"
+                  class="metric-card p-4"
+                >
+                  <p class="text-sm leading-7 text-ink-soft">{{ signal }}</p>
+                </div>
+              </div>
+
+              <div class="mt-8 space-y-4">
+                <div v-for="pillar in topPersonalityPillars" :key="pillar.key">
+                  <div class="flex items-center justify-between gap-3">
+                    <p class="text-sm font-semibold text-ink">
+                      {{ pillar.label }}
+                    </p>
+                    <p class="data-value text-sm font-bold text-accent">
+                      {{ formatPillarPercent(pillar) }}
+                    </p>
+                  </div>
+                  <div class="mt-2 h-2 rounded-full bg-ink/8">
+                    <div
+                      class="h-2 rounded-full bg-[linear-gradient(90deg,var(--color-blueprint),var(--color-accent))]"
+                      :style="{
+                        width: `${Math.round(pillar.normalized_score * 100)}%`,
+                      }"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-8 grid gap-3">
+                <div
+                  v-for="guidance in roadmapsCatalog.role_guidance.slice(0, 2)"
+                  :key="guidance"
+                  class="rounded-2xl border border-accent/18 bg-accent/8 p-4"
+                >
+                  <p class="text-sm leading-7 text-ink">{{ guidance }}</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-24">
+        <div class="max-w-3xl">
+          <p class="eyebrow">Section 3</p>
+          <h2 class="mt-4 font-display text-4xl text-ink md:text-5xl">
+            Recommended learning sequence
+          </h2>
+          <p
+            class="mt-4 max-w-2xl text-sm leading-8 text-ink-soft md:text-base"
+          >
+            A guided roadmap that turns your gap profile into a paced, visible
+            progression.
           </p>
         </div>
-      </div>
-    </section>
 
-    <section v-if="isRoadmapsComplete" class="mt-8 paper-panel p-6 md:p-8">
-      <p class="eyebrow">Recommended resources</p>
-      <h2 class="mt-4 text-3xl font-bold text-ink">
-        Keep the improvement plan practical
-      </h2>
-      <div class="mt-6 grid gap-3 md:grid-cols-3">
-        <div
-          v-for="resource in recommendedResources"
-          :key="resource"
-          class="flow-node p-4 pl-5"
-        >
-          <p class="text-sm font-semibold leading-6 text-ink">
-            {{ resource }}
-          </p>
+        <div class="mt-12 grid gap-6">
+          <div
+            v-for="(topic, index) in topRoadmapTopics"
+            :key="topic.id"
+            class="relative pl-8 md:pl-12"
+          >
+            <div
+              v-if="index !== topRoadmapTopics.length - 1"
+              class="absolute left-[1rem] top-16 hidden h-[calc(100%+1.5rem)] w-px bg-[linear-gradient(180deg,rgba(234,112,31,0.36),rgba(33,122,111,0.18))] md:block"
+            />
+            <div
+              class="absolute left-0 top-8 grid h-8 w-8 place-items-center rounded-full border border-accent/20 bg-white text-xs font-black text-accent shadow-[0_10px_24px_rgba(234,112,31,0.16)] md:left-[0.05rem]"
+            >
+              {{ index + 1 }}
+            </div>
+
+            <article class="paper-panel p-6 md:p-8">
+              <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="max-w-2xl">
+                  <p class="eyebrow">Step {{ index + 1 }}</p>
+                  <h3 class="mt-3 text-2xl font-bold text-ink">
+                    {{ topic.title }}
+                  </h3>
+                  <p class="mt-3 max-w-2xl text-sm leading-7 text-ink-soft">
+                    {{
+                      topic.description ||
+                      'This topic is prioritized from your preferred-role gap profile.'
+                    }}
+                  </p>
+                </div>
+
+                <div class="grid min-w-[13rem] gap-3 sm:grid-cols-2 sm:gap-2">
+                  <div class="metric-card p-4">
+                    <p
+                      class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
+                    >
+                      Difficulty
+                    </p>
+                    <p class="mt-2 text-sm font-bold text-ink">
+                      {{ getTopicDifficultyLabel(topic) }}
+                    </p>
+                  </div>
+                  <div class="metric-card p-4">
+                    <p
+                      class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
+                    >
+                      Duration
+                    </p>
+                    <p class="mt-2 text-sm font-bold text-ink">
+                      {{ getTopicDuration(topic) }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-6 flex flex-wrap gap-2">
+                <span
+                  v-for="tag in getTopicTags(topic)"
+                  :key="tag"
+                  class="rounded-full border border-border-subtle bg-surface-card px-3 py-1 text-xs font-semibold uppercase tracking-[0.06em] text-ink-soft"
+                >
+                  {{ tag }}
+                </span>
+              </div>
+            </article>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <section class="section-band mt-24 py-12 md:py-16">
+        <div class="mx-auto max-w-6xl">
+          <div class="max-w-3xl">
+            <p class="eyebrow">Section 4</p>
+            <h2 class="mt-4 font-display text-4xl text-ink md:text-5xl">
+              Additional insights and analytics
+            </h2>
+            <p
+              class="mt-4 max-w-2xl text-sm leading-8 text-ink-soft md:text-base"
+            >
+              Supporting detail is grouped into smaller cards so the page stays
+              analytical without becoming dense.
+            </p>
+          </div>
+
+          <div class="mt-10 grid gap-6 lg:grid-cols-3">
+            <article class="paper-panel p-6">
+              <p class="eyebrow">Strength distribution</p>
+              <h3 class="mt-3 text-2xl font-bold text-ink">
+                Strongest dimensions
+              </h3>
+              <p class="mt-2 text-sm leading-7 text-ink-soft">
+                The highest-scoring capability areas currently carrying your
+                fit.
+              </p>
+              <div class="mt-6 grid gap-4">
+                <div
+                  v-for="dimension in strongestDimensionCards"
+                  :key="dimension.key"
+                  class="metric-card p-4"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <p class="text-sm font-semibold text-ink">
+                      {{ dimension.label }}
+                    </p>
+                    <p class="data-value text-sm font-bold text-accent">
+                      {{ dimension.percent }}%
+                    </p>
+                  </div>
+                  <div class="mt-3 h-2 rounded-full bg-ink/8">
+                    <div
+                      class="h-2 rounded-full bg-[linear-gradient(90deg,var(--color-blueprint),var(--color-accent))]"
+                      :style="{ width: `${dimension.percent}%` }"
+                    />
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="paper-panel p-6">
+              <p class="eyebrow">Development priorities</p>
+              <h3 class="mt-3 text-2xl font-bold text-ink">Improve next</h3>
+              <p class="mt-2 text-sm leading-7 text-ink-soft">
+                The lowest-scoring areas that will move readiness fastest.
+              </p>
+              <div class="mt-6 grid gap-4">
+                <div
+                  v-for="dimension in growthDimensionCards"
+                  :key="dimension.key"
+                  class="metric-card p-4"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <p class="text-sm font-semibold text-ink">
+                      {{ dimension.label }}
+                    </p>
+                    <p class="data-value text-sm font-bold text-accent">
+                      {{ dimension.percent }}%
+                    </p>
+                  </div>
+                  <div class="mt-3 h-2 rounded-full bg-ink/8">
+                    <div
+                      class="h-2 rounded-full bg-[linear-gradient(90deg,var(--color-accent),var(--color-blueprint))]"
+                      :style="{ width: `${dimension.percent}%` }"
+                    />
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article v-if="topMasteryScores.length" class="paper-panel p-6">
+              <p class="eyebrow">Mastery snapshot</p>
+              <h3 class="mt-3 text-2xl font-bold text-ink">
+                Strongest topic evidence
+              </h3>
+              <p class="mt-2 text-sm leading-7 text-ink-soft">
+                Topic-level proof where current confidence and mastery are
+                already strongest.
+              </p>
+              <div class="mt-6 grid gap-3">
+                <MasteryMeter
+                  v-for="mastery in topMasteryScores"
+                  :key="mastery.topic_id"
+                  :mastery="mastery"
+                />
+              </div>
+            </article>
+          </div>
+
+          <div class="mt-10 grid gap-6 lg:grid-cols-3">
+            <article class="paper-panel p-6">
+              <p class="eyebrow">Career alignment</p>
+              <h3 class="mt-3 text-2xl font-bold text-ink">Learn next</h3>
+              <div class="mt-6 flex flex-wrap gap-2">
+                <span
+                  v-for="technology in suggestedTechnologies"
+                  :key="technology"
+                  class="rounded-full border border-border-subtle bg-surface-card px-3 py-2 text-sm font-bold text-ink"
+                >
+                  {{ technology }}
+                </span>
+              </div>
+            </article>
+
+            <article class="paper-panel p-6 lg:col-span-2">
+              <p class="eyebrow">Project evidence</p>
+              <h3 class="mt-3 text-2xl font-bold text-ink">Build for proof</h3>
+              <div class="mt-6 grid gap-4 md:grid-cols-3">
+                <div
+                  v-for="project in suggestedProjects"
+                  :key="project.title"
+                  class="metric-card p-4"
+                >
+                  <p class="text-sm font-bold text-ink">{{ project.title }}</p>
+                  <p class="mt-2 text-sm leading-6 text-ink-soft">
+                    {{ project.copy }}
+                  </p>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <div class="mt-10 grid gap-6 lg:grid-cols-2">
+            <article class="paper-panel p-6">
+              <p class="eyebrow">Action guidance</p>
+              <h3 class="mt-3 text-2xl font-bold text-ink">
+                Soft skill and execution analysis
+              </h3>
+              <div class="mt-6 grid gap-3">
+                <div
+                  v-for="item in recommendedRoadmapActions"
+                  :key="item.dimension"
+                  class="flow-node p-4 pl-5"
+                >
+                  <p class="text-sm font-bold text-ink">{{ item.dimension }}</p>
+                  <p class="mt-2 text-sm leading-6 text-ink-soft">
+                    {{ item.action }}
+                  </p>
+                </div>
+              </div>
+            </article>
+
+            <article class="paper-panel p-6">
+              <p class="eyebrow">Learning readiness</p>
+              <h3 class="mt-3 text-2xl font-bold text-ink">
+                Keep the plan practical
+              </h3>
+              <div class="mt-6 grid gap-3">
+                <div
+                  v-for="resource in recommendedResources"
+                  :key="resource"
+                  class="metric-card p-4"
+                >
+                  <p class="text-sm leading-6 text-ink">{{ resource }}</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </template>
   </main>
 </template>
