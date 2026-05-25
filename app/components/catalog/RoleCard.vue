@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { motion } from 'motion-v'
 import type { Role } from '~/shared/types/assessment'
 
 defineProps<{
@@ -16,7 +17,7 @@ const prefersReduced = useReducedMotion()
 </script>
 
 <template>
-  <Motion.button
+  <motion.button
     type="button"
     class="option-card role-card group flex h-full w-full flex-col text-left"
     :class="compact ? 'rounded-md p-4' : 'rounded-xl p-5 md:p-6'"
@@ -89,5 +90,5 @@ const prefersReduced = useReducedMotion()
         {{ topicsCount }} topics
       </span>
     </div>
-  </Motion.button>
+  </motion.button>
 </template>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { motion } from 'motion-v'
 import { getQuestionStageLabel, getQuestionTypeLabel } from '~/utils/assessment'
 import type {
   AssessmentSession,
@@ -99,8 +100,12 @@ function handleOptionSelect(option: QuestionOption) {
       </span>
     </div>
 
-    <div
+    <motion.div
       class="mt-5 rounded-lg border border-border-subtle bg-surface-muted p-5 md:p-6"
+      :key="session.current_question?.id ?? 'resolving'"
+      :initial="prefersReduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }"
+      :animate="{ opacity: 1, y: 0 }"
+      :transition="prefersReduced ? { duration: 0 } : { duration: 0.24 }"
     >
       <p
         v-if="session.current_question"
@@ -126,7 +131,7 @@ function handleOptionSelect(option: QuestionOption) {
       >
         {{ session.guidance_summary }}
       </p>
-    </div>
+    </motion.div>
 
     <div
       v-if="responseError"
@@ -185,12 +190,15 @@ function handleOptionSelect(option: QuestionOption) {
               <span class="likert-spectrum__orb-core" />
               <span class="likert-spectrum__orb-pulse" />
             </span>
+            <span class="likert-spectrum__option-label">
+              {{ option.label }}
+            </span>
           </label>
         </div>
       </fieldset>
 
       <template v-else>
-        <Motion.button
+        <motion.button
           v-for="(option, index) in session.current_question?.options || []"
           :key="option.id"
           type="button"
@@ -224,17 +232,22 @@ function handleOptionSelect(option: QuestionOption) {
                 {{ option.label }}
               </p>
               <p class="mt-1 text-sm leading-6 text-ink-soft">
-                Tap to lock this answer and continue.
+                {{
+                  selectedOptionId === option.id
+                    ? 'Selected. Saving your response...'
+                    : 'Choose this response to continue.'
+                }}
               </p>
             </div>
             <span
               class="answer-option__chevron hidden sm:inline-flex"
               aria-hidden="true"
             >
-              <span class="answer-option__chevron-arrow">&rarr;</span>
+              <span v-if="selectedOptionId === option.id">✓</span>
+              <span v-else class="answer-option__chevron-arrow">&rarr;</span>
             </span>
           </div>
-        </Motion.button>
+        </motion.button>
       </template>
     </div>
 

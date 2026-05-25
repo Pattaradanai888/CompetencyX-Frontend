@@ -2,7 +2,7 @@
 useHead({
   titleTemplate: '%s | CompetencyX',
   meta: [
-    { name: 'theme-color', content: '#f7f1e6' },
+    { name: 'theme-color', content: '#fbf6eb' },
     {
       name: 'description',
       content:
@@ -19,9 +19,9 @@ useHead({
       <NuxtRouteAnnouncer />
       <NuxtLoadingIndicator color="var(--color-accent)" />
       <div class="app-shell">
-        <div class="ambient-orb ambient-orb-one" />
-        <div class="ambient-orb ambient-orb-two" />
+        <div class="ambient-plane" />
         <div class="ambient-grid" />
+        <AppHeader />
         <NuxtPage />
       </div>
     </UApp>

@@ -5,9 +5,9 @@ const props = defineProps<{
   dimensions: RadarDimension[]
 }>()
 
-const size = 620
+const size = 520
 const center = size / 2
-const maxRadius = 170
+const maxRadius = 132
 const scaleMax = 10
 const ringSteps = [0.2, 0.4, 0.6, 0.8, 1]
 
@@ -100,10 +100,14 @@ const axes = computed(() => {
     }
   })
 })
+
+const hasDimensions = computed(() => props.dimensions.length > 0)
 </script>
 
 <template>
-  <div class="rounded-xl border border-border-subtle bg-surface-elevated p-4">
+  <div
+    class="rounded-[1.75rem] border border-border-subtle bg-surface-elevated/95 p-4 shadow-[0_24px_60px_rgba(29,42,39,0.08)] md:p-5"
+  >
     <div class="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
       <p
         class="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft"
@@ -113,7 +117,7 @@ const axes = computed(() => {
       <p class="text-xs font-semibold text-ink">1 low / 10 high</p>
     </div>
     <div
-      class="mb-2 flex flex-wrap items-center gap-2 rounded-2xl border border-border-subtle bg-surface-card px-3 py-2"
+      class="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-border-subtle bg-surface-card px-3 py-2"
       aria-hidden="true"
     >
       <span
@@ -124,97 +128,116 @@ const axes = computed(() => {
         {{ Math.round(step * scaleMax) }}
       </span>
     </div>
-    <svg
-      :viewBox="`0 0 ${size} ${size}`"
-      class="h-auto w-full"
-      role="img"
-      aria-label="Roadmaps PSP and SDLC skill spider chart"
+    <div
+      v-if="hasDimensions"
+      class="overflow-hidden rounded-[1.5rem] border border-border-subtle bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.14),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(243,247,244,0.92))] px-3 py-4 md:px-5"
     >
-      <g>
+      <div
+        class="mx-auto mb-4 flex w-full max-w-[22rem] items-center justify-between gap-3 rounded-full border border-emerald-900/8 bg-white/80 px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-ink-soft"
+      >
+        <span>Survey 2 live blend</span>
+        <span class="rounded-full bg-emerald-100 px-2 py-1 text-accent">
+          {{ axes.length }} dimensions
+        </span>
+      </div>
+      <svg
+        :viewBox="`0 0 ${size} ${size}`"
+        class="mx-auto h-auto w-full max-w-[22rem] md:max-w-[25rem]"
+        role="img"
+        aria-label="Roadmaps PSP and SDLC skill spider chart"
+      >
+        <g>
+          <polygon
+            v-for="step in ringSteps"
+            :key="step"
+            :points="
+              axes
+                .map(
+                  (axis, index) =>
+                    `${toPoint(index, step, axes.length).x},${toPoint(index, step, axes.length).y}`,
+                )
+                .join(' ')
+            "
+            fill="none"
+            stroke="var(--color-ink)"
+            stroke-width="1"
+          />
+        </g>
+
+        <g>
+          <line
+            v-for="axis in axes"
+            :key="`axis-${axis.key}`"
+            :x1="center"
+            :y1="center"
+            :x2="axis.edge.x"
+            :y2="axis.edge.y"
+            stroke="rgba(29, 42, 39, 0.18)"
+            stroke-width="1"
+          />
+        </g>
+
         <polygon
-          v-for="step in ringSteps"
-          :key="step"
-          :points="
-            axes
-              .map(
-                (axis, index) =>
-                  `${toPoint(index, step, axes.length).x},${toPoint(index, step, axes.length).y}`,
-              )
-              .join(' ')
-          "
-          fill="none"
-          stroke="var(--color-ink)"
-          stroke-width="1"
+          :points="polygonPoints"
+          fill="rgba(29, 107, 87, 0.26)"
+          stroke="var(--color-accent)"
+          stroke-width="2"
         />
-      </g>
 
-      <g>
-        <line
+        <circle
           v-for="axis in axes"
-          :key="`axis-${axis.key}`"
-          :x1="center"
-          :y1="center"
-          :x2="axis.edge.x"
-          :y2="axis.edge.y"
-          stroke="rgba(29, 42, 39, 0.18)"
-          stroke-width="1"
-        />
-      </g>
-
-      <polygon
-        :points="polygonPoints"
-        fill="rgba(29, 107, 87, 0.26)"
-        stroke="var(--color-accent)"
-        stroke-width="2"
-      />
-
-      <circle
-        v-for="axis in axes"
-        :key="`node-${axis.key}`"
-        :cx="axis.node.x"
-        :cy="axis.node.y"
-        r="4"
-        fill="var(--color-accent)"
-      />
-
-      <g>
-        <text
-          v-for="axis in axes"
-          :key="`score-${axis.key}`"
-          :x="axis.scoreAnchor.x"
-          :y="axis.scoreAnchor.y"
-          text-anchor="middle"
-          dominant-baseline="middle"
-          font-size="11"
+          :key="`node-${axis.key}`"
+          :cx="axis.node.x"
+          :cy="axis.node.y"
+          r="4"
           fill="var(--color-accent)"
-          font-weight="800"
-        >
-          {{ axis.score }}/10
-        </text>
-      </g>
+        />
 
-      <g>
-        <text
-          v-for="axis in axes"
-          :key="`label-${axis.key}`"
-          :x="axis.labelAnchor.x"
-          :y="axis.labelAnchor.y"
-          :text-anchor="axis.textAnchor"
-          dominant-baseline="middle"
-          font-size="11"
-          fill="var(--color-ink)"
-          font-weight="700"
-        >
-          <tspan
-            v-for="(line, lineIndex) in axis.labelLines"
-            :key="`${axis.key}-line-${lineIndex}`"
-            :x="axis.labelAnchor.x"
-            :dy="lineIndex === 0 ? 0 : 13"
+        <g>
+          <text
+            v-for="axis in axes"
+            :key="`score-${axis.key}`"
+            :x="axis.scoreAnchor.x"
+            :y="axis.scoreAnchor.y"
+            text-anchor="middle"
+            dominant-baseline="middle"
+            font-size="11"
+            fill="var(--color-accent)"
+            font-weight="800"
           >
-            {{ line }}
-          </tspan>
-        </text>
-      </g>
-    </svg>
+            {{ axis.score }}/10
+          </text>
+        </g>
+
+        <g>
+          <text
+            v-for="axis in axes"
+            :key="`label-${axis.key}`"
+            :x="axis.labelAnchor.x"
+            :y="axis.labelAnchor.y"
+            :text-anchor="axis.textAnchor"
+            dominant-baseline="middle"
+            font-size="11"
+            fill="var(--color-ink)"
+            font-weight="700"
+          >
+            <tspan
+              v-for="(line, lineIndex) in axis.labelLines"
+              :key="`${axis.key}-line-${lineIndex}`"
+              :x="axis.labelAnchor.x"
+              :dy="lineIndex === 0 ? 0 : 13"
+            >
+              {{ line }}
+            </tspan>
+          </text>
+        </g>
+      </svg>
+    </div>
+    <p
+      v-else
+      class="rounded-md border border-border-subtle bg-surface-card p-4 text-sm leading-6 text-ink-soft"
+    >
+      Roadmap chart data is not available yet.
+    </p>
   </div>
 </template>

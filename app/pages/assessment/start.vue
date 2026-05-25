@@ -14,6 +14,9 @@ const PREFERRED_ROLE_KEY = 'competencyx:preferred-role'
 const preferredRoleSlug = ref<string | null>(null)
 const pageError = ref<ApiError | null>(null)
 const toast = useToast()
+const decisionMode = ref<'known' | 'unsure'>(
+  typeof route.query.role === 'string' ? 'known' : 'unsure',
+)
 
 if (typeof route.query.role === 'string') {
   preferredRoleSlug.value = route.query.role
@@ -26,6 +29,7 @@ onMounted(() => {
   const stored = localStorage.getItem(PREFERRED_ROLE_KEY)
   if (stored) {
     preferredRoleSlug.value = stored
+    decisionMode.value = 'known'
   }
 })
 
@@ -137,6 +141,20 @@ const selectedRoleName = computed(
   () => selectedRole.value?.name ?? 'No preferred role',
 )
 
+const startButtonLabel = computed(() => {
+  if (isSubmitting.value) return 'Preparing your assessment...'
+  if (decisionMode.value === 'known' && selectedRole.value) {
+    return 'Start Phase 2 skill assessment'
+  }
+  return 'Start Phase 1 discovery'
+})
+
+const canStart = computed(
+  () =>
+    !isSubmitting.value &&
+    (decisionMode.value === 'unsure' || Boolean(selectedRole.value)),
+)
+
 const resultSummary = computed(() => {
   if (!roles.value.length) {
     return 'Role catalog is empty.'
@@ -150,9 +168,24 @@ const resultSummary = computed(() => {
 })
 
 const onboardingSteps = [
-  'Pick a role target or leave it open',
-  'Answer focused scenario questions',
-  'Review fit, gaps, and the next roadmap topic',
+  'Choose known role or open discovery',
+  'Complete the right assessment phase',
+  'Review role fit, skill gaps, and roadmap',
+]
+
+const decisionCards = [
+  {
+    mode: 'known' as const,
+    title: 'I already know my role',
+    copy: 'Pick a target role and move straight into role-aware skill calibration.',
+    tag: 'Skip Phase 1',
+  },
+  {
+    mode: 'unsure' as const,
+    title: 'I am still exploring',
+    copy: 'Start with personality and preference questions to discover suitable roles.',
+    tag: 'Start Phase 1',
+  },
 ]
 
 function clearFilters() {
@@ -161,6 +194,7 @@ function clearFilters() {
 }
 
 function selectPreferredRole(slug: string) {
+  decisionMode.value = 'known'
   preferredRoleSlug.value = slug
   if (import.meta.client) {
     localStorage.setItem(PREFERRED_ROLE_KEY, slug)
@@ -168,13 +202,25 @@ function selectPreferredRole(slug: string) {
 }
 
 function clearPreferredRole() {
+  decisionMode.value = 'unsure'
   preferredRoleSlug.value = null
   if (import.meta.client) {
     localStorage.removeItem(PREFERRED_ROLE_KEY)
   }
 }
 
+function selectDecisionMode(mode: 'known' | 'unsure') {
+  decisionMode.value = mode
+  if (mode === 'unsure') {
+    clearPreferredRole()
+  }
+}
+
 async function handleStart() {
+  if (!canStart.value) {
+    return
+  }
+
   pageError.value = null
 
   try {
@@ -218,7 +264,7 @@ useSeoMeta({
     </div>
 
     <section
-      class="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(21rem,0.92fr)] lg:items-start"
+      class="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.12fr)_minmax(21rem,0.88fr)] lg:items-start"
     >
       <section
         class="glass-panel p-6 md:p-8"
@@ -227,7 +273,7 @@ useSeoMeta({
         <div class="flex flex-wrap items-center justify-between gap-4">
           <p class="eyebrow">Onboarding</p>
           <p
-            class="rounded-full border border-accent-soft bg-emerald-50/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-accent"
+            class="rounded-full border border-accent-soft bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-accent"
             aria-live="polite"
           >
             {{ selectedRole ? 'Role selected' : 'Open discovery' }}
@@ -238,13 +284,42 @@ useSeoMeta({
           id="onboarding-title"
           class="mt-4 max-w-4xl font-display text-4xl leading-tight text-ink md:text-5xl"
         >
-          Choose a role target, or let the assessment find the strongest signal.
+          Do you already know which software role you want?
         </h1>
         <p class="mt-4 max-w-2xl text-sm leading-7 text-ink-soft">
-          A preferred role frames the roadmap preview. The final recommendation
-          still comes from your answers, so leaving this open is a valid
-          starting point.
+          Choose a target role to move directly into Phase 2, or start with
+          Phase 1 if you want the platform to recommend roles from your
+          preferences.
         </p>
+
+        <div
+          class="mt-6 grid gap-3 md:grid-cols-2"
+          role="radiogroup"
+          aria-label="Choose assessment entry point"
+        >
+          <button
+            v-for="card in decisionCards"
+            :key="card.mode"
+            type="button"
+            role="radio"
+            :aria-checked="decisionMode === card.mode"
+            class="option-card min-h-44 rounded-md p-5 text-left"
+            :class="
+              decisionMode === card.mode
+                ? 'border-accent/60 shadow-[0_16px_34px_rgba(15,118,110,0.16)]'
+                : ''
+            "
+            @click="selectDecisionMode(card.mode)"
+          >
+            <span class="eyebrow">{{ card.tag }}</span>
+            <span class="mt-4 block text-2xl font-black leading-tight text-ink">
+              {{ card.title }}
+            </span>
+            <span class="mt-3 block text-sm leading-7 text-ink-soft">
+              {{ card.copy }}
+            </span>
+          </button>
+        </div>
 
         <ol
           class="assessment-stagebar mt-6 grid gap-3 border border-border-subtle bg-surface-muted p-3 sm:grid-cols-3"
@@ -263,7 +338,7 @@ useSeoMeta({
         </ol>
 
         <div
-          class="mt-6 rounded-lg border border-border-subtle bg-surface-muted p-4"
+          class="mt-6 rounded-md border border-border-subtle bg-surface-muted p-4"
           aria-live="polite"
         >
           <div class="flex flex-wrap items-center justify-between gap-3">
@@ -276,23 +351,27 @@ useSeoMeta({
               <p
                 class="mt-1 wrap-break-word text-2xl font-bold leading-tight text-ink"
               >
-                {{ selectedRoleName }}
+                {{
+                  decisionMode === 'known'
+                    ? selectedRoleName
+                    : 'Open role discovery'
+                }}
               </p>
             </div>
             <button
               type="button"
-              class="inline-flex items-center justify-center rounded-full border border-ink/12 bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/35 disabled:cursor-not-allowed disabled:opacity-50"
-              :disabled="!selectedRole"
+              class="cx-button-secondary"
+              :disabled="decisionMode === 'unsure' && !selectedRole"
               @click="clearPreferredRole"
             >
-              Continue without a preferred role
+              Use discovery mode
             </button>
           </div>
           <p class="mt-3 text-sm leading-6 text-ink-soft">
             {{
-              selectedRole
-                ? 'You can change the target before starting. The assessment will still compare it with the best-fit role.'
-                : 'Start open-ended if you want the recommendation to emerge from the assessment.'
+              decisionMode === 'known'
+                ? 'Select a role below, then continue directly into the role-specific skill assessment path.'
+                : 'The first phase will ask preference and personality-style questions before skill calibration.'
             }}
           </p>
         </div>
@@ -304,7 +383,8 @@ useSeoMeta({
                 Role chooser
               </h2>
               <p class="mt-1 text-sm text-ink-soft">
-                Search by title, discipline, or description.
+                Choose a role if you want to skip Phase 1 and go straight to
+                technical calibration.
               </p>
             </div>
             <button
@@ -421,8 +501,8 @@ useSeoMeta({
         <div class="mt-8 flex flex-wrap items-center gap-4">
           <button
             type="button"
-            class="inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-accent-shadow transition hover:-translate-y-0.5 hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="isSubmitting"
+            class="cx-button-primary disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="!canStart"
             @click="handleStart"
           >
             <span
@@ -430,9 +510,7 @@ useSeoMeta({
               class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
               aria-hidden="true"
             />
-            {{
-              isSubmitting ? 'Preparing your assessment…' : 'Start assessment'
-            }}
+            {{ startButtonLabel }}
           </button>
           <p
             v-if="isSubmitting"

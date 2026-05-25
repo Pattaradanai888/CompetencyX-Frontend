@@ -1,19 +1,17 @@
 <script setup lang="ts">
+import { motion } from 'motion-v'
 import {
   formatConfidencePercent,
-  getAlignmentLabel,
-  getRoleResolutionLabel,
-  sortMasteryDescending,
   sortRankedRolesDescending,
 } from '~/utils/assessment'
 import { useAssessmentResults } from '~/composables/useAssessmentResults'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
 import { getErrorMessage } from '~/utils/api'
-import type { ApiError } from '~/shared/types/assessment'
-
-const RecommendationCard = defineAsyncComponent(
-  () => import('~/components/results/RecommendationCard.vue'),
-)
+import type {
+  ApiError,
+  RankedRoleInsight,
+  Role,
+} from '~/shared/types/assessment'
 
 const route = useRoute('/results/[sessionId]')
 const { getResults } = useAssessmentResults()
@@ -55,273 +53,161 @@ if (
 }
 
 const results = ref(_fetchData.value?.resultsAttempt ?? null)
-const roadmapsButton = ref<HTMLAnchorElement | null>(null)
+const continueButton = ref<HTMLAnchorElement | null>(null)
 
-const masteryScores = computed(() =>
-  sortMasteryDescending(results.value?.mastery_scores ?? []),
-)
-const gapTopics = computed(() => results.value?.preferred_role_gap_topics ?? [])
-const pillarProfile = computed(() => results.value?.pillar_profile ?? [])
 const rankedRoles = computed(() =>
   sortRankedRolesDescending(results.value?.ranked_roles ?? []),
 )
 
+const primaryRankedRole = computed(() => rankedRoles.value[0] ?? null)
+const alternativeRoles = computed(() => rankedRoles.value.slice(1, 3))
+const primaryRole = computed(
+  () =>
+    results.value?.best_fit_role ??
+    results.value?.preferred_role ??
+    ({
+      id: 0,
+      slug: primaryRankedRole.value?.slug ?? 'recommended-role',
+      name: primaryRankedRole.value?.name ?? 'Recommended software role',
+    } satisfies Role),
+)
+
+const primaryScore = computed(
+  () =>
+    primaryRankedRole.value?.fit_score ??
+    results.value?.best_fit_confidence ??
+    0,
+)
+
+const primaryScorePercent = computed(() => Math.round(primaryScore.value * 100))
+
+function getRoleDescription(role: RankedRoleInsight | Role | null): string {
+  if (!role) {
+    return 'Your answers point toward this path as the clearest next direction.'
+  }
+
+  if ('description' in role && role.description) {
+    return role.description
+  }
+
+  if ('top_supporting_pillars' in role && role.top_supporting_pillars.length) {
+    return `Strongest signals: ${role.top_supporting_pillars.join(', ')}.`
+  }
+
+  return 'A close fit based on your work-style and preference pattern.'
+}
+
 useSeoMeta({
-  title: 'CompetencyX | Assessment results',
+  title: 'CompetencyX | Role recommendation',
   description:
-    'Review your role fit, gap topics, and recommended next learning steps for the completed assessment.',
+    'Review your primary recommended software role and top alternatives before continuing to skill assessment.',
 })
 
 onMounted(async () => {
   await nextTick()
-  roadmapsButton.value?.focus()
+  const focusTarget =
+    continueButton.value instanceof HTMLElement
+      ? continueButton.value
+      : (
+          continueButton.value as unknown as {
+            $el?: HTMLElement
+          } | null
+        )?.$el
+
+  focusTarget?.focus()
 })
 </script>
 
 <template>
   <main v-if="results" id="main-content" class="page-wrap">
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <NuxtLink to="/assessment/start" class="editorial-link text-sm">
-        Start a new assessment
-      </NuxtLink>
-      <div class="flex items-center gap-4">
-        <NuxtLink
-          ref="roadmapsButton"
-          :to="`/roadmaps/${route.params.sessionId}`"
-          class="inline-flex items-center justify-center rounded-full border border-border-subtle bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/35 hover:text-accent"
-        >
-          Continue to Roadmaps
-        </NuxtLink>
-        <p class="text-sm text-ink-soft">
-          Updated <NuxtTime :datetime="results.updated_at" relative />
-        </p>
-      </div>
-    </div>
-
-    <div
-      class="assessment-stagebar mt-6 flex flex-wrap items-center justify-between gap-3 border border-border-subtle bg-surface-muted px-4 py-3"
-    >
-      <div class="flex flex-wrap items-center gap-3">
-        <span class="eyebrow mb-0">Results dossier</span>
-        <span
-          class="rounded-full border border-border-subtle bg-paper-strong px-3 py-1 text-[0.72rem] font-bold uppercase tracking-[0.08em] text-ink-soft"
-        >
-          Assessment complete
-        </span>
-        <span
-          class="rounded-full border border-accent-soft bg-emerald-50/80 px-3 py-1 text-[0.72rem] font-bold uppercase tracking-[0.08em] text-accent"
-        >
-          {{ getRoleResolutionLabel(results.role_resolution_status) }}
-        </span>
-      </div>
-      <p class="text-sm text-ink-soft">
-        Your recommendation is based on the latest completed session.
-      </p>
-    </div>
-
-    <Motion.section
-      class="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]"
+    <motion.section
+      class="result-spotlight mx-auto max-w-5xl p-6 text-center md:p-8 lg:p-10"
       :initial="{ opacity: 0, y: 20 }"
       :animate="{ opacity: 1, y: 0 }"
       :transition="{ duration: 0.4 }"
+      aria-labelledby="results-title"
     >
-      <section class="glass-panel p-6 md:p-8">
-        <p class="eyebrow">Results dossier</p>
-        <h1
-          class="mt-4 font-display text-4xl leading-tight text-ink md:text-6xl"
-        >
-          {{
-            results.best_fit_role?.name ||
-            results.preferred_role?.name ||
-            'Assessment complete'
-          }}
-        </h1>
-        <p class="mt-4 max-w-2xl text-sm leading-7 text-ink-soft">
-          {{ results.guidance_summary }}
-        </p>
-
-        <div class="mt-8 grid gap-4 md:grid-cols-3">
-          <div
-            class="rounded-md border border-border-subtle bg-surface-card p-4"
-          >
-            <p class="eyebrow">Preferred role</p>
-            <p class="mt-3 text-lg font-semibold text-ink">
-              {{ results.preferred_role?.name || 'Not specified' }}
-            </p>
-          </div>
-          <div
-            class="rounded-md border border-border-subtle bg-surface-card p-4"
-          >
-            <p class="eyebrow">Best fit</p>
-            <p class="mt-3 text-lg font-semibold text-ink">
-              {{ results.best_fit_role?.name || 'Still calibrating' }}
-            </p>
-          </div>
-          <div
-            class="rounded-md border border-border-subtle bg-surface-card p-4"
-          >
-            <p class="eyebrow">Confidence</p>
-            <p class="mt-3 text-lg font-semibold text-ink">
-              {{ formatConfidencePercent(results.best_fit_confidence) }}
-            </p>
-          </div>
-        </div>
-
+      <div class="mx-auto max-w-3xl">
         <div
-          class="mt-6 rounded-lg border border-border-subtle bg-surface-card p-5"
+          class="inline-flex items-center gap-2 rounded-full border border-accent/15 bg-accent/10 px-4 py-2 text-sm font-bold text-accent"
         >
-          <p class="eyebrow">Alignment read</p>
-          <p class="mt-3 text-lg font-semibold text-ink">
-            {{ getAlignmentLabel(results.role_alignment_status) }}
-          </p>
-          <p class="mt-2 text-sm font-semibold text-ink">
-            Resolution:
-            {{ getRoleResolutionLabel(results.role_resolution_status) }}
-          </p>
-          <p class="mt-2 text-sm leading-7 text-ink-soft">
-            Role answers: {{ results.milestones.answered_role_questions }}.
-            Skill answers: {{ results.milestones.answered_skill_questions }}.
-          </p>
+          <span aria-hidden="true">✓</span>
+          Phase 1 complete
         </div>
-      </section>
 
-      <div class="space-y-6">
-        <RecommendationCard
-          eyebrow="Preferred path recommendation"
-          :recommendation="results.preferred_path_recommendation"
-        />
-        <RecommendationCard
-          eyebrow="Best-fit path recommendation"
-          :recommendation="results.best_fit_path_recommendation"
-        />
-      </div>
-    </Motion.section>
-
-    <section class="mt-8 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-      <section class="paper-panel p-6 md:p-8">
-        <p class="eyebrow">Role fit analysis</p>
-        <h2 class="mt-4 text-3xl font-bold text-ink">
-          Why this role rose to the top
-        </h2>
-        <div class="mt-6 space-y-3">
+        <div class="mt-8 flex justify-center">
           <div
-            v-for="role in rankedRoles"
-            :key="role.slug"
-            class="rounded-md border border-border-subtle bg-surface-card p-4"
+            class="result-match-ring"
+            :style="{ '--score': `${primaryScorePercent}%` }"
+            aria-label="Primary match score"
           >
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <p class="text-sm font-semibold text-ink">
-                  {{ role.name }}
-                </p>
-                <p class="mt-2 text-sm leading-6 text-ink-soft">
-                  {{
-                    role.top_supporting_pillars.join(', ') ||
-                    'No supporting pillar details available.'
-                  }}
-                </p>
-              </div>
-              <div class="text-right">
-                <p class="text-sm font-semibold text-ink">
-                  {{ formatConfidencePercent(role.fit_score) }}
+            <div
+              class="grid h-28 w-28 place-items-center rounded-full bg-paper-strong"
+            >
+              <div class="text-center">
+                <p class="data-value text-4xl font-black text-ink">
+                  {{ formatConfidencePercent(primaryScore) }}
                 </p>
                 <p
-                  class="mt-1 text-xs uppercase tracking-[0.08em] text-ink-soft"
+                  class="mt-1 text-xs font-extrabold uppercase tracking-[0.1em] text-ink-soft"
                 >
-                  {{ formatConfidencePercent(role.fit_share) }} share
+                  match
                 </p>
               </div>
             </div>
           </div>
-          <p
-            v-if="!rankedRoles.length"
-            class="rounded-md border border-border-subtle bg-surface-card p-4 text-sm leading-6 text-ink-soft"
-          >
-            Ranked role insights are not available for this assessment.
-          </p>
         </div>
-      </section>
 
-      <section class="paper-panel p-6 md:p-8">
-        <p class="eyebrow">Gap topics</p>
-        <h2 class="mt-4 text-3xl font-bold text-ink">What to close next</h2>
-        <div class="mt-6 space-y-3">
-          <div
-            v-for="topic in gapTopics"
-            :key="topic.id"
-            class="rounded-md border border-border-subtle bg-surface-card p-4"
-          >
-            <p class="text-sm font-semibold text-ink">
-              {{ topic.title }}
-            </p>
-            <p class="mt-2 text-sm leading-6 text-ink-soft">
-              {{
-                topic.description ||
-                'This topic is highlighted as a likely gap for the preferred role path.'
-              }}
-            </p>
-          </div>
-          <p
-            v-if="!gapTopics.length"
-            class="rounded-md border border-border-subtle bg-surface-card p-4 text-sm leading-6 text-ink-soft"
-          >
-            No focused gap topics are highlighted for this path.
-          </p>
-        </div>
-      </section>
-
-      <section class="paper-panel p-6 md:p-8">
-        <p class="eyebrow">Mastery scores</p>
-        <h2 class="mt-4 text-3xl font-bold text-ink">
-          Confidence-weighted topic readout
-        </h2>
-        <div class="mt-6 space-y-3">
-          <LazyMasteryMeter
-            v-for="item in masteryScores"
-            :key="item.topic_id"
-            :mastery="item"
-          />
-          <p
-            v-if="!masteryScores.length"
-            class="rounded-md border border-border-subtle bg-surface-card p-4 text-sm leading-6 text-ink-soft"
-          >
-            Topic confidence scores are not available for this assessment.
-          </p>
-        </div>
-      </section>
-    </section>
-
-    <section class="mt-8 paper-panel p-6 md:p-8">
-      <p class="eyebrow">Pillar profile</p>
-      <h2 class="mt-4 text-3xl font-bold text-ink">
-        Evidence behind the recommendation
-      </h2>
-      <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <div
-          v-for="pillar in pillarProfile"
-          :key="pillar.key"
-          class="rounded-md border border-border-subtle bg-surface-card p-4"
+        <h1
+          id="results-title"
+          class="mx-auto mt-8 max-w-4xl font-display text-4xl font-semibold leading-tight text-ink md:text-6xl"
         >
-          <p class="text-sm font-semibold text-ink">
-            {{ pillar.label }}
-          </p>
-          <p class="mt-3 text-2xl font-semibold text-ink">
-            {{ formatConfidencePercent(pillar.normalized_score) }}
-          </p>
-          <p class="mt-2 text-sm leading-6 text-ink-soft">
-            Raw score {{ pillar.raw_score }} from
-            {{ pillar.evidence_count }} evidence point{{
-              pillar.evidence_count === 1 ? '' : 's'
-            }}.
-          </p>
-        </div>
-        <p
-          v-if="!pillarProfile.length"
-          class="rounded-md border border-border-subtle bg-surface-card p-4 text-sm leading-6 text-ink-soft"
-        >
-          Pillar-level explainability data is not available for this assessment.
+          {{ primaryRole.name }} looks like your strongest role direction.
+        </h1>
+        <p class="mx-auto mt-5 max-w-2xl text-base leading-8 text-ink-soft">
+          {{ getRoleDescription(primaryRankedRole || primaryRole) }}
         </p>
       </div>
-    </section>
+
+      <section class="mt-10 grid gap-4 text-left md:grid-cols-3">
+        <article class="result-role-card p-5 md:p-6">
+          <p class="eyebrow">Primary role</p>
+          <h2 class="mt-3 text-2xl font-black text-ink">
+            {{ primaryRole.name }}
+          </h2>
+          <p class="mt-3 text-sm leading-7 text-ink-soft">
+            {{ getRoleDescription(primaryRankedRole || primaryRole) }}
+          </p>
+          <p class="mt-5 data-value text-3xl font-black text-accent">
+            {{ formatConfidencePercent(primaryScore) }}
+          </p>
+        </article>
+
+        <article
+          v-for="(role, index) in alternativeRoles"
+          :key="role.slug"
+          class="result-role-card p-5 md:p-6"
+        >
+          <p class="eyebrow">Alternative {{ index + 1 }}</p>
+          <div class="mt-3 flex items-start justify-between gap-4">
+            <h2 class="text-2xl font-black text-ink">{{ role.name }}</h2>
+            <p class="data-value text-lg font-black text-accent">
+              {{ formatConfidencePercent(role.fit_score) }}
+            </p>
+          </div>
+          <p class="mt-3 text-sm leading-7 text-ink-soft">
+            {{ getRoleDescription(role) }}
+          </p>
+        </article>
+      </section>
+
+      <NuxtLink
+        ref="continueButton"
+        :to="`/roadmaps/${route.params.sessionId}`"
+        class="cx-button-primary mt-10"
+      >
+        Continue to Phase 2
+      </NuxtLink>
+    </motion.section>
   </main>
 </template>

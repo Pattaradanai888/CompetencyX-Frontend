@@ -97,6 +97,20 @@ describe('results page', () => {
             'Reliability and Automation',
           ],
         },
+        {
+          slug: 'data-engineer',
+          name: 'Data Engineer',
+          fit_score: 0.74,
+          fit_share: 0.24,
+          top_supporting_pillars: ['Systems Design'],
+        },
+        {
+          slug: 'devops-engineer',
+          name: 'DevOps Engineer',
+          fit_score: 0.68,
+          fit_share: 0.14,
+          top_supporting_pillars: ['Reliability and Automation'],
+        },
       ],
       preferred_role_gap_topics: [],
       mastery_scores: [],
@@ -113,13 +127,23 @@ describe('results page', () => {
     })
   })
 
-  it('renders nullable recommendation states without crashing', async () => {
+  it('renders the simplified Phase 1 role recommendation', async () => {
     const wrapper = await mountSuspended(ResultsPage)
 
-    expect(wrapper.text()).toContain('API Design')
-    expect(wrapper.text()).toContain('Recommendation in progress')
+    expect(wrapper.text()).toContain('Phase 1 complete')
+    expect(wrapper.text()).toContain(
+      'Backend Engineer looks like your strongest role direction.',
+    )
+    expect(wrapper.text()).toContain('81%')
+    expect(wrapper.text()).toContain('Data Engineer')
+    expect(wrapper.text()).toContain('74%')
+    expect(wrapper.text()).toContain('DevOps Engineer')
+    expect(wrapper.text()).toContain('68%')
     expect(wrapper.text()).toContain('Systems Design')
-    expect(wrapper.text()).toContain('Resolved')
+    expect(wrapper.text()).toContain('Continue to Phase 2')
+    expect(wrapper.text()).not.toContain('API Design')
+    expect(wrapper.text()).not.toContain('Resolved')
+    expect(wrapper.text()).not.toContain('Recommendation in progress')
     expect(navigateToMock).not.toHaveBeenCalled()
   })
 })

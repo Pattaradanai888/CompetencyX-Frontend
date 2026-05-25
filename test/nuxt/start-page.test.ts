@@ -68,9 +68,7 @@ describe('assessment start page', () => {
 
     await flushPromises()
     await wrapper.get('button[aria-pressed="false"]').trigger('click')
-    await wrapper
-      .get('button[class*="bg-\\[var\\(--cx-accent\\)\\]"]')
-      .trigger('click')
+    await wrapper.get('button.cx-button-primary').trigger('click')
 
     expect(createSessionMock).toHaveBeenCalledWith({
       preferred_role_slug: 'backend-engineer',
