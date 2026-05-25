@@ -1,11 +1,13 @@
+import { flushPromises } from '@vue/test-utils'
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ResultsPage from '../../app/pages/results/[sessionId].vue'
 
-const { navigateToMock, getSessionMock, getResultsMock } = vi.hoisted(() => ({
+const { navigateToMock, getSessionMock, getResultsMock, createSessionMock } = vi.hoisted(() => ({
   navigateToMock: vi.fn(),
   getSessionMock: vi.fn(),
   getResultsMock: vi.fn(),
+  createSessionMock: vi.fn(),
 }))
 
 mockNuxtImport('navigateTo', () => navigateToMock)
@@ -16,6 +18,7 @@ mockNuxtImport('useRoute', () => () => ({
 
 vi.mock('~/composables/useAssessmentSession', () => ({
   useAssessmentSession: () => ({
+    createSession: createSessionMock,
     getSession: getSessionMock,
   }),
 }))
@@ -54,6 +57,7 @@ describe('results page', () => {
       guidance_summary: 'Done.',
       current_question: null,
     })
+    createSessionMock.mockResolvedValue({ id: 'session-2' })
     getResultsMock.mockResolvedValue({
       id: 'session-1',
       status: 'completed',
@@ -141,11 +145,94 @@ describe('results page', () => {
     expect(wrapper.text()).toContain('14%')
     expect(wrapper.text()).toContain('Systems Design')
     expect(wrapper.text()).toContain('How to read these numbers')
+    expect(wrapper.text()).toContain('Default selection')
+    expect(wrapper.text()).toContain('Continue to Assignment 2')
+    expect(wrapper.text()).toContain('Use this role instead')
+    expect(wrapper.text()).toContain(
+      'The top-ranked role is already selected for Assignment 2.',
+    )
     expect(wrapper.text()).toContain('Back to landing page')
-    expect(wrapper.text()).toContain('Continue to Phase 2')
     expect(wrapper.text()).not.toContain('API Design')
     expect(wrapper.text()).not.toContain('Resolved')
     expect(wrapper.text()).not.toContain('Recommendation in progress')
     expect(navigateToMock).not.toHaveBeenCalled()
+  })
+
+  it('starts Assignment 2 directly when the user picks an alternative role', async () => {
+    getSessionMock
+      .mockResolvedValueOnce({
+        id: 'session-1',
+        status: 'completed',
+        phase: 'recommendation_ready',
+        best_fit_confidence: 0.81,
+        preferred_role: {
+          id: 1,
+          slug: 'backend-engineer',
+          name: 'Backend Engineer',
+        },
+        best_fit_role: {
+          id: 1,
+          slug: 'backend-engineer',
+          name: 'Backend Engineer',
+        },
+        profile: null,
+        started_at: '2026-04-17T04:00:00Z',
+        updated_at: '2026-04-17T04:02:00Z',
+        completed_at: '2026-04-17T04:02:00Z',
+        milestones: { answered_role_questions: 2, answered_skill_questions: 4 },
+        role_alignment_status: 'aligned',
+        role_resolution_status: 'resolved',
+        guidance_summary: 'Done.',
+        current_question: null,
+      })
+      .mockResolvedValueOnce({
+        id: 'session-2',
+        status: 'in_progress',
+        phase: 'skill_assessment',
+        best_fit_confidence: 0.81,
+        preferred_role: {
+          id: 2,
+          slug: 'data-engineer',
+          name: 'Data Engineer',
+        },
+        best_fit_role: null,
+        profile: null,
+        started_at: '2026-04-17T04:03:00Z',
+        updated_at: '2026-04-17T04:03:00Z',
+        completed_at: null,
+        milestones: { answered_role_questions: 0, answered_skill_questions: 0 },
+        role_alignment_status: 'aligned',
+        role_resolution_status: 'resolved',
+        guidance_summary: 'Done.',
+        current_question: {
+          id: 201,
+          code: 'skill-1',
+          stage: 'skill',
+          question_type: 'single_choice',
+          prompt: 'Skill question',
+          help_text: '',
+          role: null,
+          topic: null,
+          options: [],
+          response_scale: [],
+        },
+      })
+
+    const wrapper = await mountSuspended(ResultsPage)
+
+    const switchButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Use this role instead'))
+
+    expect(switchButton).toBeDefined()
+    await switchButton!.trigger('click')
+    await flushPromises()
+
+    expect(createSessionMock).toHaveBeenCalledWith({
+      preferred_role_slug: 'data-engineer',
+    })
+    await vi.waitFor(() => {
+      expect(navigateToMock).toHaveBeenCalledWith('/roadmaps/session-2')
+    })
   })
 })

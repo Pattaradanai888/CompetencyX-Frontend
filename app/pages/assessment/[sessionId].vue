@@ -112,64 +112,6 @@ const isAwaitingResolution = computed(() => {
   )
 })
 
-const answeredCount = computed(() => {
-  if (!session.value) return 0
-  return (
-    session.value.milestones.answered_role_questions +
-    session.value.milestones.answered_skill_questions
-  )
-})
-
-const progressPercent = computed(() => {
-  if (!session.value) return 0
-  if (isSessionComplete(session.value)) return 100
-  return Math.min(92, Math.max(12, answeredCount.value * 12 + 12))
-})
-
-const phaseLabel = computed(() => {
-  if (session.value?.current_question?.stage === 'skill') {
-    return 'Phase 2: skill assessment'
-  }
-  return 'Phase 1: role discovery'
-})
-
-const estimatedMinutesRemaining = computed(() => {
-  if (!session.value || isSessionComplete(session.value)) return 0
-  return Math.max(1, Math.ceil((8 - answeredCount.value) * 0.45))
-})
-
-const phaseTimeline = computed(() => [
-  {
-    label: 'Role discovery',
-    detail: `${session.value?.milestones.answered_role_questions ?? 0} saved`,
-    state:
-      session.value?.current_question?.stage === 'role'
-        ? 'active'
-        : (session.value?.milestones.answered_role_questions ?? 0) > 0
-          ? 'complete'
-          : 'pending',
-  },
-  {
-    label: 'Skill calibration',
-    detail: `${session.value?.milestones.answered_skill_questions ?? 0} saved`,
-    state:
-      session.value?.current_question?.stage === 'skill'
-        ? 'active'
-        : (session.value?.milestones.answered_skill_questions ?? 0) > 0
-          ? 'complete'
-          : 'pending',
-  },
-  {
-    label: 'Recommendation',
-    detail:
-      session.value && isSessionComplete(session.value) ? 'Ready' : 'Locked',
-    state:
-      session.value && isSessionComplete(session.value)
-        ? 'complete'
-        : 'pending',
-  },
-])
-
 useSeoMeta({
   title: 'CompetencyX | Active assessment',
   description:
@@ -186,74 +128,6 @@ useSeoMeta({
       <span class="data-value text-sm text-ink-soft"
         >Session {{ route.params.sessionId }}</span
       >
-    </div>
-
-    <div
-      v-if="session"
-      class="assessment-stagebar mt-6 border border-border-subtle bg-surface-muted px-4 py-4"
-    >
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-3">
-          <span class="eyebrow mb-0">Active assessment</span>
-          <span
-            class="rounded-sm border border-border-subtle bg-paper-strong px-3 py-1 text-[0.72rem] font-bold uppercase tracking-[0.08em] text-ink-soft"
-          >
-            {{ phaseLabel }}
-          </span>
-          <span
-            v-if="isAwaitingResolution"
-            class="rounded-sm border border-accent-soft bg-accent/10 px-3 py-1 text-[0.72rem] font-bold uppercase tracking-[0.08em] text-accent"
-          >
-            Awaiting resolution
-          </span>
-        </div>
-        <p class="text-sm text-ink-soft">
-          {{ answeredCount }} answer{{ answeredCount === 1 ? '' : 's' }} saved
-          <span class="mx-2 opacity-35">/</span>
-          ~{{ estimatedMinutesRemaining }} min left
-        </p>
-      </div>
-      <div
-        class="mt-4 h-2 overflow-hidden rounded-full bg-ink/10"
-        role="progressbar"
-        aria-label="Assessment progress"
-        :aria-valuenow="Math.round(progressPercent)"
-        aria-valuemin="0"
-        aria-valuemax="100"
-      >
-        <div
-          class="h-full rounded-full bg-[linear-gradient(90deg,var(--color-accent),var(--color-blueprint))] transition-all duration-500"
-          :style="{ width: `${progressPercent}%` }"
-        />
-      </div>
-      <div
-        class="phase-rail mt-4 sm:grid-cols-3"
-        aria-label="Assessment phases"
-      >
-        <div
-          v-for="(phase, index) in phaseTimeline"
-          :key="phase.label"
-          class="phase-rail__item"
-          :class="{
-            'is-active': phase.state === 'active',
-            'is-complete': phase.state === 'complete',
-          }"
-        >
-          <div class="flex items-start gap-3">
-            <span
-              class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border-subtle bg-paper-strong text-xs font-black text-ink"
-            >
-              {{ index + 1 }}
-            </span>
-            <div class="min-w-0">
-              <p class="text-sm font-extrabold text-ink">{{ phase.label }}</p>
-              <p class="mt-1 text-xs font-semibold text-ink-soft">
-                {{ phase.detail }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <div

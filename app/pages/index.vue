@@ -243,9 +243,6 @@ onMounted(async () => {
           >
             {{ lastSessionLabel }}
           </NuxtLink>
-          <NuxtLink to="#how-it-works" class="cx-button-secondary">
-            See the flow
-          </NuxtLink>
         </div>
 
         <p class="mt-8 text-sm text-ink-soft">

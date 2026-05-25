@@ -14,7 +14,7 @@ import type {
 
 const route = useRoute('/results/[sessionId]')
 const { getResults } = useAssessmentResults()
-const { getSession } = useAssessmentSession()
+const { createSession, getSession } = useAssessmentSession()
 const toast = useToast()
 
 const { data: _fetchData, error: fetchError } = await useAsyncData(
@@ -53,6 +53,7 @@ if (
 
 const results = ref(_fetchData.value?.resultsAttempt ?? null)
 const continueButton = ref<HTMLAnchorElement | null>(null)
+const isSwitchingRoleSlug = ref<string | null>(null)
 
 const rankedRoles = computed(() =>
   sortRankedRolesDescending(results.value?.ranked_roles ?? []),
@@ -109,6 +110,43 @@ function getRoleDescription(role: RankedRoleInsight | Role | null): string {
   }
 
   return 'A close fit based on your work-style and preference pattern.'
+}
+
+const phase2DefaultLabel = computed(() => primaryRole.value.name)
+
+async function startPhase2ForRole(role: RankedRoleInsight | Role | null) {
+  if (!role?.slug || isSwitchingRoleSlug.value) {
+    return
+  }
+
+  isSwitchingRoleSlug.value = role.slug
+
+  try {
+    const session = await createSession({
+      preferred_role_slug: role.slug,
+    })
+
+    const maxAttempts = 4
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      const hydratedSession = await getSession(session.id)
+      if (hydratedSession.current_question?.stage === 'skill') {
+        break
+      }
+      if (attempt < maxAttempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 250))
+      }
+    }
+
+    await navigateTo(`/roadmaps/${session.id}`)
+  } catch (error) {
+    toast.add({
+      title: 'Could not start Phase 2',
+      description: getErrorMessage(error as ApiError) ?? undefined,
+      color: 'error',
+    })
+  } finally {
+    isSwitchingRoleSlug.value = null
+  }
 }
 
 useSeoMeta({
@@ -199,6 +237,16 @@ onMounted(async () => {
           <p class="mt-5 data-value text-3xl font-black text-accent">
             {{ primaryScorePercent }}%
           </p>
+          <div
+            class="mt-6 rounded-xl border border-accent/20 bg-accent/8 px-4 py-3"
+          >
+            <p class="text-xs font-extrabold uppercase tracking-[0.08em] text-accent">
+              Default selection
+            </p>
+            <p class="mt-2 text-sm leading-6 text-ink-soft">
+              Phase 2 will start with <span class="font-semibold text-ink">{{ primaryRole.name }}</span>.
+            </p>
+          </div>
         </article>
 
         <article
@@ -216,6 +264,18 @@ onMounted(async () => {
           <p class="mt-3 text-sm leading-7 text-ink-soft">
             {{ getRoleDescription(role) }}
           </p>
+          <button
+            type="button"
+            class="cx-button-secondary mt-6 disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="Boolean(isSwitchingRoleSlug)"
+            @click="startPhase2ForRole(role)"
+          >
+            {{
+              isSwitchingRoleSlug === role.slug
+                ? 'Opening Assignment 2...'
+                : 'Use this role instead'
+            }}
+          </button>
         </article>
       </section>
 
@@ -229,6 +289,35 @@ onMounted(async () => {
           Use the top role as your primary direction, and alternatives as nearby
           paths you can still explore.
         </p>
+        <p class="mt-2 text-sm leading-7 text-ink-soft">
+          The top-ranked role is already selected for Assignment 2. Choosing a
+          different ranked role will open Assignment 2 directly with that role.
+        </p>
+      </section>
+
+      <section
+        class="mt-8 rounded-xl border border-border-subtle bg-surface-elevated/90 p-5 text-left shadow-[0_18px_44px_rgba(74,54,35,0.08)] md:p-6"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="max-w-2xl">
+            <p class="eyebrow">Assignment 2</p>
+            <h2 class="mt-3 text-2xl font-bold text-ink">
+              Continue with {{ phase2DefaultLabel }}
+            </h2>
+            <p class="mt-2 text-sm leading-7 text-ink-soft">
+              Your recommended role is already prepared as the default path for
+              the next assignment.
+            </p>
+          </div>
+          <div class="rounded-full border border-border-subtle bg-paper-strong px-4 py-2">
+            <p class="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-soft">
+              Selected role
+            </p>
+            <p class="mt-1 text-sm font-bold text-ink">
+              {{ phase2DefaultLabel }}
+            </p>
+          </div>
+        </div>
       </section>
 
       <NuxtLink
@@ -236,7 +325,7 @@ onMounted(async () => {
         :to="`/roadmaps/${route.params.sessionId}`"
         class="cx-button-primary mt-10"
       >
-        Continue to Phase 2
+        Continue to Assignment 2
       </NuxtLink>
     </motion.section>
   </main>
