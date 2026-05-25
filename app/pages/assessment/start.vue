@@ -7,7 +7,8 @@ import type { ApiError, RoadmapTopic, Role } from '~/shared/types/assessment'
 
 const route = useRoute('/assessment/start')
 const { listRoleTopics, listRoles } = useCatalogApi()
-const { createSession, isSubmitting, lastSessionId } = useAssessmentSession()
+const { createSession, getSession, isSubmitting, lastSessionId } =
+  useAssessmentSession()
 
 const PREFERRED_ROLE_KEY = 'competencyx:preferred-role'
 
@@ -143,8 +144,10 @@ const selectedRoleName = computed(
 
 const startButtonLabel = computed(() => {
   if (isSubmitting.value) return 'Preparing your assessment...'
-  if (decisionMode.value === 'known' && selectedRole.value) {
-    return 'Start Phase 2 skill assessment'
+  if (decisionMode.value === 'known') {
+    return selectedRole.value
+      ? 'Start Phase 2 skill assessment'
+      : 'Choose a role to continue'
   }
   return 'Start Phase 1 discovery'
 })
@@ -211,7 +214,12 @@ function clearPreferredRole() {
 
 function selectDecisionMode(mode: 'known' | 'unsure') {
   decisionMode.value = mode
-  if (mode === 'unsure') {
+  if (mode === 'known' && !preferredRoleSlug.value) {
+    const firstRole = filteredRoles.value[0]
+    if (firstRole) {
+      selectPreferredRole(firstRole.slug)
+    }
+  } else if (mode === 'unsure') {
     clearPreferredRole()
   }
 }
@@ -229,6 +237,24 @@ async function handleStart() {
         ? { preferred_role_slug: preferredRoleSlug.value }
         : {},
     )
+
+    if (decisionMode.value === 'known' && preferredRoleSlug.value) {
+      const maxAttempts = 4
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const hydratedSession = await getSession(session.id)
+        if (hydratedSession.current_question?.stage === 'skill') {
+          break
+        }
+        if (attempt < maxAttempts - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 250))
+        }
+      }
+    }
+
+    if (decisionMode.value === 'known' && preferredRoleSlug.value) {
+      await navigateTo(`/roadmaps/${session.id}`)
+      return
+    }
 
     await navigateTo(`/assessment/${session.id}`)
   } catch (error) {
@@ -311,13 +337,30 @@ useSeoMeta({
             "
             @click="selectDecisionMode(card.mode)"
           >
-            <span class="eyebrow">{{ card.tag }}</span>
-            <span class="mt-4 block text-2xl font-black leading-tight text-ink">
-              {{ card.title }}
-            </span>
-            <span class="mt-3 block text-sm leading-7 text-ink-soft">
-              {{ card.copy }}
-            </span>
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <span class="eyebrow">{{ card.tag }}</span>
+                <span
+                  class="mt-4 block text-2xl font-black leading-tight text-ink"
+                >
+                  {{ card.title }}
+                </span>
+                <span class="mt-3 block text-sm leading-7 text-ink-soft">
+                  {{ card.copy }}
+                </span>
+              </div>
+              <span
+                class="mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-black"
+                :class="
+                  decisionMode === card.mode
+                    ? 'border-accent bg-accent text-white'
+                    : 'border-border-subtle text-ink-soft'
+                "
+                aria-hidden="true"
+              >
+                {{ decisionMode === card.mode ? '✓' : '' }}
+              </span>
+            </div>
           </button>
         </div>
 
@@ -376,7 +419,11 @@ useSeoMeta({
           </p>
         </div>
 
-        <div class="mt-6 space-y-4" aria-labelledby="role-filter-title">
+        <div
+          v-if="decisionMode === 'known'"
+          class="mt-6 space-y-4"
+          aria-labelledby="role-filter-title"
+        >
           <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 id="role-filter-title" class="text-2xl font-bold text-ink">
@@ -462,31 +509,41 @@ useSeoMeta({
           </p>
         </div>
 
-        <div
-          class="mt-6 grid max-h-136 gap-3 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-3"
-          role="group"
-          aria-label="Available roles"
-        >
-          <RoleCard
-            v-for="role in filteredRoles"
-            :key="role.id"
-            :role="role"
-            :selected="role.slug === preferredRoleSlug"
-            :topics-count="
-              role.slug === preferredRoleSlug ? topics.length : undefined
-            "
-            compact
-            @select="selectPreferredRole"
-          />
+        <div v-if="decisionMode === 'known'">
+          <div
+            class="mt-6 grid max-h-136 gap-3 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-3"
+            role="group"
+            aria-label="Available roles"
+          >
+            <RoleCard
+              v-for="role in filteredRoles"
+              :key="role.id"
+              :role="role"
+              :selected="role.slug === preferredRoleSlug"
+              :topics-count="
+                role.slug === preferredRoleSlug ? topics.length : undefined
+              "
+              compact
+              @select="selectPreferredRole"
+            />
+          </div>
+
+          <p
+            v-if="!filteredRoles.length && roles.length"
+            class="mt-6 rounded-md border border-border-subtle bg-surface-card p-4 text-sm text-ink-soft"
+            aria-live="polite"
+          >
+            No roles match your search. Try a different keyword or clear the
+            filters.
+          </p>
         </div>
 
         <p
-          v-if="!filteredRoles.length && roles.length"
-          class="mt-6 rounded-md border border-border-subtle bg-surface-card p-4 text-sm text-ink-soft"
-          aria-live="polite"
+          v-else
+          class="mt-6 rounded-md border border-border-subtle bg-surface-card p-4 text-sm leading-6 text-ink-soft"
         >
-          No roles match your search. Try a different keyword or clear the
-          filters.
+          Discovery mode is active. You can start immediately and CompetencyX
+          will recommend role paths after your Phase 1 responses.
         </p>
 
         <div

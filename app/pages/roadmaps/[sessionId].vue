@@ -6,6 +6,7 @@ import SkillSpiderChart from '~/components/results/SkillSpiderChart.vue'
 import { getErrorMessage } from '~/utils/api'
 import type {
   ApiError,
+  AssessmentSession,
   RoadmapsCatalogQuestion,
 } from '~/shared/types/assessment'
 
@@ -18,13 +19,25 @@ const {
   saveRoadmapsState,
 } = useAssessmentResults()
 const toast = useToast()
+const { getSession } = useAssessmentSession()
 
 const { data: _roadmapsData } = await useAsyncData(
   `roadmaps-${route.params.sessionId}`,
   async () => {
+    const session = await getSession(route.params.sessionId).catch(
+      () => null as AssessmentSession | null,
+    )
+
+    const assessmentResult = await getResults(route.params.sessionId).catch((error) => {
+      if ((error as ApiError).statusCode === 409) {
+        return null
+      }
+      throw error
+    })
+
     const [result, history, roadmapsCatalog, roadmapsState] = await Promise.all(
       [
-        getResults(route.params.sessionId),
+        Promise.resolve(assessmentResult),
         getHistory(route.params.sessionId).catch(() => null),
         getRoadmapsCatalog(route.params.sessionId),
         getRoadmapsState(route.params.sessionId).catch(() => ({
@@ -34,19 +47,63 @@ const { data: _roadmapsData } = await useAsyncData(
         })),
       ],
     )
-    return { result, history, roadmapsCatalog, roadmapsState }
+    return { session, result, history, roadmapsCatalog, roadmapsState }
   },
 )
 
+const session = _roadmapsData.value!.session
 const result = _roadmapsData.value!.result
 const history = _roadmapsData.value!.history
 const roadmapsCatalog = _roadmapsData.value!.roadmapsCatalog
 const roadmapsState = _roadmapsData.value!.roadmapsState
 
-const evaluation = computed(() => buildRoadmapsEvaluation(result, history))
+const preferredRoleName = computed(
+  () => result?.preferred_role?.name ?? session?.preferred_role?.name ?? null,
+)
+const bestFitRoleName = computed(
+  () => result?.best_fit_role?.name ?? session?.best_fit_role?.name ?? null,
+)
+const survey2RoleTitle = computed(
+  () => bestFitRoleName.value ?? preferredRoleName.value ?? 'Software role',
+)
+
+const evaluation = computed(() => {
+  if (!result) {
+    return {
+      dimensions: [],
+      strengths: [],
+      growthAreas: [],
+      personalitySignals: [],
+    }
+  }
+
+  return buildRoadmapsEvaluation(result, history)
+})
+
+const baseDimensions = computed<RadarDimension[]>(() => {
+  const fromEvaluation = new Map(
+    evaluation.value.dimensions.map((item) => [item.key, item]),
+  )
+
+  return roadmapsCatalog.dimensions.map(
+    (dimension: {
+      key: string
+      label: string
+      track: 'psp' | 'sdlc'
+    }) => {
+      const existing = fromEvaluation.get(dimension.key)
+      return {
+        key: dimension.key,
+        label: dimension.label,
+        track: dimension.track,
+        value: existing?.value ?? 0.5,
+      }
+    },
+  )
+})
 
 const topRoadmapTopics = computed(() =>
-  result.preferred_role_gap_topics.slice(0, 6),
+  result?.preferred_role_gap_topics.slice(0, 6) ?? [],
 )
 
 const isRoadmapsComplete = ref(roadmapsState.completed)
@@ -77,6 +134,7 @@ const answerScaleMax = answerScaleValues.length
 const roadmapAnswers = ref<Record<string, number>>({ ...roadmapsState.answers })
 const currentQuestionIndex = ref(0)
 const isSavingRoadmaps = ref(false)
+const RL_EPSILON = 0.18
 
 const hasAnsweredAll = computed(() => {
   return roadmapQuestions.every((question) =>
@@ -125,11 +183,9 @@ const catalogByKey = computed(
 )
 
 const blendedDimensions = computed<RadarDimension[]>(() => {
-  const baseByKey = new Map(
-    evaluation.value.dimensions.map((item) => [item.key, item]),
-  )
+  const baseByKey = new Map(baseDimensions.value.map((item) => [item.key, item]))
 
-  return evaluation.value.dimensions.map((dimension) => {
+  return baseDimensions.value.map((dimension) => {
     const matchingQuestions = roadmapQuestions.filter(
       (question) => question.dimensionKey === dimension.key,
     )
@@ -154,6 +210,77 @@ const blendedDimensions = computed<RadarDimension[]>(() => {
 })
 
 const hasRoadmapChartData = computed(() => blendedDimensions.value.length > 0)
+
+function answeredQuestionsCountForDimension(dimensionKey: string): number {
+  return roadmapQuestions.filter((question) => {
+    if (question.dimensionKey !== dimensionKey) {
+      return false
+    }
+    return Number.isFinite(roadmapAnswers.value[question.id])
+  }).length
+}
+
+function getDimensionMastery(dimensionKey: string): number {
+  const matchingAnswers = roadmapQuestions
+    .filter((question) => question.dimensionKey === dimensionKey)
+    .map((question) => roadmapAnswers.value[question.id])
+    .filter((value): value is number => Number.isFinite(value))
+
+  if (!matchingAnswers.length) {
+    return 0.5
+  }
+
+  const normalized = matchingAnswers.map((value) => normalizeRoadmapsAnswer(value))
+  const average =
+    normalized.reduce((sum, value) => sum + value, 0) / normalized.length
+  return clamp(average)
+}
+
+function scoreAdaptiveCandidate(question: RoadmapQuestion): number {
+  const mastery = getDimensionMastery(question.dimensionKey)
+  const uncertainty = 1 - Math.abs(mastery - 0.5) * 2
+  const developmentNeed = 1 - mastery
+  const coverageBonus =
+    answeredQuestionsCountForDimension(question.dimensionKey) === 0 ? 0.25 : 0
+  return developmentNeed * 0.55 + uncertainty * 0.3 + coverageBonus
+}
+
+function getUnansweredQuestions(): RoadmapQuestion[] {
+  return roadmapQuestions.filter(
+    (question) => !Number.isFinite(roadmapAnswers.value[question.id]),
+  )
+}
+
+function pickNextQuestionWithRl(): RoadmapQuestion | null {
+  const unanswered = getUnansweredQuestions()
+  if (!unanswered.length) {
+    return null
+  }
+
+  if (Math.random() < RL_EPSILON) {
+    return unanswered[Math.floor(Math.random() * unanswered.length)] ?? null
+  }
+
+  return unanswered.reduce((best, current) => {
+    if (!best) {
+      return current
+    }
+
+    return scoreAdaptiveCandidate(current) > scoreAdaptiveCandidate(best)
+      ? current
+      : best
+  }, null as RoadmapQuestion | null)
+}
+
+function setCurrentQuestionById(questionId: string | null) {
+  if (!questionId) {
+    currentQuestionIndex.value = 0
+    return
+  }
+
+  const nextIndex = roadmapQuestions.findIndex((question) => question.id === questionId)
+  currentQuestionIndex.value = nextIndex === -1 ? 0 : nextIndex
+}
 
 const sortedDimensionsDesc = computed(() =>
   [...blendedDimensions.value].sort((left, right) => right.value - left.value),
@@ -203,7 +330,7 @@ const readinessStatus = computed(() => {
 })
 
 const suggestedTechnologies = computed(() => {
-  const roleName = result.best_fit_role?.name?.toLowerCase() ?? ''
+  const roleName = result?.best_fit_role?.name?.toLowerCase() ?? ''
   if (roleName.includes('frontend')) {
     return ['HTML/CSS systems', 'JavaScript', 'Vue or React', 'Accessibility']
   }
@@ -224,20 +351,186 @@ const suggestedTechnologies = computed(() => {
   ]
 })
 
-const suggestedProjects = computed(() =>
-  topRoadmapTopics.value.slice(0, 3).map((topic, index) => ({
-    title: `${result.best_fit_role?.name ?? 'Software'} project ${index + 1}`,
-    copy:
-      topic.description ||
-      `Build a focused project that demonstrates ${topic.title.toLowerCase()}.`,
-  })),
-)
+type ProjectSuggestion = {
+  title: string
+  copy: string
+}
 
-const recommendedResources = [
-  'Official documentation for each suggested technology',
-  'Small portfolio project with README, screenshots, and tests',
-  'Peer review from a mentor, teacher, or student developer community',
-]
+function getRoleProjectTemplates(roleName: string): ProjectSuggestion[] {
+  if (roleName.includes('frontend')) {
+    return [
+      {
+        title: 'Accessibility-First Feature Sprint',
+        copy: 'Build a responsive feature with keyboard navigation, semantic landmarks, and screen-reader-tested flows.',
+      },
+      {
+        title: 'State & API Integration Module',
+        copy: 'Implement a real API-backed page with loading/error states, caching behavior, and clear UX fallbacks.',
+      },
+      {
+        title: 'Performance Refactor Case Study',
+        copy: 'Optimize rendering and bundle size, then document before/after metrics and engineering tradeoffs.',
+      },
+    ]
+  }
+
+  if (roleName.includes('backend')) {
+    return [
+      {
+        title: 'Service API + Data Integrity Pack',
+        copy: 'Design and implement REST endpoints with validation, pagination, structured errors, and migration-safe schema updates.',
+      },
+      {
+        title: 'Reliability & Observability Slice',
+        copy: 'Add request tracing, health checks, retry-safe jobs, and production-ready logging for one backend service.',
+      },
+      {
+        title: 'Auth + Permission Boundary',
+        copy: 'Implement role-based access with tests for authorization edges and abuse-case handling.',
+      },
+    ]
+  }
+
+  if (roleName.includes('data')) {
+    return [
+      {
+        title: 'Pipeline-to-Dashboard Flow',
+        copy: 'Build an ETL pipeline from raw data to a clean analytics table and publish a dashboard with key decisions.',
+      },
+      {
+        title: 'Data Quality Guardrails',
+        copy: 'Create validation checks, anomaly alerts, and a quality report for critical business dimensions.',
+      },
+      {
+        title: 'Experiment Analysis Notebook',
+        copy: 'Run a hypothesis-driven analysis with reproducible notebook steps and clear recommendation notes.',
+      },
+    ]
+  }
+
+  if (roleName.includes('devops')) {
+    return [
+      {
+        title: 'CI/CD Reliability Upgrade',
+        copy: 'Implement lint/test/security gates, artifact versioning, and rollback-safe deploy strategy in one pipeline.',
+      },
+      {
+        title: 'Infra Provisioning Baseline',
+        copy: 'Provision a minimal environment with IaC, secrets handling, and reproducible deployment scripts.',
+      },
+      {
+        title: 'Incident Readiness Drill',
+        copy: 'Create monitoring alerts, runbook steps, and a post-incident review template for common outages.',
+      },
+    ]
+  }
+
+  return [
+    {
+      title: 'End-to-End Delivery Case',
+      copy: 'Take one feature from requirements to release with tests, documentation, and measurable outcome.',
+    },
+    {
+      title: 'Quality & Maintenance Sprint',
+      copy: 'Improve an existing module by fixing defects, increasing test confidence, and reducing change risk.',
+    },
+    {
+      title: 'Architecture Communication Brief',
+      copy: 'Document one technical decision with constraints, alternatives, risks, and operational impact.',
+    },
+  ]
+}
+
+const suggestedProjects = computed(() => {
+  const roleName = survey2RoleTitle.value.toLowerCase()
+  const templates = getRoleProjectTemplates(roleName)
+  const topicHints = topRoadmapTopics.value.slice(0, 3)
+
+  return templates.map((template, index) => {
+    const topic = topicHints[index]
+    if (!topic) {
+      return template
+    }
+
+    return {
+      title: template.title,
+      copy: `${template.copy} Focus scope on ${topic.title.toLowerCase()}.`,
+    }
+  })
+})
+
+const recommendedRoadmapActions = computed(() => {
+  const roleName = survey2RoleTitle.value.toLowerCase()
+  const weakest = sortedDimensionsDesc.value.slice(-4)
+
+  return weakest.map((dimension) => {
+    const defaultAction =
+      catalogByKey.value.get(dimension.key)?.low_score_action ??
+      'Practice this area while completing your next roadmap topic.'
+
+    let roleActionPrefix = 'Execution focus'
+    if (roleName.includes('frontend')) roleActionPrefix = 'UI delivery focus'
+    else if (roleName.includes('backend'))
+      roleActionPrefix = 'Service reliability focus'
+    else if (roleName.includes('data'))
+      roleActionPrefix = 'Data trust focus'
+    else if (roleName.includes('devops'))
+      roleActionPrefix = 'Platform stability focus'
+
+    return {
+      dimension: dimension.label,
+      action: `${roleActionPrefix}: ${defaultAction}`,
+    }
+  })
+})
+
+const recommendedResources = computed(() => {
+  const roleName = survey2RoleTitle.value.toLowerCase()
+  const shared = [
+    'Project README template: problem, architecture, tradeoffs, tests, and next improvements',
+    'Engineering review checklist for quality, risk, and maintainability',
+  ]
+
+  if (roleName.includes('frontend')) {
+    return [
+      ...shared,
+      'MDN Web Docs for platform APIs and browser behavior',
+      'WCAG + accessible component patterns reference',
+      'Frontend performance audits with Lighthouse and DevTools',
+    ]
+  }
+  if (roleName.includes('backend')) {
+    return [
+      ...shared,
+      'REST API design guidelines and OpenAPI examples',
+      'PostgreSQL docs for schema/index/query fundamentals',
+      'Observability stack docs (structured logging, metrics, traces)',
+    ]
+  }
+  if (roleName.includes('data')) {
+    return [
+      ...shared,
+      'SQL style and query optimization references',
+      'Pandas + data validation framework documentation',
+      'Dashboard storytelling and metric design examples',
+    ]
+  }
+  if (roleName.includes('devops')) {
+    return [
+      ...shared,
+      'Docker and container runtime production practices',
+      'CI/CD pipeline hardening and rollback strategy guides',
+      'Cloud monitoring and incident response runbook examples',
+    ]
+  }
+
+  return [
+    ...shared,
+    'Official docs for your selected framework and runtime',
+    'Testing strategy guide for unit, integration, and end-to-end coverage',
+    'Architecture decision record (ADR) examples for technical communication',
+  ]
+})
 
 async function submitRoadmaps() {
   if (!hasAnsweredAll.value) {
@@ -247,18 +540,25 @@ async function submitRoadmaps() {
   isSavingRoadmaps.value = true
 
   try {
-    const saved = await saveRoadmapsState(route.params.sessionId, {
+    const savePromise = saveRoadmapsState(route.params.sessionId, {
       completed: true,
       answers: { ...roadmapAnswers.value },
       completed_at: new Date().toISOString(),
     })
+    const timeoutPromise = new Promise<never>((_resolve, reject) => {
+      setTimeout(() => reject(new Error('Save timeout')), 15000)
+    })
+    const saved = await Promise.race([savePromise, timeoutPromise])
 
     roadmapAnswers.value = { ...saved.answers }
     isRoadmapsComplete.value = saved.completed
   } catch (error) {
     toast.add({
       title: 'Could not save Roadmaps',
-      description: getErrorMessage(error as ApiError),
+      description:
+        error instanceof Error && error.message === 'Save timeout'
+          ? 'Saving took too long. Please try again.'
+          : getErrorMessage(error as ApiError),
       color: 'error',
     })
   } finally {
@@ -290,8 +590,9 @@ function goToNextQuestion() {
     return
   }
 
-  if (currentQuestionIndex.value < roadmapQuestions.length - 1) {
-    currentQuestionIndex.value += 1
+  const nextQuestion = pickNextQuestionWithRl()
+  if (nextQuestion) {
+    setCurrentQuestionById(nextQuestion.id)
     return
   }
 
@@ -300,12 +601,21 @@ function goToNextQuestion() {
 
 onMounted(() => {
   if (!roadmapsState.completed) {
-    const firstUnanswered = roadmapQuestions.findIndex(
-      (question) => !Number.isFinite(roadmapsState.answers[question.id]),
-    )
-    currentQuestionIndex.value =
-      firstUnanswered === -1 ? roadmapQuestions.length - 1 : firstUnanswered
+    setCurrentQuestionById(pickNextQuestionWithRl()?.id ?? null)
   }
+})
+
+const displayPersonalitySignals = computed(() => {
+  if (evaluation.value.personalitySignals.length) {
+    return evaluation.value.personalitySignals
+  }
+
+  const roleName = survey2RoleTitle.value
+  return [
+    `Current profile is calibrated for ${roleName}.`,
+    `Survey 2 scores reflect execution habits across PSP and SDLC dimensions.`,
+    'Use low-scoring dimensions as immediate next-improvement priorities.',
+  ]
 })
 
 function downloadFile(filename: string, content: string, mimeType: string) {
@@ -332,7 +642,7 @@ function exportRoadmapReport() {
   const lines = [
     'CompetencyX Roadmaps - PSP + SDLC Roadmap',
     `Session: ${route.params.sessionId}`,
-    `Best fit role: ${result.best_fit_role?.name ?? 'N/A'}`,
+    `Best fit role: ${result?.best_fit_role?.name ?? 'N/A'}`,
     '',
     'Strengths:',
     ...exportStrengths.map((item) => `- ${item}`),
@@ -347,7 +657,7 @@ function exportRoadmapReport() {
     ...roadmapsCatalog.role_guidance.map((item) => `- ${item}`),
     '',
     'Recommended Actions:',
-    ...recommendedActions.value.map(
+    ...recommendedRoadmapActions.value.map(
       (item) => `- ${item.dimension}: ${item.action}`,
     ),
     '',
@@ -407,7 +717,7 @@ useSeoMeta({
       <h1 class="mt-4 font-display text-4xl leading-tight text-ink md:text-6xl">
         {{
           isRoadmapsComplete
-            ? `${result.best_fit_role?.name ?? 'Software role'} readiness roadmap`
+            ? `${survey2RoleTitle} readiness roadmap`
             : 'Calibrate the skills behind your recommended role'
         }}
       </h1>
@@ -418,6 +728,20 @@ useSeoMeta({
             : 'Answer a short set of role-aware skill prompts. The full chart, roadmap, and recommendations stay hidden until this step is complete.'
         }}
       </p>
+      <div class="mt-5 flex flex-wrap items-center gap-2">
+        <span
+          v-if="preferredRoleName"
+          class="rounded-full border border-border-subtle bg-surface-card px-3 py-1 text-xs font-semibold uppercase tracking-[0.06em] text-ink"
+        >
+          Known role: {{ preferredRoleName }}
+        </span>
+        <span
+          v-if="bestFitRoleName"
+          class="rounded-full border border-accent-soft bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.06em] text-accent"
+        >
+          Discovery result: {{ bestFitRoleName }}
+        </span>
+      </div>
       <div v-if="isRoadmapsComplete" class="mt-6 grid gap-3 md:grid-cols-3">
         <div class="metric-card p-4">
           <p class="eyebrow">Overall score</p>
@@ -434,7 +758,7 @@ useSeoMeta({
         <div class="metric-card p-4">
           <p class="eyebrow">Best-fit role</p>
           <p class="mt-3 text-2xl font-black text-ink">
-            {{ result.best_fit_role?.name ?? 'Still calibrating' }}
+            {{ survey2RoleTitle }}
           </p>
         </div>
       </div>
@@ -599,7 +923,7 @@ useSeoMeta({
 
       <div class="mt-6 space-y-3">
         <p
-          v-for="signal in evaluation.personalitySignals"
+          v-for="signal in displayPersonalitySignals"
           :key="signal"
           class="rounded-md border border-border-subtle bg-surface-card p-4 text-sm leading-6 text-ink-soft"
         >
@@ -644,7 +968,7 @@ useSeoMeta({
       </h2>
       <div class="mt-6 grid gap-3 md:grid-cols-2">
         <div
-          v-for="item in recommendedActions"
+          v-for="item in recommendedRoadmapActions"
           :key="item.dimension"
           class="rounded-md border border-border-subtle bg-surface-card p-4"
         >

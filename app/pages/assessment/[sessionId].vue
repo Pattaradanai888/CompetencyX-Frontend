@@ -201,11 +201,10 @@ useSeoMeta({
             {{ phaseLabel }}
           </span>
           <span
+            v-if="isAwaitingResolution"
             class="rounded-sm border border-accent-soft bg-accent/10 px-3 py-1 text-[0.72rem] font-bold uppercase tracking-[0.08em] text-accent"
           >
-            {{
-              isAwaitingResolution ? 'Awaiting resolution' : 'Decision ready'
-            }}
+            Awaiting resolution
           </span>
         </div>
         <p class="text-sm text-ink-soft">

@@ -4,13 +4,19 @@ import { ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import StartPage from '../../app/pages/assessment/start.vue'
 
-const { navigateToMock, listRolesMock, listRoleTopicsMock, createSessionMock } =
-  vi.hoisted(() => ({
-    navigateToMock: vi.fn(),
-    listRolesMock: vi.fn(),
-    listRoleTopicsMock: vi.fn(),
-    createSessionMock: vi.fn(),
-  }))
+const {
+  navigateToMock,
+  listRolesMock,
+  listRoleTopicsMock,
+  createSessionMock,
+  getSessionMock,
+} = vi.hoisted(() => ({
+  navigateToMock: vi.fn(),
+  listRolesMock: vi.fn(),
+  listRoleTopicsMock: vi.fn(),
+  createSessionMock: vi.fn(),
+  getSessionMock: vi.fn(),
+}))
 
 mockNuxtImport('navigateTo', () => navigateToMock)
 mockNuxtImport('useRoute', () => () => ({
@@ -28,6 +34,7 @@ vi.mock('~/composables/useCatalogApi', () => ({
 vi.mock('~/composables/useAssessmentSession', () => ({
   useAssessmentSession: () => ({
     createSession: createSessionMock,
+    getSession: getSessionMock,
     isSubmitting: ref(false),
     lastSessionId: ref(null),
   }),
@@ -60,6 +67,10 @@ describe('assessment start page', () => {
       },
     ])
     createSessionMock.mockResolvedValue({ id: 'session-1' })
+    getSessionMock.mockResolvedValue({
+      id: 'session-1',
+      current_question: { id: 101, stage: 'skill' },
+    })
     localStorage.clear()
   })
 
@@ -67,12 +78,12 @@ describe('assessment start page', () => {
     const wrapper = await mountSuspended(StartPage)
 
     await flushPromises()
-    await wrapper.get('button[aria-pressed="false"]').trigger('click')
+    await wrapper.get('button[role="radio"][aria-checked="false"]').trigger('click')
     await wrapper.get('button.cx-button-primary').trigger('click')
 
     expect(createSessionMock).toHaveBeenCalledWith({
       preferred_role_slug: 'backend-engineer',
     })
-    expect(navigateToMock).toHaveBeenCalledWith('/assessment/session-1')
+    expect(navigateToMock).toHaveBeenCalledWith('/roadmaps/session-1')
   })
 })
