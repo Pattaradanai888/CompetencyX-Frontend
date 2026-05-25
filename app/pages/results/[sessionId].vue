@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { motion } from 'motion-v'
 import {
-  formatConfidencePercent,
   sortRankedRolesDescending,
 } from '~/utils/assessment'
 import { useAssessmentResults } from '~/composables/useAssessmentResults'
@@ -74,12 +73,27 @@ const primaryRole = computed(
 
 const primaryScore = computed(
   () =>
+    primaryRankedRole.value?.fit_share ??
     primaryRankedRole.value?.fit_score ??
     results.value?.best_fit_confidence ??
     0,
 )
 
-const primaryScorePercent = computed(() => Math.round(primaryScore.value * 100))
+function normalizeDisplayScore(value: number): number {
+  if (Number.isNaN(value)) return 0
+  if (value <= 0) return 0
+  if (value >= 1) return 1
+  return value
+}
+
+const primaryScorePercent = computed(() =>
+  Math.round(normalizeDisplayScore(primaryScore.value) * 100),
+)
+
+function getDisplayPercentForRole(role: RankedRoleInsight): string {
+  const raw = role.fit_share ?? role.fit_score ?? 0
+  return `${Math.round(normalizeDisplayScore(raw) * 100)}%`
+}
 
 function getRoleDescription(role: RankedRoleInsight | Role | null): string {
   if (!role) {
@@ -120,6 +134,10 @@ onMounted(async () => {
 
 <template>
   <main v-if="results" id="main-content" class="page-wrap">
+    <div class="mb-4">
+      <NuxtLink to="/" class="editorial-link text-sm">Back to landing page</NuxtLink>
+    </div>
+
     <motion.section
       class="result-spotlight mx-auto max-w-5xl p-6 text-center md:p-8 lg:p-10"
       :initial="{ opacity: 0, y: 20 }"
@@ -146,7 +164,7 @@ onMounted(async () => {
             >
               <div class="text-center">
                 <p class="data-value text-4xl font-black text-ink">
-                  {{ formatConfidencePercent(primaryScore) }}
+                  {{ primaryScorePercent }}%
                 </p>
                 <p
                   class="mt-1 text-xs font-extrabold uppercase tracking-[0.1em] text-ink-soft"
@@ -179,7 +197,7 @@ onMounted(async () => {
             {{ getRoleDescription(primaryRankedRole || primaryRole) }}
           </p>
           <p class="mt-5 data-value text-3xl font-black text-accent">
-            {{ formatConfidencePercent(primaryScore) }}
+            {{ primaryScorePercent }}%
           </p>
         </article>
 
@@ -192,13 +210,25 @@ onMounted(async () => {
           <div class="mt-3 flex items-start justify-between gap-4">
             <h2 class="text-2xl font-black text-ink">{{ role.name }}</h2>
             <p class="data-value text-lg font-black text-accent">
-              {{ formatConfidencePercent(role.fit_score) }}
+              {{ getDisplayPercentForRole(role) }}
             </p>
           </div>
           <p class="mt-3 text-sm leading-7 text-ink-soft">
             {{ getRoleDescription(role) }}
           </p>
         </article>
+      </section>
+
+      <section class="mt-8 rounded-xl border border-border-subtle bg-surface-card p-5 text-left md:p-6">
+        <h2 class="text-lg font-bold text-ink">How to read these numbers</h2>
+        <p class="mt-2 text-sm leading-7 text-ink-soft">
+          These percentages are normalized match shares, not raw model scores.
+          Higher means stronger alignment with your Survey 1 answers.
+        </p>
+        <p class="mt-2 text-sm leading-7 text-ink-soft">
+          Use the top role as your primary direction, and alternatives as nearby
+          paths you can still explore.
+        </p>
       </section>
 
       <NuxtLink

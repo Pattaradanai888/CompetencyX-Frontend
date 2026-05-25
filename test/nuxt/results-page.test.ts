@@ -134,12 +134,14 @@ describe('results page', () => {
     expect(wrapper.text()).toContain(
       'Backend Engineer looks like your strongest role direction.',
     )
-    expect(wrapper.text()).toContain('81%')
+    expect(wrapper.text()).toContain('62%')
     expect(wrapper.text()).toContain('Data Engineer')
-    expect(wrapper.text()).toContain('74%')
+    expect(wrapper.text()).toContain('24%')
     expect(wrapper.text()).toContain('DevOps Engineer')
-    expect(wrapper.text()).toContain('68%')
+    expect(wrapper.text()).toContain('14%')
     expect(wrapper.text()).toContain('Systems Design')
+    expect(wrapper.text()).toContain('How to read these numbers')
+    expect(wrapper.text()).toContain('Back to landing page')
     expect(wrapper.text()).toContain('Continue to Phase 2')
     expect(wrapper.text()).not.toContain('API Design')
     expect(wrapper.text()).not.toContain('Resolved')
