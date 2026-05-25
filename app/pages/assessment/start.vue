@@ -170,12 +170,6 @@ const resultSummary = computed(() => {
   return `Showing ${filteredRoles.value.length} of ${roles.value.length} roles.`
 })
 
-const onboardingSteps = [
-  'Choose known role or open discovery',
-  'Complete the right assessment phase',
-  'Review role fit, skill gaps, and roadmap',
-]
-
 const decisionCards = [
   {
     mode: 'known' as const,
@@ -283,7 +277,7 @@ useSeoMeta({
       <NuxtLink
         v-if="lastSessionId"
         :to="`/assessment/${lastSessionId}`"
-        class="inline-flex items-center justify-center rounded-full border border-ink/12 bg-white/85 px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:-translate-y-0.5 hover:border-accent/35 hover:text-accent"
+        class="inline-flex items-center justify-center rounded-full border border-border-subtle bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:-translate-y-0.5 hover:border-accent/35 hover:text-accent"
       >
         Resume previous session
       </NuxtLink>
@@ -364,21 +358,18 @@ useSeoMeta({
           </button>
         </div>
 
-        <ol
-          class="assessment-stagebar mt-6 grid gap-3 border border-border-subtle bg-surface-muted p-3 sm:grid-cols-3"
-          aria-label="Assessment onboarding steps"
-        >
-          <li
-            v-for="(step, index) in onboardingSteps"
-            :key="step"
-            class="rounded-sm border border-border-subtle bg-paper-strong p-3"
-          >
-            <p class="eyebrow">Step {{ index + 1 }}</p>
-            <p class="mt-2 text-sm font-semibold leading-6 text-ink">
-              {{ step }}
-            </p>
-          </li>
-        </ol>
+        <div class="assessment-stagebar mt-6 border border-border-subtle bg-surface-muted p-4">
+          <p class="text-sm font-semibold text-ink">
+            {{
+              decisionMode === 'known'
+                ? 'Next: choose your target role below, then start Phase 2.'
+                : 'Next: start Phase 1 to discover your best-fit role first.'
+            }}
+          </p>
+          <p class="mt-1 text-xs leading-6 text-ink-soft">
+            You can switch modes any time before starting.
+          </p>
+        </div>
 
         <div
           class="mt-6 rounded-md border border-border-subtle bg-surface-muted p-4"
@@ -581,7 +572,7 @@ useSeoMeta({
       </section>
 
       <aside
-        class="paper-panel rounded-4xl p-6 md:sticky md:top-6 md:p-8"
+        class="paper-panel sticky top-4 self-start rounded-4xl p-6 md:top-6 md:max-h-[calc(100vh-2.5rem)] md:overflow-auto md:p-8"
         aria-labelledby="roadmap-preview-title"
       >
         <p class="eyebrow">Roadmap preview</p>

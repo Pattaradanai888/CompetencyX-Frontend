@@ -1153,12 +1153,17 @@ button:focus-visible,
 
   .glass-panel,
   .paper-panel,
+  .flow-node,
   .option-card,
   .answer-option,
   .result-spotlight,
   .result-role-card {
     border-color: var(--color-border-subtle);
     background: rgba(17, 24, 36, 0.82);
+  }
+
+  .flow-node::before {
+    background: linear-gradient(180deg, #fb923c, #22c55e);
   }
 
   .app-header {
@@ -1182,5 +1187,16 @@ button:focus-visible,
 
   .cx-button-primary:hover {
     background: #dbeafe;
+  }
+
+  .option-card[aria-pressed='true'],
+  .option-card[role='radio'][aria-checked='true'] {
+    border-color: rgba(251, 146, 60, 0.7);
+    background: linear-gradient(
+      180deg,
+      rgba(30, 41, 59, 0.96),
+      rgba(17, 24, 39, 0.96)
+    );
+    color: var(--color-ink);
   }
 }

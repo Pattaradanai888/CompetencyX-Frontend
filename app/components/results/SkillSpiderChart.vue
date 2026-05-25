@@ -106,7 +106,7 @@ const hasDimensions = computed(() => props.dimensions.length > 0)
 
 <template>
   <div
-    class="rounded-[1.75rem] border border-border-subtle bg-surface-elevated/95 p-4 shadow-[0_24px_60px_rgba(29,42,39,0.08)] md:p-5"
+    class="skill-spider rounded-[1.75rem] border border-border-subtle bg-surface-elevated/95 p-4 shadow-[0_24px_60px_rgba(29,42,39,0.08)] md:p-5"
   >
     <div class="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
       <p
@@ -123,20 +123,20 @@ const hasDimensions = computed(() => props.dimensions.length > 0)
       <span
         v-for="step in ringSteps"
         :key="`scale-chip-${step}`"
-        class="rounded-full bg-emerald-50 px-2.5 py-1 text-[0.68rem] font-bold text-accent"
+        class="rounded-full bg-accent/12 px-2.5 py-1 text-[0.68rem] font-bold text-accent"
       >
         {{ Math.round(step * scaleMax) }}
       </span>
     </div>
     <div
       v-if="hasDimensions"
-      class="overflow-hidden rounded-[1.5rem] border border-border-subtle bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.14),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(243,247,244,0.92))] px-3 py-4 md:px-5"
+      class="overflow-hidden rounded-[1.5rem] border border-border-subtle bg-surface-muted px-3 py-4 md:px-5"
     >
       <div
-        class="mx-auto mb-4 flex w-full max-w-[22rem] items-center justify-between gap-3 rounded-full border border-emerald-900/8 bg-white/80 px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-ink-soft"
+        class="mx-auto mb-4 flex w-full max-w-[22rem] items-center justify-between gap-3 rounded-full border border-border-subtle bg-surface-elevated px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-ink-soft"
       >
         <span>Survey 2 live blend</span>
-        <span class="rounded-full bg-emerald-100 px-2 py-1 text-accent">
+        <span class="rounded-full bg-accent/14 px-2 py-1 text-accent">
           {{ axes.length }} dimensions
         </span>
       </div>
@@ -159,7 +159,7 @@ const hasDimensions = computed(() => props.dimensions.length > 0)
                 .join(' ')
             "
             fill="none"
-            stroke="var(--color-ink)"
+            stroke="var(--chart-grid)"
             stroke-width="1"
           />
         </g>
@@ -172,14 +172,14 @@ const hasDimensions = computed(() => props.dimensions.length > 0)
             :y1="center"
             :x2="axis.edge.x"
             :y2="axis.edge.y"
-            stroke="rgba(29, 42, 39, 0.18)"
+            stroke="var(--chart-axis)"
             stroke-width="1"
           />
         </g>
 
         <polygon
           :points="polygonPoints"
-          fill="rgba(29, 107, 87, 0.26)"
+          fill="var(--chart-fill)"
           stroke="var(--color-accent)"
           stroke-width="2"
         />
@@ -218,7 +218,7 @@ const hasDimensions = computed(() => props.dimensions.length > 0)
             :text-anchor="axis.textAnchor"
             dominant-baseline="middle"
             font-size="11"
-            fill="var(--color-ink)"
+            fill="var(--chart-label)"
             font-weight="700"
           >
             <tspan
@@ -241,3 +241,21 @@ const hasDimensions = computed(() => props.dimensions.length > 0)
     </p>
   </div>
 </template>
+
+<style scoped>
+.skill-spider {
+  --chart-grid: rgba(47, 38, 31, 0.2);
+  --chart-axis: rgba(47, 38, 31, 0.18);
+  --chart-fill: rgba(29, 107, 87, 0.26);
+  --chart-label: var(--color-ink);
+}
+
+@media (prefers-color-scheme: dark) {
+  .skill-spider {
+    --chart-grid: rgba(226, 232, 240, 0.24);
+    --chart-axis: rgba(226, 232, 240, 0.2);
+    --chart-fill: rgba(251, 146, 60, 0.24);
+    --chart-label: rgba(238, 245, 247, 0.96);
+  }
+}
+</style>

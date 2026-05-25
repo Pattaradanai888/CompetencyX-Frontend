@@ -3,17 +3,35 @@ import { motion } from 'motion-v'
 import RoleCard from '~/components/catalog/RoleCard.vue'
 import { useCatalogApi } from '~/composables/useCatalogApi'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
-import type { Role } from '~/shared/types/assessment'
+import type { AssessmentSession, Role } from '~/shared/types/assessment'
 
 const { listRoles } = useCatalogApi()
-const { lastSessionId } = useAssessmentSession()
+const { getSession, lastSessionId } = useAssessmentSession()
 const prefersReduced = useReducedMotion()
+const lastSessionSnapshot = ref<AssessmentSession | null>(null)
 
 const { data: roles, error } = await useAsyncData('catalog-roles', listRoles, {
   default: () => [] as Role[],
 })
 
 const featuredRoles = computed(() => roles.value.slice(0, 3))
+
+const lastSessionRoute = computed(() => {
+  if (!lastSessionId.value) {
+    return null
+  }
+  if (lastSessionSnapshot.value?.status === 'completed') {
+    return `/results/${lastSessionId.value}`
+  }
+  return `/assessment/${lastSessionId.value}`
+})
+
+const lastSessionLabel = computed(() => {
+  if (lastSessionSnapshot.value?.status === 'completed') {
+    return 'View last evaluation'
+  }
+  return 'Resume last session'
+})
 
 const processSteps = [
   {
@@ -46,39 +64,122 @@ const studentBenefits = [
 ]
 
 const roleFamilies = [
-  ['Frontend', 'Interfaces, React, responsive systems'],
-  ['Backend', 'APIs, databases, authentication'],
-  ['Full Stack', 'End-to-end product engineering'],
-  ['Mobile', 'iOS, Android, cross-platform apps'],
-  ['DevOps', 'Deployment, automation, reliability'],
-  ['Data', 'Pipelines, analytics, machine learning'],
-  ['QA', 'Quality strategy and test automation'],
-  ['Product', 'Discovery, prioritization, delivery'],
+  {
+    name: 'Frontend',
+    icon: '🖥️',
+    description: 'Interfaces, React, responsive systems',
+    details:
+      'Best for students who enjoy user experience, visual polish, and turning product ideas into interactive pages.',
+  },
+  {
+    name: 'Backend',
+    icon: '🧠',
+    description: 'APIs, databases, authentication',
+    details:
+      'Focused on service logic, data reliability, and the server-side foundations that power applications.',
+  },
+  {
+    name: 'Full Stack',
+    icon: '🧩',
+    description: 'End-to-end product engineering',
+    details:
+      'Balances frontend and backend responsibilities for complete feature delivery across the stack.',
+  },
+  {
+    name: 'Mobile',
+    icon: '📱',
+    description: 'iOS, Android, cross-platform apps',
+    details:
+      'Ideal for building app-first experiences with performance, device capabilities, and touch UX in mind.',
+  },
+  {
+    name: 'DevOps',
+    icon: '⚙️',
+    description: 'Deployment, automation, reliability',
+    details:
+      'Centers on CI/CD, infrastructure, observability, and stable software delivery in production.',
+  },
+  {
+    name: 'Data',
+    icon: '📊',
+    description: 'Pipelines, analytics, machine learning',
+    details:
+      'For students who like transforming raw data into clear metrics, models, and business decisions.',
+  },
+  {
+    name: 'QA',
+    icon: '🧪',
+    description: 'Quality strategy and test automation',
+    details:
+      'Emphasizes defect prevention, test design, automation, and confidence before release.',
+  },
+  {
+    name: 'Product',
+    icon: '🧭',
+    description: 'Discovery, prioritization, delivery',
+    details:
+      'For coordinating user value, scope decisions, and iterative outcomes across cross-functional teams.',
+  },
 ]
 
 const timeline = [
-  'Start with a role target or open discovery',
-  'Answer focused personality and preference prompts',
-  'Review the strongest role match and alternatives',
-  'Complete the role-specific skill assessment',
-  'Use the final roadmap to plan your next projects',
+  {
+    title: 'Start path',
+    copy: 'Choose known role or open discovery',
+    icon: '◎',
+  },
+  {
+    title: 'Survey 1',
+    copy: 'Answer preference and personality prompts',
+    icon: '◉',
+  },
+  {
+    title: 'Role match',
+    copy: 'Review primary role and alternatives',
+    icon: '◈',
+  },
+  {
+    title: 'Survey 2',
+    copy: 'Complete role-aware skill assessment',
+    icon: '◍',
+  },
+  {
+    title: 'Roadmap',
+    copy: 'Get project-ready action plan and next steps',
+    icon: '◆',
+  },
 ]
 
 const faqs = [
   {
+    icon: '⏭️',
     question: 'Can I skip the personality assessment?',
     answer:
       'Yes. If you already know your preferred role, select it during onboarding and continue directly into the skill-focused path.',
   },
   {
+    icon: '🎯',
     question: 'Is this only for beginners?',
     answer:
       'No. The flow works for students who are exploring roles and for students who already have experience but need a clearer roadmap.',
   },
   {
+    icon: '🗺️',
     question: 'What do I get at the end?',
     answer:
       'You get a role-fit read, skill breakdown, gap topics, and a roadmap that turns the result into concrete next steps.',
+  },
+  {
+    icon: '🔁',
+    question: 'Can I retake the assessment later?',
+    answer:
+      'Yes. You can restart the flow as your skills evolve and compare your newer roadmap against previous results.',
+  },
+  {
+    icon: '🧾',
+    question: 'Will this replace my portfolio?',
+    answer:
+      'No. It complements your portfolio by helping you prioritize what to build next and which skill gaps to close first.',
   },
 ]
 
@@ -86,6 +187,18 @@ useSeoMeta({
   title: 'CompetencyX | Adaptive roadmap assessment',
   description:
     'Start an adaptive competency assessment and get a role roadmap tailored to your strengths, gaps, and next learning step.',
+})
+
+onMounted(async () => {
+  if (!lastSessionId.value) {
+    return
+  }
+
+  try {
+    lastSessionSnapshot.value = await getSession(lastSessionId.value)
+  } catch {
+    lastSessionSnapshot.value = null
+  }
 })
 </script>
 
@@ -124,11 +237,11 @@ useSeoMeta({
             Start discovery
           </NuxtLink>
           <NuxtLink
-            v-if="lastSessionId"
-            :to="`/assessment/${lastSessionId}`"
+            v-if="lastSessionId && lastSessionRoute"
+            :to="lastSessionRoute"
             class="cx-button-secondary"
           >
-            Resume last session
+            {{ lastSessionLabel }}
           </NuxtLink>
           <NuxtLink to="#how-it-works" class="cx-button-secondary">
             See the flow
@@ -158,7 +271,7 @@ useSeoMeta({
           class="overflow-hidden rounded-xl bg-[linear-gradient(135deg,rgba(234,112,31,0.18),rgba(255,255,255,0.86)_42%,rgba(33,122,111,0.13))] p-5 text-left md:p-8"
         >
           <div
-            class="rounded-lg border border-white/75 bg-white/78 p-4 shadow-sm backdrop-blur md:p-6"
+            class="rounded-lg border border-border-subtle bg-surface-elevated/95 p-4 shadow-sm backdrop-blur md:p-6"
           >
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -180,7 +293,7 @@ useSeoMeta({
               <div
                 v-for="(step, index) in processSteps"
                 :key="step.title"
-                class="rounded-lg border border-border-subtle bg-white/80 p-4"
+                class="rounded-lg border border-border-subtle bg-surface-card p-4"
               >
                 <p class="data-value text-sm font-black text-accent">
                   0{{ index + 1 }}
@@ -267,7 +380,7 @@ useSeoMeta({
                 class="mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-accent text-xs font-black text-white"
                 aria-hidden="true"
               >
-                ✓
+                ?
               </span>
               <p class="text-sm font-semibold leading-6 text-ink">
                 {{ benefit }}
@@ -278,15 +391,26 @@ useSeoMeta({
 
         <div class="paper-panel p-6">
           <p class="eyebrow">Software roles overview</p>
+          <p class="mt-2 text-sm leading-7 text-ink-soft">
+            Each role path focuses on different problem types, workflows, and
+            technical depth. Pick the one that aligns with how you prefer to
+            think and build.
+          </p>
           <div class="mt-5 grid gap-3 sm:grid-cols-2">
             <div
-              v-for="[name, description] in roleFamilies"
-              :key="name"
+              v-for="role in roleFamilies"
+              :key="role.name"
               class="rounded-md border border-border-subtle bg-surface-card p-4"
             >
-              <p class="font-extrabold text-ink">{{ name }}</p>
+              <div class="flex items-center gap-2">
+                <span class="text-base" aria-hidden="true">{{ role.icon }}</span>
+                <p class="font-extrabold text-ink">{{ role.name }}</p>
+              </div>
               <p class="mt-2 text-sm leading-6 text-ink-soft">
-                {{ description }}
+                {{ role.description }}
+              </p>
+              <p class="mt-2 text-xs leading-6 text-ink-soft/90">
+                {{ role.details }}
               </p>
             </div>
           </div>
@@ -312,14 +436,28 @@ useSeoMeta({
       <ol class="mt-8 grid gap-3 lg:grid-cols-5">
         <li
           v-for="(item, index) in timeline"
-          :key="item"
-          class="flow-node min-h-40 p-4 pl-5"
+          :key="item.title"
+          class="flow-node relative min-h-44 p-4 pl-5"
         >
-          <p class="data-value text-sm font-black text-accent">
-            0{{ index + 1 }}
+          <span
+            v-if="index < timeline.length - 1"
+            class="pointer-events-none absolute -right-2 top-1/2 hidden -translate-y-1/2 text-accent/60 lg:inline"
+            aria-hidden="true"
+            >→</span
+          >
+          <div class="flex items-center justify-between gap-3">
+            <p class="data-value text-sm font-black text-accent">
+              0{{ index + 1 }}
+            </p>
+            <span class="text-lg font-black text-accent" aria-hidden="true">
+              {{ item.icon }}
+            </span>
+          </div>
+          <p class="mt-4 text-base font-extrabold leading-6 text-ink">
+            {{ item.title }}
           </p>
-          <p class="mt-4 text-sm font-extrabold leading-6 text-ink">
-            {{ item }}
+          <p class="mt-2 text-sm leading-6 text-ink-soft">
+            {{ item.copy }}
           </p>
         </li>
       </ol>
@@ -337,7 +475,7 @@ useSeoMeta({
         </div>
         <NuxtLink
           to="/assessment/start"
-          class="editorial-link hidden text-sm sm:inline-flex"
+          class="cx-button-primary hidden text-sm sm:inline-flex"
         >
           Open onboarding
         </NuxtLink>
@@ -369,15 +507,35 @@ useSeoMeta({
           </h2>
         </div>
         <div class="grid gap-3">
+          <p class="text-sm leading-7 text-ink-soft">
+            Common questions before starting the assessment flow.
+          </p>
           <details
             v-for="item in faqs"
             :key="item.question"
             class="metric-card group p-5"
           >
             <summary
-              class="cursor-pointer list-none text-base font-extrabold text-ink"
+              class="flex cursor-pointer list-none items-center justify-between gap-3 text-base font-extrabold text-ink"
             >
-              {{ item.question }}
+              <span class="flex items-center gap-2">
+                <span aria-hidden="true">{{ item.icon }}</span>
+                <span>{{ item.question }}</span>
+              </span>
+              <span
+                class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border-subtle bg-surface-elevated text-ink-soft transition group-open:rotate-180"
+                aria-hidden="true"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path
+                    d="M3 5L7 9L11 5"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </span>
             </summary>
             <p class="mt-3 text-sm leading-7 text-ink-soft">
               {{ item.answer }}
@@ -404,3 +562,4 @@ useSeoMeta({
     </footer>
   </main>
 </template>
+
