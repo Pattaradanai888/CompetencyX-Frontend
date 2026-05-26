@@ -11,6 +11,7 @@ const { createSession, getSession, isSubmitting, lastSessionId } =
   useAssessmentSession()
 
 const PREFERRED_ROLE_KEY = 'competencyx:preferred-role'
+const SELECTED_LANGUAGE_KEY = 'competencyx:preferred-language'
 
 const preferredRoleSlug = ref<string | null>(null)
 const pageError = ref<ApiError | null>(null)
@@ -18,6 +19,8 @@ const toast = useToast()
 const decisionMode = ref<'known' | 'unsure'>(
   typeof route.query.role === 'string' ? 'known' : 'unsure',
 )
+
+const currentLanguage = ref<'en' | 'th'>('en')
 
 if (typeof route.query.role === 'string') {
   preferredRoleSlug.value = route.query.role
@@ -31,6 +34,137 @@ onMounted(() => {
   if (stored) {
     preferredRoleSlug.value = stored
     decisionMode.value = 'known'
+  }
+
+  const storedLang = localStorage.getItem(SELECTED_LANGUAGE_KEY)
+  if (storedLang === 'th' || storedLang === 'en') {
+    currentLanguage.value = storedLang
+  }
+})
+
+function selectLanguage(lang: 'en' | 'th') {
+  currentLanguage.value = lang
+  if (import.meta.client) {
+    localStorage.setItem(SELECTED_LANGUAGE_KEY, lang)
+  }
+}
+
+const t = computed(() => {
+  if (currentLanguage.value === 'th') {
+    return {
+      backLink: 'ย้อนกลับไปหน้าภาพรวม',
+      resumeBtn: 'กลับไปทำเซสชันล่าสุด',
+      onboardingTitle: 'คุณมีตำแหน่งเป้าหมายที่ต้องการแล้วหรือยัง?',
+      onboardingSub: 'เลือกตำแหน่งงานเพื่อก้าวเข้าสู่การประเมินทักษะเฟส 2 ได้ทันที หรือเริ่มทำจากเฟส 1 เพื่อให้ระบบช่วยแนะนำบทบาทที่เหมาะสมจากสไตล์และทัศนคติของคุณ',
+      decisionCards: [
+        {
+          mode: 'known' as const,
+          title: 'ฉันมีตำแหน่งในใจแล้ว',
+          copy: 'เลือกตำแหน่งงานที่ต้องการและตรงไปที่สเกลความสามารถเชิงเทคนิคทันที',
+          tag: 'ข้ามเฟส 1',
+        },
+        {
+          mode: 'unsure' as const,
+          title: 'ฉันยังอยากค้นหาตัวเอง',
+          copy: 'เริ่มต้นด้วยแบบประเมินความชอบและสไตล์การทำงานเพื่อระบุตำแหน่งงานที่ลงตัว',
+          tag: 'เริ่มเฟส 1',
+        },
+      ],
+      stagebarKnown: 'ขั้นตอนถัดไป: เลือกตำแหน่งเป้าหมายด้านล่าง จากนั้นเริ่มทำการประเมินทักษะเฟส 2',
+      stagebarUnsure: 'ขั้นตอนถัดไป: เริ่มการประเมินเฟส 1 เพื่อวิเคราะห์และระบุบทบาทงานที่แนะนำสำหรับคุณก่อน',
+      stagebarSub: 'คุณสามารถเปลี่ยนใจและเลือกโหมดที่สะดวกได้ตลอดเวลาก่อนเริ่มการประเมิน',
+      currentTarget: 'ตำแหน่งเป้าหมายปัจจุบัน',
+      openDiscovery: 'การค้นหาตำแหน่งงานแบบเปิด',
+      useDiscoveryBtn: 'ใช้โหมดค้นหาตำแหน่งงาน',
+      discoverySubTextKnown: 'เลือกตำแหน่งงานที่สนใจด้านล่างเพื่อเข้าสู่การวัดระดับและจัดทำแผนพัฒนาความสามารถโดยละเอียด',
+      discoverySubTextUnsure: 'ระบบจะเริ่มด้วยแบบประเมินสไตล์การทำงานและความถนัดทั่วไป ก่อนวิเคราะห์ทักษะเชิงลึก',
+      roleChooserTitle: 'ตัวเลือกตำแหน่งงาน',
+      roleChooserSub: 'เลือกตำแหน่งงานที่ต้องการเพื่อข้ามเฟส 1 และตรงเข้าสู่การประเมินความสามารถเชิงลึก',
+      clearFilters: 'ล้างการค้นหา',
+      searchPlaceholder: 'ค้นหาตำแหน่งงาน...',
+      emptyCatalog: 'ไม่พบตำแหน่งงานในสารบบ',
+      noRolesMatch: 'ไม่พบตำแหน่งงานที่สอดคล้องกับคำค้นหา โปรดระบุคีย์เวิร์ดอื่นหรือล้างการค้นหา',
+      discoveryActiveCopy: 'โหมดค้นหาตำแหน่งงานกำลังเปิดทำงานอยู่ คุณสามารถคลิกปุ่มเริ่มด้านล่างได้ทันที และ CompetencyX จะวิเคราะห์คำตอบเฟส 1 เพื่อแนะนำตำแหน่งงานที่ตรงที่สุดแก่คุณ',
+      preparingSession: 'กำลังเตรียมแบบประเมินของคุณ...',
+      startPhase2: 'เริ่มแบบประเมินทักษะเฟส 2',
+      chooseRoleToContinue: 'โปรดเลือกตำแหน่งงานเพื่อไปต่อ',
+      startPhase1: 'เริ่มการค้นหาตัวตนเฟส 1',
+      settingUpQuestion: 'กำลังจัดเตรียมคำถามแรกของคุณ...',
+      previewEyebrow: 'พรีวิวแผนการเรียนรู้',
+      previewDefaultTitle: 'เลือกตำแหน่งเพื่อดูทิศทางการเรียนรู้',
+      previewDefaultSub: 'เลือกตำแหน่งงานเป้าหมายเพื่อดูพรีวิวหัวข้อแรกและทิศทางโดยรวมของการประเมินทักษะ',
+      previewSelectedSub: 'ทบทวนหัวข้อสำคัญที่วิถีการพัฒนานี้เน้นย้ำและพรีวิวเนื้อหาก่อนที่คุณจะเริ่มทำแบบประเมิน',
+      previewLoading: 'กำลังโหลดข้อมูลแผนการเรียนรู้...',
+      previewNoRoadmap: 'ยังไม่มีแผนพรีวิวแบบสรุปสำหรับบทบาทนี้ในขณะนี้ แต่คุณยังสามารถเริ่มประเมินเพื่อรับคำแนะนำฉบับเต็มได้',
+      previewSelectHint: 'เลือกตำแหน่งเป้าหมายด้านล่างเพื่อแสดงพรีวิวหัวข้อทักษะการเรียนรู้ หรือเลือกโหมดค้นหาเพื่อเริ่มโดยไม่ต้องมีเป้าหมายล่วงหน้า',
+      categoryLabels: {
+        'All': 'ทั้งหมด',
+        'Engineering': 'วิศวกรรม',
+        'Data': 'ข้อมูลและวิทยาการข้อมูล',
+        'Product & Management': 'ผลิตภัณฑ์และการจัดการ',
+        'Design': 'การออกแบบและอินเตอร์เฟส',
+        'Enterprise': 'ระบบองค์กรใหญ่',
+        'Other': 'อื่นๆ'
+      } as Record<string, string>
+    }
+  }
+
+  // English defaults
+  return {
+    backLink: 'Back to overview',
+    resumeBtn: 'Resume previous session',
+    onboardingTitle: 'Do you already know which software role you want?',
+    onboardingSub: 'Choose a target role to move directly into Phase 2, or start with Phase 1 if you want the platform to recommend roles from your preferences.',
+    decisionCards: [
+      {
+        mode: 'known' as const,
+        title: 'I already know my role',
+        copy: 'Pick a target role and move straight into role-aware skill calibration.',
+        tag: 'Skip Phase 1',
+      },
+      {
+        mode: 'unsure' as const,
+        title: 'I am still exploring',
+        copy: 'Start with personality and preference questions to discover suitable roles.',
+        tag: 'Start Phase 1',
+      },
+    ],
+    stagebarKnown: 'Next: choose your target role below, then start Phase 2.',
+    stagebarUnsure: 'Next: start Phase 1 to discover your best-fit role first.',
+    stagebarSub: 'You can switch modes any time before starting.',
+    currentTarget: 'Current target',
+    openDiscovery: 'Open role discovery',
+    useDiscoveryBtn: 'Use discovery mode',
+    discoverySubTextKnown: 'Select a role below, then continue directly into the role-specific skill assessment path.',
+    discoverySubTextUnsure: 'The first phase will ask preference and personality-style questions before skill calibration.',
+    roleChooserTitle: 'Role chooser',
+    roleChooserSub: 'Choose a role if you want to skip Phase 1 and go straight to technical calibration.',
+    clearFilters: 'Clear filters',
+    searchPlaceholder: 'Search roles…',
+    emptyCatalog: 'Role catalog is empty.',
+    noRolesMatch: 'No roles match the current filters. Try a different keyword or clear the filters.',
+    discoveryActiveCopy: 'Discovery mode is active. You can start immediately and CompetencyX will recommend role paths after your Phase 1 responses.',
+    preparingSession: 'Preparing your assessment...',
+    startPhase2: 'Start Phase 2 skill assessment',
+    chooseRoleToContinue: 'Choose a role to continue',
+    startPhase1: 'Start Phase 1 discovery',
+    settingUpQuestion: 'Setting up your first question…',
+    previewEyebrow: 'Roadmap preview',
+    previewDefaultTitle: 'Choose a path to preview its learning arc',
+    previewDefaultSub: 'Select a preferred role to preview the first topics and the overall direction of the assessment.',
+    previewSelectedSub: 'Review the first topics this path emphasizes before you begin.',
+    previewLoading: 'Loading roadmap preview…',
+    previewNoRoadmap: 'No roadmap preview is available for this role. You can still continue and review the full recommendation at the end.',
+    previewSelectHint: 'Select a role to preview roadmap topics, or start the assessment without a preferred role.',
+    categoryLabels: {
+      'All': 'All',
+      'Engineering': 'Engineering',
+      'Data': 'Data',
+      'Product & Management': 'Product & Management',
+      'Design': 'Design',
+      'Enterprise': 'Enterprise',
+      'Other': 'Other'
+    } as Record<string, string>
   }
 })
 
@@ -139,17 +273,17 @@ const isFiltered = computed(
 )
 
 const selectedRoleName = computed(
-  () => selectedRole.value?.name ?? 'No preferred role',
+  () => selectedRole.value?.name ?? t.value.openDiscovery,
 )
 
 const startButtonLabel = computed(() => {
-  if (isSubmitting.value) return 'Preparing your assessment...'
+  if (isSubmitting.value) return t.value.preparingSession
   if (decisionMode.value === 'known') {
     return selectedRole.value
-      ? 'Start Phase 2 skill assessment'
-      : 'Choose a role to continue'
+      ? t.value.startPhase2
+      : t.value.chooseRoleToContinue
   }
-  return 'Start Phase 1 discovery'
+  return t.value.startPhase1
 })
 
 const canStart = computed(
@@ -160,30 +294,20 @@ const canStart = computed(
 
 const resultSummary = computed(() => {
   if (!roles.value.length) {
-    return 'Role catalog is empty.'
+    return t.value.emptyCatalog
   }
 
   if (!filteredRoles.value.length) {
-    return 'No roles match the current filters.'
+    return t.value.noRolesMatch
   }
 
+  if (currentLanguage.value === 'th') {
+    return `กำลังแสดง ${filteredRoles.value.length} จากทั้งหมด ${roles.value.length} ตำแหน่งงาน`
+  }
   return `Showing ${filteredRoles.value.length} of ${roles.value.length} roles.`
 })
 
-const decisionCards = [
-  {
-    mode: 'known' as const,
-    title: 'I already know my role',
-    copy: 'Pick a target role and move straight into role-aware skill calibration.',
-    tag: 'Skip Phase 1',
-  },
-  {
-    mode: 'unsure' as const,
-    title: 'I am still exploring',
-    copy: 'Start with personality and preference questions to discover suitable roles.',
-    tag: 'Start Phase 1',
-  },
-]
+const decisionCards = computed(() => t.value.decisionCards)
 
 function clearFilters() {
   searchQuery.value = ''
@@ -226,11 +350,10 @@ async function handleStart() {
   pageError.value = null
 
   try {
-    const session = await createSession(
-      preferredRoleSlug.value
-        ? { preferred_role_slug: preferredRoleSlug.value }
-        : {},
-    )
+    const session = await createSession({
+      preferred_role_slug: preferredRoleSlug.value ?? undefined,
+      language: currentLanguage.value,
+    })
 
     if (decisionMode.value === 'known' && preferredRoleSlug.value) {
       const maxAttempts = 4
@@ -254,7 +377,7 @@ async function handleStart() {
   } catch (error) {
     pageError.value = error as ApiError
     toast.add({
-      title: 'Could not start assessment',
+      title: currentLanguage.value === 'th' ? 'ไม่สามารถเริ่มต้นแบบประเมินได้' : 'Could not start assessment',
       description: getErrorMessage(error as ApiError) ?? undefined,
       color: 'error',
     })
@@ -262,24 +385,25 @@ async function handleStart() {
 }
 
 useSeoMeta({
-  title: 'CompetencyX | Start assessment',
-  description:
-    'Choose an optional preferred role, preview its roadmap themes, and begin the assessment.',
+  title: computed(() => currentLanguage.value === 'th' ? 'CompetencyX | เริ่มทำแบบประเมิน' : 'CompetencyX | Start assessment'),
+  description: computed(() => currentLanguage.value === 'th'
+    ? 'เลือกตำแหน่งงานเป้าหมายของคุณ พรีวิวเนื้อหาการเรียนรู้ และเริ่มต้นการประเมินทักษะของคุณ'
+    : 'Choose an optional preferred role, preview its roadmap themes, and begin the assessment.'),
 })
 </script>
 
 <template>
   <main id="main-content" class="page-wrap">
     <div class="flex flex-wrap items-center justify-between gap-4">
-      <NuxtLink to="/" class="editorial-link text-sm"
-        >Back to overview</NuxtLink
-      >
+      <NuxtLink to="/" class="editorial-link text-sm">
+        {{ t.backLink }}
+      </NuxtLink>
       <NuxtLink
         v-if="lastSessionId"
         :to="`/assessment/${lastSessionId}`"
         class="inline-flex items-center justify-center rounded-full border border-border-subtle bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:-translate-y-0.5 hover:border-accent/35 hover:text-accent"
       >
-        Resume previous session
+        {{ t.resumeBtn }}
       </NuxtLink>
     </div>
 
@@ -290,26 +414,52 @@ useSeoMeta({
         class="glass-panel p-6 md:p-8"
         aria-labelledby="onboarding-title"
       >
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <p class="eyebrow">Onboarding</p>
-          <p
-            class="rounded-full border border-accent-soft bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-accent"
-            aria-live="polite"
-          >
-            {{ selectedRole ? 'Role selected' : 'Open discovery' }}
-          </p>
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-border-subtle pb-6">
+          <div>
+            <p class="eyebrow">Onboarding</p>
+            <p
+              class="mt-1.5 rounded-full border border-accent-soft bg-accent/10 px-3 py-0.5 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-accent inline-block"
+              aria-live="polite"
+            >
+              {{ selectedRole ? (currentLanguage === 'th' ? 'เลือกตำแหน่งงานแล้ว' : 'Role selected') : (currentLanguage === 'th' ? 'โหมดค้นหาอิสระ' : 'Open discovery') }}
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <span class="text-[9px] font-extrabold uppercase tracking-[0.18em] text-ink-soft text-right">
+              {{ currentLanguage === 'th' ? 'ภาษาของแบบประเมิน' : 'Assessment Language' }}
+            </span>
+            <div class="relative flex items-center rounded-full border border-border-subtle bg-surface-elevated/40 p-1 shadow-sm transition hover:border-ink/12">
+              <button
+                type="button"
+                class="relative flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.05em] transition-all duration-300"
+                :class="currentLanguage === 'en' ? 'bg-accent text-white shadow-[0_4px_12px_rgba(15,118,110,0.25)]' : 'text-ink-soft hover:text-ink hover:bg-surface-muted/50'"
+                @click="selectLanguage('en')"
+              >
+                <span>🇺🇸</span>
+                <span>English</span>
+              </button>
+              <button
+                type="button"
+                class="relative flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.05em] transition-all duration-300"
+                :class="currentLanguage === 'th' ? 'bg-accent text-white shadow-[0_4px_12px_rgba(15,118,110,0.25)]' : 'text-ink-soft hover:text-ink hover:bg-surface-muted/50'"
+                @click="selectLanguage('th')"
+              >
+                <span>🇹🇭</span>
+                <span>ไทย</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <h1
           id="onboarding-title"
-          class="mt-4 max-w-4xl font-display text-4xl leading-tight text-ink md:text-5xl"
+          class="mt-6 max-w-4xl font-display text-4xl leading-tight text-ink md:text-5xl"
         >
-          Do you already know which software role you want?
+          {{ t.onboardingTitle }}
         </h1>
         <p class="mt-4 max-w-2xl text-sm leading-7 text-ink-soft">
-          Choose a target role to move directly into Phase 2, or start with
-          Phase 1 if you want the platform to recommend roles from your
-          preferences.
+          {{ t.onboardingSub }}
         </p>
 
         <div
@@ -362,12 +512,12 @@ useSeoMeta({
           <p class="text-sm font-semibold text-ink">
             {{
               decisionMode === 'known'
-                ? 'Next: choose your target role below, then start Phase 2.'
-                : 'Next: start Phase 1 to discover your best-fit role first.'
+                ? t.stagebarKnown
+                : t.stagebarUnsure
             }}
           </p>
           <p class="mt-1 text-xs leading-6 text-ink-soft">
-            You can switch modes any time before starting.
+            {{ t.stagebarSub }}
           </p>
         </div>
 
@@ -380,7 +530,7 @@ useSeoMeta({
               <p
                 class="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-soft"
               >
-                Current target
+                {{ t.currentTarget }}
               </p>
               <p
                 class="mt-1 wrap-break-word text-2xl font-bold leading-tight text-ink"
@@ -388,7 +538,7 @@ useSeoMeta({
                 {{
                   decisionMode === 'known'
                     ? selectedRoleName
-                    : 'Open role discovery'
+                    : t.openDiscovery
                 }}
               </p>
             </div>
@@ -398,14 +548,14 @@ useSeoMeta({
               :disabled="decisionMode === 'unsure' && !selectedRole"
               @click="clearPreferredRole"
             >
-              Use discovery mode
+              {{ t.useDiscoveryBtn }}
             </button>
           </div>
           <p class="mt-3 text-sm leading-6 text-ink-soft">
             {{
               decisionMode === 'known'
-                ? 'Select a role below, then continue directly into the role-specific skill assessment path.'
-                : 'The first phase will ask preference and personality-style questions before skill calibration.'
+                ? t.discoverySubTextKnown
+                : t.discoverySubTextUnsure
             }}
           </p>
         </div>
@@ -418,11 +568,10 @@ useSeoMeta({
           <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 id="role-filter-title" class="text-2xl font-bold text-ink">
-                Role chooser
+                {{ t.roleChooserTitle }}
               </h2>
               <p class="mt-1 text-sm text-ink-soft">
-                Choose a role if you want to skip Phase 1 and go straight to
-                technical calibration.
+                {{ t.roleChooserSub }}
               </p>
             </div>
             <button
@@ -431,12 +580,12 @@ useSeoMeta({
               class="editorial-link text-sm"
               @click="clearFilters"
             >
-              Clear filters
+              {{ t.clearFilters }}
             </button>
           </div>
 
           <label class="block" for="role-search">
-            <span class="sr-only">Search roles</span>
+            <span class="sr-only">{{ currentLanguage === 'th' ? 'ค้นหาตำแหน่งงาน' : 'Search roles' }}</span>
             <span class="relative block">
               <svg
                 aria-hidden="true"
@@ -466,7 +615,7 @@ useSeoMeta({
                 name="role-search"
                 type="text"
                 autocomplete="off"
-                placeholder="Search roles…"
+                :placeholder="t.searchPlaceholder"
                 class="w-full rounded-full border border-border-subtle bg-surface-card py-2.5 pl-11 pr-4 text-sm text-ink placeholder:text-ink-soft/50 transition focus-visible:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
               />
             </span>
@@ -491,7 +640,7 @@ useSeoMeta({
               "
               @click="activeCategory = category"
             >
-              {{ category }}
+              {{ t.categoryLabels[category] ?? category }}
             </button>
           </div>
 
@@ -524,8 +673,7 @@ useSeoMeta({
             class="mt-6 rounded-md border border-border-subtle bg-surface-card p-4 text-sm text-ink-soft"
             aria-live="polite"
           >
-            No roles match your search. Try a different keyword or clear the
-            filters.
+            {{ t.noRolesMatch }}
           </p>
         </div>
 
@@ -533,8 +681,7 @@ useSeoMeta({
           v-else
           class="mt-6 rounded-md border border-border-subtle bg-surface-card p-4 text-sm leading-6 text-ink-soft"
         >
-          Discovery mode is active. You can start immediately and CompetencyX
-          will recommend role paths after your Phase 1 responses.
+          {{ t.discoveryActiveCopy }}
         </p>
 
         <div
@@ -543,7 +690,7 @@ useSeoMeta({
           role="alert"
           class="cx-error-panel mt-6 p-4 text-sm"
         >
-          {{ getErrorMessage(pageError) }} Please try starting again.
+          {{ getErrorMessage(pageError) }} {{ currentLanguage === 'th' ? 'โปรดพยายามเริ่มต้นใหม่อีกครั้ง' : 'Please try starting again.' }}
         </div>
 
         <div class="mt-8 flex flex-wrap items-center gap-4">
@@ -566,7 +713,7 @@ useSeoMeta({
             role="status"
             class="text-sm text-ink-soft"
           >
-            Setting up your first question…
+            {{ t.settingUpQuestion }}
           </p>
         </div>
       </section>
@@ -575,21 +722,20 @@ useSeoMeta({
         class="paper-panel sticky top-4 self-start rounded-4xl p-6 md:top-6 md:max-h-[calc(100vh-2.5rem)] md:overflow-auto md:p-8"
         aria-labelledby="roadmap-preview-title"
       >
-        <p class="eyebrow">Roadmap preview</p>
+        <p class="eyebrow">{{ t.previewEyebrow }}</p>
         <h2
           id="roadmap-preview-title"
           class="mt-4 text-3xl font-bold leading-tight text-ink"
         >
           {{
-            selectedRole?.name || 'Choose a path to preview its learning arc'
+            selectedRole?.name || t.previewDefaultTitle
           }}
         </h2>
         <p class="mt-4 text-sm leading-7 text-ink-soft">
           {{
             selectedRole
-              ? selectedRole.description ||
-                'Review the first topics this path emphasizes before you begin.'
-              : 'Select a preferred role to preview the first topics and the overall direction of the assessment.'
+              ? selectedRole.description || t.previewSelectedSub
+              : t.previewDefaultSub
           }}
         </p>
 
@@ -599,7 +745,7 @@ useSeoMeta({
           role="status"
           class="mt-6 space-y-3"
         >
-          <p class="sr-only">Loading roadmap preview…</p>
+          <p class="sr-only">{{ t.previewLoading }}</p>
           <div
             v-for="index in 4"
             :key="index"
@@ -623,7 +769,9 @@ useSeoMeta({
             <p class="mt-2 text-sm leading-6 text-ink-soft">
               {{
                 topic.description ||
-                'This topic appears in the roadmap preview for the selected role.'
+                (currentLanguage === 'th'
+                  ? 'หัวข้อนี้มีความสำคัญอย่างมากในเส้นทางการประเมินของบทบาทที่คุณเลือก'
+                  : 'This topic appears in the roadmap preview for the selected role.')
               }}
             </p>
           </li>
@@ -633,16 +781,14 @@ useSeoMeta({
           v-else-if="selectedRole"
           class="mt-6 rounded-md border border-border-subtle bg-surface-card p-4 text-sm text-ink-soft"
         >
-          No roadmap preview is available for this role. You can still continue
-          and review the full recommendation at the end.
+          {{ t.previewNoRoadmap }}
         </p>
 
         <p
           v-else
           class="mt-6 rounded-md border border-border-subtle bg-surface-card p-4 text-sm text-ink-soft"
         >
-          Select a role to preview roadmap topics, or start the assessment
-          without a preferred role.
+          {{ t.previewSelectHint }}
         </p>
       </aside>
     </section>

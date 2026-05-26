@@ -93,6 +93,7 @@ export interface AssessmentSession {
   preferred_role: Role | null
   best_fit_role: Role | null
   profile?: Record<string, unknown> | null
+  language?: 'en' | 'th'
   started_at: string
   updated_at: string
   completed_at?: string | null
@@ -221,6 +222,7 @@ export interface RoadmapsCatalog {
 
 export interface SessionCreatePayload {
   preferred_role_slug?: string
+  language?: 'en' | 'th'
   profile?: Record<string, unknown>
 }
 

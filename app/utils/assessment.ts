@@ -21,11 +21,28 @@ export function isSessionComplete(
   )
 }
 
-export function getQuestionStageLabel(stage: QuestionStage): string {
+export function getQuestionStageLabel(stage: QuestionStage, lang?: string): string {
+  if (lang === 'th') {
+    return stage === 'role' ? 'ค้นหาบทบาท' : 'ประเมินทักษะ'
+  }
   return stage === 'role' ? 'Role discovery' : 'Skill assessment'
 }
 
-export function getQuestionTypeLabel(questionType: QuestionType): string {
+export function getQuestionTypeLabel(questionType: QuestionType, lang?: string): string {
+  if (lang === 'th') {
+    switch (questionType) {
+      case 'yes_no':
+        return 'ใช่ / ไม่ใช่'
+      case 'yes_no_maybe':
+        return 'ใช่ / ไม่ใช่ / อาจจะ'
+      case 'likert_5':
+        return 'สเกลความเห็น'
+      case 'ranked_choice':
+        return 'จัดอันดับความสำคัญ'
+      default:
+        return 'เลือกข้อเดียว'
+    }
+  }
   switch (questionType) {
     case 'yes_no':
       return 'Yes / no'
@@ -54,7 +71,20 @@ export function getAlignmentTone(
   return 'neutral'
 }
 
-export function getAlignmentLabel(status: RoleAlignmentStatus): string {
+export function getAlignmentLabel(status: RoleAlignmentStatus, lang?: string): string {
+  if (lang === 'th') {
+    if (status === 'aligned') {
+      return 'ตรงตามเป้าหมาย'
+    }
+    if (status === 'ambiguous') {
+      return 'เป้าหมายยังไม่ชัดเจน'
+    }
+    if (status === 'mismatch') {
+      return 'เป้าหมายที่ต้องปรับตัว'
+    }
+    return 'กำลังวิเคราะห์ทักษะ'
+  }
+
   if (status === 'aligned') {
     return 'Trajectory aligned'
   }
@@ -70,7 +100,20 @@ export function getAlignmentLabel(status: RoleAlignmentStatus): string {
   return 'Still calibrating'
 }
 
-export function getRoleResolutionLabel(status: RoleResolutionStatus): string {
+export function getRoleResolutionLabel(status: RoleResolutionStatus, lang?: string): string {
+  if (lang === 'th') {
+    if (status === 'resolved') {
+      return 'วิเคราะห์แล้ว'
+    }
+    if (status === 'ambiguous') {
+      return 'ก้ำกึ่ง'
+    }
+    if (status === 'in_progress') {
+      return 'กำลังดำเนินการ'
+    }
+    return 'ไม่ระบุ'
+  }
+
   if (status === 'resolved') {
     return 'Resolved'
   }

@@ -112,10 +112,13 @@ const isAwaitingResolution = computed(() => {
   )
 })
 
+const isThai = computed(() => session.value?.language === 'th')
+
 useSeoMeta({
-  title: 'CompetencyX | Active assessment',
-  description:
-    'Answer the assessment questions one at a time and review your live guidance as the session progresses.',
+  title: computed(() => isThai.value ? 'CompetencyX | ทำแบบประเมินเชิงรุก' : 'CompetencyX | Active assessment'),
+  description: computed(() => isThai.value
+    ? 'ตอบคำถามการประเมินทีละข้อและทบทวนคำแนะนำสดใหม่เมื่อการประเมินดำเนินไป'
+    : 'Answer the assessment questions one at a time and review your live guidance as the session progresses.'),
 })
 </script>
 
@@ -123,10 +126,10 @@ useSeoMeta({
   <main id="main-content" class="page-wrap">
     <div class="flex items-center justify-between gap-4">
       <NuxtLink to="/assessment/start" class="editorial-link text-sm">
-        Restart from onboarding
+        {{ isThai ? 'เริ่มใหม่ตั้งแต่ต้น' : 'Restart from onboarding' }}
       </NuxtLink>
       <span class="data-value text-sm text-ink-soft"
-        >Session {{ route.params.sessionId }}</span
+        >{{ isThai ? 'เซสชัน' : 'Session' }} {{ route.params.sessionId }}</span
       >
     </div>
 
@@ -157,25 +160,29 @@ useSeoMeta({
               class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-accent"
               aria-hidden="true"
             />
-            Refresh session state
+            {{ isThai ? 'รีเฟรชสถานะเซสชัน' : 'Refresh session state' }}
           </button>
         </div>
       </div>
     </div>
 
     <section v-else-if="pageError" class="glass-panel mt-6 p-8 text-center">
-      <p class="text-3xl font-bold text-ink">Session unavailable</p>
+      <p class="text-3xl font-bold text-ink">
+        {{ isThai ? 'เซสชันไม่พร้อมใช้งาน' : 'Session unavailable' }}
+      </p>
       <p class="mt-4 text-sm leading-7 text-ink-soft">
         {{
           responseErrorMessage ||
-          'This assessment could not be opened. Return to onboarding to begin a new session.'
+          (isThai
+            ? 'ไม่สามารถเปิดแบบประเมินนี้ได้ โปรดย้อนกลับไปเริ่มทำเซสชันใหม่'
+            : 'This assessment could not be opened. Return to onboarding to begin a new session.')
         }}
       </p>
       <NuxtLink
         to="/assessment/start"
         class="mt-6 inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-accent-shadow transition hover:-translate-y-0.5 hover:bg-accent-hover"
       >
-        Return to start
+        {{ isThai ? 'กลับไปหน้าเริ่มต้น' : 'Return to start' }}
       </NuxtLink>
     </section>
 
@@ -183,7 +190,7 @@ useSeoMeta({
       v-else
       class="mt-6 grid gap-6 lg:grid-cols-[0.68fr_1.32fr] lg:items-start"
       aria-busy="true"
-      aria-label="Loading session"
+      :aria-label="isThai ? 'กำลังโหลดข้อมูลเซสชัน...' : 'Loading session'"
     >
       <div class="space-y-4">
         <div class="skeleton h-8 w-32 rounded-full" />

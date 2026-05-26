@@ -53,7 +53,19 @@ const activeScaleIndex = computed(() => {
   )
 })
 
+const isThai = computed(() => props.session.language === 'th')
+
 const questionModeCopy = computed(() => {
+  if (isThai.value) {
+    if (isLikertQuestion.value) {
+      return 'โปรดเลือกความเห็นของคุณบนสเกลและตอบเพื่อไปต่อ'
+    }
+    if (currentQuestion.value?.question_type === 'ranked_choice') {
+      return 'เลือกตัวเลือกที่คุณให้ความสำคัญมากที่สุดเพื่อประกอบการคำนวณ'
+    }
+    return 'เลือกคำตอบที่เหมาะสมที่สุดแล้วตอบคำถามเพื่อไปต่อ'
+  }
+
   if (isLikertQuestion.value) {
     return 'Place the statement on the agreement scale and continue.'
   }
@@ -87,7 +99,7 @@ function handleOptionSelect(option: QuestionOption) {
   <section class="glass-panel p-6 md:p-8" aria-live="polite">
     <div class="flex flex-wrap items-center gap-3">
       <span class="eyebrow">{{
-        getQuestionStageLabel(session.current_question?.stage || 'role')
+        getQuestionStageLabel(session.current_question?.stage || 'role', session.language)
       }}</span>
       <span
         class="rounded-full border border-border-subtle bg-surface-elevated px-3 py-1 text-[0.72rem] font-bold uppercase tracking-[0.08em] text-ink-soft"
@@ -95,6 +107,7 @@ function handleOptionSelect(option: QuestionOption) {
         {{
           getQuestionTypeLabel(
             session.current_question?.question_type || 'single_choice',
+            session.language,
           )
         }}
       </span>
@@ -116,7 +129,7 @@ function handleOptionSelect(option: QuestionOption) {
       <h1 class="font-display text-3xl leading-tight text-ink md:text-5xl">
         {{
           session.current_question?.prompt ||
-          'We are resolving your role signal.'
+          (isThai ? 'ระบบกำลังวิเคราะห์ความถนัดตำแหน่งงานของคุณ' : 'We are resolving your role signal.')
         }}
       </h1>
       <p
@@ -149,13 +162,13 @@ function handleOptionSelect(option: QuestionOption) {
         :disabled="isSubmitting"
       >
         <legend class="sr-only">
-          Agreement scale from strongly disagree to strongly agree
+          {{ isThai ? 'สเกลความเห็นจากไม่เห็นด้วยอย่างยิ่งถึงเห็นด้วยอย่างยิ่ง' : 'Agreement scale from strongly disagree to strongly agree' }}
         </legend>
 
         <div class="likert-spectrum__labels" aria-hidden="true">
-          <span>Strongly disagree</span>
-          <span class="hidden sm:inline-flex">Neutral</span>
-          <span>Strongly agree</span>
+          <span>{{ isThai ? 'ไม่เห็นด้วยอย่างยิ่ง' : 'Strongly disagree' }}</span>
+          <span class="hidden sm:inline-flex">{{ isThai ? 'เป็นกลาง' : 'Neutral' }}</span>
+          <span>{{ isThai ? 'เห็นด้วยอย่างยิ่ง' : 'Strongly agree' }}</span>
         </div>
 
         <div class="likert-spectrum__track">
@@ -234,8 +247,8 @@ function handleOptionSelect(option: QuestionOption) {
               <p class="mt-1 text-sm leading-6 text-ink-soft">
                 {{
                   selectedOptionId === option.id
-                    ? 'Selected. Saving your response...'
-                    : 'Choose this response to continue.'
+                    ? (isThai ? 'เลือกแล้ว กำลังบันทึกคำตอบ...' : 'Selected. Saving your response...')
+                    : (isThai ? 'คลิกเลือกคำตอบนี้เพื่อไปต่อ' : 'Choose this response to continue.')
                 }}
               </p>
             </div>
@@ -258,10 +271,10 @@ function handleOptionSelect(option: QuestionOption) {
       <p class="status-copy">
         {{
           isSubmitting
-            ? 'Saving your answer...'
+            ? (isThai ? 'กำลังบันทึกคำตอบ...' : 'Saving your answer...')
             : isLikertQuestion
-              ? 'Agreement response. Immediate next step.'
-              : 'Single decision. Immediate next step.'
+              ? (isThai ? 'ระดับความคิดเห็น ระบบจะบันทึกคำตอบทันที' : 'Agreement response. Immediate next step.')
+              : (isThai ? 'เลือกตอบข้อเดียว ระบบจะบันทึกคำตอบทันที' : 'Single decision. Immediate next step.')
         }}
       </p>
       <div
@@ -270,10 +283,10 @@ function handleOptionSelect(option: QuestionOption) {
         <span class="inline-flex h-2 w-2 rounded-full bg-accent" />
         {{
           isLikertQuestion
-            ? 'Agreement scale'
+            ? (isThai ? 'สเกลความเห็น' : 'Agreement scale')
             : session.current_question.question_type === 'ranked_choice'
-              ? 'Priority response'
-              : 'Tap to continue'
+              ? (isThai ? 'จัดอันดับความสำคัญ' : 'Priority response')
+              : (isThai ? 'คลิกเพื่อไปต่อ' : 'Tap to continue')
         }}
       </div>
     </div>
@@ -282,8 +295,7 @@ function handleOptionSelect(option: QuestionOption) {
       v-else
       class="mt-8 rounded-lg border border-border-subtle bg-surface-card p-5 text-sm leading-7 text-ink-soft"
     >
-      This session does not have an answerable question right now. Refresh the
-      page to check whether the next step has resolved.
+      {{ isThai ? 'เซสชันนี้ไม่มีคำถามให้ทำต่อในขณะนี้ โปรดรีเฟรชหน้าจอเพื่อตรวจสอบขั้นตอนความถนัดถัดไป' : 'This session does not have an answerable question right now. Refresh the page to check whether the next step has resolved.' }}
     </div>
   </section>
 </template>

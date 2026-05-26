@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import {
   getAlignmentLabel,
   getQuestionStageLabel,
@@ -7,11 +8,12 @@ import {
 } from '~/utils/assessment'
 import type { AssessmentSession } from '~/shared/types/assessment'
 
-defineProps<{
+const props = defineProps<{
   session: AssessmentSession
 }>()
 
 const isExpanded = ref(false)
+const isThai = computed(() => props.session.language === 'th')
 </script>
 
 <template>
@@ -25,9 +27,9 @@ const isExpanded = ref(false)
       @click="isExpanded = !isExpanded"
     >
       <div class="min-w-0">
-        <p class="eyebrow">Live guidance</p>
+        <p class="eyebrow">{{ isThai ? 'คำแนะนำเรียลไทม์' : 'Live guidance' }}</p>
         <h2 class="mt-2 text-2xl font-bold text-ink">
-          {{ getQuestionStageLabel(session.current_question?.stage || 'role') }}
+          {{ getQuestionStageLabel(session.current_question?.stage || 'role', session.language) }}
         </h2>
       </div>
       <span
@@ -54,11 +56,11 @@ const isExpanded = ref(false)
 
     <!-- Compact one-liner always visible -->
     <p class="mt-3 text-sm text-ink-soft">
-      Q{{ getTotalAnswered(session.milestones) }} answered
+      {{ isThai ? 'ตอบแล้ว' : '' }} Q{{ getTotalAnswered(session.milestones) }} {{ isThai ? 'ข้อ' : 'answered' }}
       <span class="mx-1.5 opacity-40">&middot;</span>
-      {{ getAlignmentLabel(session.role_alignment_status) }}
+      {{ getAlignmentLabel(session.role_alignment_status, session.language) }}
       <span class="mx-1.5 opacity-40">&middot;</span>
-      {{ getRoleResolutionLabel(session.role_resolution_status) }}
+      {{ getRoleResolutionLabel(session.role_resolution_status, session.language) }}
     </p>
 
     <!-- Expandable detail panel -->
@@ -82,23 +84,23 @@ const isExpanded = ref(false)
           <div
             class="assessment-stat rounded-md border border-border-subtle bg-surface-card p-4"
           >
-            <p class="eyebrow">Alignment</p>
+            <p class="eyebrow">{{ isThai ? 'เป้าหมาย' : 'Alignment' }}</p>
             <p class="mt-2 text-lg font-semibold text-ink">
-              {{ getAlignmentLabel(session.role_alignment_status) }}
+              {{ getAlignmentLabel(session.role_alignment_status, session.language) }}
             </p>
           </div>
           <div
             class="assessment-stat rounded-md border border-border-subtle bg-surface-card p-4"
           >
-            <p class="eyebrow">Resolution</p>
+            <p class="eyebrow">{{ isThai ? 'สถานะวิเคราะห์' : 'Resolution' }}</p>
             <p class="mt-2 text-lg font-semibold text-ink">
-              {{ getRoleResolutionLabel(session.role_resolution_status) }}
+              {{ getRoleResolutionLabel(session.role_resolution_status, session.language) }}
             </p>
           </div>
           <div
             class="assessment-stat rounded-md border border-border-subtle bg-surface-card p-4"
           >
-            <p class="eyebrow">Role answers</p>
+            <p class="eyebrow">{{ isThai ? 'ตอบคำถามค้นหา' : 'Role answers' }}</p>
             <p class="mt-2 text-lg font-semibold text-ink">
               <span class="data-value">{{
                 session.milestones.answered_role_questions
@@ -108,7 +110,7 @@ const isExpanded = ref(false)
           <div
             class="assessment-stat rounded-md border border-border-subtle bg-surface-card p-4"
           >
-            <p class="eyebrow">Questions answered</p>
+            <p class="eyebrow">{{ isThai ? 'คำตอบทั้งหมด' : 'Questions answered' }}</p>
             <p class="mt-2 text-lg font-semibold text-ink">
               <span class="data-value">{{
                 getTotalAnswered(session.milestones)
@@ -121,18 +123,18 @@ const isExpanded = ref(false)
           class="mt-6 rounded-lg border border-border-subtle bg-surface-elevated p-4"
         >
           <p class="text-xs font-semibold uppercase tracking-[0.1em] text-warm">
-            Current read
+            {{ isThai ? 'ผลวิเคราะห์ปัจจุบัน' : 'Current read' }}
           </p>
           <p class="mt-3 text-sm text-ink-soft">
-            Preferred role:
+            {{ isThai ? 'ตำแหน่งเป้าหมาย:' : 'Preferred role:' }}
             <span class="font-semibold text-ink">
-              {{ session.preferred_role?.name || 'Undeclared' }}
+              {{ session.preferred_role?.name || (isThai ? 'ยังไม่ได้ระบุ' : 'Undeclared') }}
             </span>
           </p>
           <p class="mt-2 text-sm text-ink-soft">
-            Best fit:
+            {{ isThai ? 'ตำแหน่งที่เหมาะสม:' : 'Best fit:' }}
             <span class="font-semibold text-ink">
-              {{ session.best_fit_role?.name || 'Emerging from your answers' }}
+              {{ session.best_fit_role?.name || (isThai ? 'กำลังประมวลผลจากคำตอบ' : 'Emerging from your answers') }}
             </span>
           </p>
         </div>
