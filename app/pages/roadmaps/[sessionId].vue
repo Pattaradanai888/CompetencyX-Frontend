@@ -23,6 +23,7 @@ const {
   getResults,
   getHistory,
   getRoadmapsCatalog,
+  getRoadmapsNextQuestion,
   getRoadmapsState,
   saveRoadmapsState,
 } = useAssessmentResults()
@@ -141,7 +142,6 @@ const roadmapAnswers = ref<Record<string, number>>({ ...roadmapsState.answers })
 const currentQuestionIndex = ref(0)
 const isSavingRoadmaps = ref(false)
 const isAutoAdvancing = ref(false)
-const RL_EPSILON = 0.18
 
 const hasAnsweredAll = computed(() => {
   return roadmapQuestions.every((question) =>
@@ -266,28 +266,38 @@ function getUnansweredQuestions(): RoadmapQuestion[] {
   )
 }
 
-function pickNextQuestionWithRl(): RoadmapQuestion | null {
+async function pickNextQuestionWithRl(): Promise<RoadmapQuestion | null> {
   const unanswered = getUnansweredQuestions()
   if (!unanswered.length) {
     return null
   }
 
-  if (Math.random() < RL_EPSILON) {
-    return unanswered[Math.floor(Math.random() * unanswered.length)] ?? null
+  try {
+    const response = await getRoadmapsNextQuestion(
+      route.params.sessionId,
+      roadmapAnswers.value,
+    )
+    const nextQuestionId = response.next_question?.id
+    if (!nextQuestionId) {
+      return null
+    }
+    return (
+      roadmapQuestions.find((question) => question.id === nextQuestionId) ?? null
+    )
+  } catch {
+    return unanswered.reduce(
+      (best, current) => {
+        if (!best) {
+          return current
+        }
+
+        return scoreAdaptiveCandidate(current) > scoreAdaptiveCandidate(best)
+          ? current
+          : best
+      },
+      null as RoadmapQuestion | null,
+    )
   }
-
-  return unanswered.reduce(
-    (best, current) => {
-      if (!best) {
-        return current
-      }
-
-      return scoreAdaptiveCandidate(current) > scoreAdaptiveCandidate(best)
-        ? current
-        : best
-    },
-    null as RoadmapQuestion | null,
-  )
 }
 
 function setCurrentQuestionById(questionId: string | null) {
@@ -329,8 +339,11 @@ const overallCapabilityScore = computed(() => {
 const roadmapsProgressPercent = computed(() => {
   if (!roadmapQuestions.length) return 0
   if (isRoadmapsComplete.value) return 100
+  const answeredCount = roadmapQuestions.filter((question) =>
+    Number.isFinite(roadmapAnswers.value[question.id]),
+  ).length
   return Math.round(
-    (Object.keys(roadmapAnswers.value).length / roadmapQuestions.length) * 100,
+    (answeredCount / roadmapQuestions.length) * 100,
   )
 })
 
@@ -807,7 +820,7 @@ function selectAnswer(value: number) {
   autoAdvanceTimer = setTimeout(() => {
     isAutoAdvancing.value = false
     autoAdvanceTimer = null
-    goToNextQuestion()
+    void goToNextQuestion()
   }, AUTO_ADVANCE_DELAY_MS)
 }
 
@@ -819,7 +832,7 @@ function goToPreviousQuestion() {
   currentQuestionIndex.value -= 1
 }
 
-function goToNextQuestion() {
+async function goToNextQuestion() {
   if (
     !activeQuestion.value ||
     !Number.isFinite(activeQuestionAnswer.value ?? Number.NaN)
@@ -827,7 +840,7 @@ function goToNextQuestion() {
     return
   }
 
-  const nextQuestion = pickNextQuestionWithRl()
+  const nextQuestion = await pickNextQuestionWithRl()
   if (nextQuestion) {
     setCurrentQuestionById(nextQuestion.id)
     return
@@ -836,9 +849,10 @@ function goToNextQuestion() {
   void submitRoadmaps()
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (!roadmapsState.completed) {
-    setCurrentQuestionById(pickNextQuestionWithRl()?.id ?? null)
+    const nextQuestion = await pickNextQuestionWithRl()
+    setCurrentQuestionById(nextQuestion?.id ?? null)
   }
 })
 

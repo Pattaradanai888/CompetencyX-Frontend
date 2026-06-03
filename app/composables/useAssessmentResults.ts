@@ -4,6 +4,7 @@ import type {
   AssessmentResult,
   ApiError,
   RoadmapsCatalog,
+  RoadmapsNextQuestionResponse,
   RoadmapsSessionState,
 } from '~/shared/types/assessment'
 
@@ -67,12 +68,27 @@ export function useAssessmentResults() {
     })
   }
 
+  async function getRoadmapsNextQuestion(
+    sessionId: string,
+    answers: Record<string, number>,
+  ) {
+    return await fetchRoadmapsEndpoint<RoadmapsNextQuestionResponse>(
+      sessionId,
+      'next-question/',
+      {
+        method: 'POST',
+        body: { answers },
+      },
+    )
+  }
+
   return {
     getHistory,
     getInsights,
     getResults,
     getRoadmapsCatalog,
     getRoadmapsState,
+    getRoadmapsNextQuestion,
     saveRoadmapsState,
   }
 }
