@@ -12,7 +12,7 @@ import type {
 } from '~/shared/types/assessment'
 
 const route = useRoute('/assessment/[sessionId]')
-const { getSession, session, submitAnswer, isSubmitting } =
+const { clearSession, getSession, session, submitAnswer, isSubmitting } =
   useAssessmentSession()
 
 const pageError = ref<ApiError | null>(null)
@@ -103,6 +103,11 @@ async function handleSelect(answer: QuestionAnswerSelection) {
   }
 }
 
+async function handleResetSession() {
+  clearSession()
+  await navigateTo('/assessment/start')
+}
+
 const responseErrorMessage = computed(() => getErrorMessage(pageError.value))
 const isAwaitingResolution = computed(() => {
   return Boolean(
@@ -145,19 +150,23 @@ useSeoMeta({
           :response-error="responseErrorMessage"
           @select="handleSelect"
         />
-        <div v-if="isAwaitingResolution" class="mt-4 flex justify-end">
+        <div
+          v-if="isAwaitingResolution"
+          class="mt-4 flex flex-wrap justify-end gap-3"
+        >
           <button
             type="button"
-            class="inline-flex items-center justify-center rounded-full border border-ink/12 bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/35 disabled:cursor-not-allowed disabled:opacity-50"
-            :disabled="isSubmitting"
+            class="inline-flex items-center justify-center rounded-full border border-ink/12 bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/35"
+            @click="handleResetSession"
+          >
+            Reset session
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center justify-center rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-accent-shadow transition hover:-translate-y-0.5 hover:bg-accent-hover"
             @click="loadSession"
           >
-            <span
-              v-if="isSubmitting"
-              class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-accent"
-              aria-hidden="true"
-            />
-            Refresh session state
+            Refresh session
           </button>
         </div>
       </div>
