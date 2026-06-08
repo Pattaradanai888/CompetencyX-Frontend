@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { motion } from 'motion-v'
-import {
-  sortRankedRolesDescending,
-} from '~/utils/assessment'
+import { sortRankedRolesDescending } from '~/utils/assessment'
 import { useAssessmentResults } from '~/composables/useAssessmentResults'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
 import { getErrorMessage } from '~/utils/api'
@@ -52,8 +50,8 @@ if (
 }
 
 const results = ref(_fetchData.value?.resultsAttempt ?? null)
-const continueButton = ref<HTMLAnchorElement | null>(null)
-const isSwitchingRoleSlug = ref<string | null>(null)
+const continueButton = ref<HTMLButtonElement | null>(null)
+const isContinuing = ref(false)
 
 const rankedRoles = computed(() =>
   sortRankedRolesDescending(results.value?.ranked_roles ?? []),
@@ -72,29 +70,21 @@ const primaryRole = computed(
     } satisfies Role),
 )
 
-const primaryScore = computed(
-  () =>
-    primaryRankedRole.value?.fit_share ??
-    primaryRankedRole.value?.fit_score ??
-    results.value?.best_fit_confidence ??
-    0,
+const selectedRole = ref<RankedRoleInsight | Role | null>(null)
+
+watch(
+  primaryRole,
+  (newVal) => {
+    if (newVal && !selectedRole.value) {
+      selectedRole.value = newVal
+    }
+  },
+  { immediate: true },
 )
 
-function normalizeDisplayScore(value: number): number {
-  if (Number.isNaN(value)) return 0
-  if (value <= 0) return 0
-  if (value >= 1) return 1
-  return value
-}
-
-const primaryScorePercent = computed(() =>
-  Math.round(normalizeDisplayScore(primaryScore.value) * 100),
+const selectedRoleName = computed(
+  () => selectedRole.value?.name ?? primaryRole.value?.name ?? 'Selected role',
 )
-
-function getDisplayPercentForRole(role: RankedRoleInsight): string {
-  const raw = role.fit_share ?? role.fit_score ?? 0
-  return `${Math.round(normalizeDisplayScore(raw) * 100)}%`
-}
 
 function getRoleDescription(role: RankedRoleInsight | Role | null): string {
   if (!role) {
@@ -112,14 +102,18 @@ function getRoleDescription(role: RankedRoleInsight | Role | null): string {
   return 'A close fit based on your work-style and preference pattern.'
 }
 
-const phase2DefaultLabel = computed(() => primaryRole.value.name)
-
-async function startPhase2ForRole(role: RankedRoleInsight | Role | null) {
-  if (!role?.slug || isSwitchingRoleSlug.value) {
+async function handleContinue() {
+  const role = selectedRole.value
+  if (!role?.slug || isContinuing.value) {
     return
   }
 
-  isSwitchingRoleSlug.value = role.slug
+  if (role.slug === primaryRole.value?.slug) {
+    await navigateTo(`/roadmaps/${route.params.sessionId}`)
+    return
+  }
+
+  isContinuing.value = true
 
   try {
     const session = await createSession({
@@ -145,7 +139,7 @@ async function startPhase2ForRole(role: RankedRoleInsight | Role | null) {
       color: 'error',
     })
   } finally {
-    isSwitchingRoleSlug.value = null
+    isContinuing.value = false
   }
 }
 
@@ -157,23 +151,16 @@ useSeoMeta({
 
 onMounted(async () => {
   await nextTick()
-  const focusTarget =
-    continueButton.value instanceof HTMLElement
-      ? continueButton.value
-      : (
-          continueButton.value as unknown as {
-            $el?: HTMLElement
-          } | null
-        )?.$el
-
-  focusTarget?.focus()
+  continueButton.value?.focus()
 })
 </script>
 
 <template>
   <main v-if="results" id="main-content" class="page-wrap">
     <div class="mb-4">
-      <NuxtLink to="/" class="editorial-link text-sm">Back to landing page</NuxtLink>
+      <NuxtLink to="/" class="editorial-link text-sm"
+        >Back to landing page</NuxtLink
+      >
     </div>
 
     <motion.section
@@ -191,29 +178,6 @@ onMounted(async () => {
           Phase 1 complete
         </div>
 
-        <div class="mt-8 flex justify-center">
-          <div
-            class="result-match-ring"
-            :style="{ '--score': `${primaryScorePercent}%` }"
-            aria-label="Primary match score"
-          >
-            <div
-              class="grid h-28 w-28 place-items-center rounded-full bg-paper-strong"
-            >
-              <div class="text-center">
-                <p class="data-value text-4xl font-black text-ink">
-                  {{ primaryScorePercent }}%
-                </p>
-                <p
-                  class="mt-1 text-xs font-extrabold uppercase tracking-[0.1em] text-ink-soft"
-                >
-                  match
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <h1
           id="results-title"
           class="mx-auto mt-8 max-w-4xl font-display text-4xl font-semibold leading-tight text-ink md:text-6xl"
@@ -226,73 +190,115 @@ onMounted(async () => {
       </div>
 
       <section class="mt-10 grid gap-4 text-left md:grid-cols-3">
-        <article class="result-role-card p-5 md:p-6">
-          <p class="eyebrow">Primary role</p>
-          <h2 class="mt-3 text-2xl font-black text-ink">
-            {{ primaryRole.name }}
-          </h2>
-          <p class="mt-3 text-sm leading-7 text-ink-soft">
-            {{ getRoleDescription(primaryRankedRole || primaryRole) }}
-          </p>
-          <p class="mt-5 data-value text-3xl font-black text-accent">
-            {{ primaryScorePercent }}%
-          </p>
-          <div
-            class="mt-6 rounded-xl border border-accent/20 bg-accent/8 px-4 py-3"
-          >
-            <p class="text-xs font-extrabold uppercase tracking-[0.08em] text-accent">
-              Default selection
+        <!-- Primary role card -->
+        <article
+          :class="[
+            'result-role-card p-5 md:p-6 transition-all duration-200 relative border cursor-pointer flex flex-col justify-between',
+            selectedRole?.slug === primaryRole.slug
+              ? 'border-accent ring-2 ring-accent/30 bg-accent/[0.02]'
+              : 'border-border-subtle hover:border-ink-soft/40',
+            isContinuing ? 'pointer-events-none opacity-80' : '',
+          ]"
+          @click="selectedRole = primaryRole"
+        >
+          <div>
+            <div
+              v-if="selectedRole?.slug === primaryRole.slug"
+              class="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-white text-xs font-bold shadow-sm"
+              aria-hidden="true"
+            >
+              ✓
+            </div>
+            <p class="eyebrow">Primary role</p>
+            <h2 class="mt-3 text-2xl font-black text-ink">
+              {{ primaryRole.name }}
+            </h2>
+            <p class="mt-3 text-sm leading-7 text-ink-soft">
+              {{ getRoleDescription(primaryRankedRole || primaryRole) }}
             </p>
-            <p class="mt-2 text-sm leading-6 text-ink-soft">
-              Phase 2 will start with <span class="font-semibold text-ink">{{ primaryRole.name }}</span>.
-            </p>
+          </div>
+          <div class="mt-6">
+            <div
+              v-if="selectedRole?.slug === primaryRole.slug"
+              class="rounded-xl border border-accent/20 bg-accent/8 px-4 py-3"
+            >
+              <p
+                class="text-xs font-extrabold uppercase tracking-[0.08em] text-accent"
+              >
+                Default selection
+              </p>
+              <p class="mt-2 text-sm leading-6 text-ink-soft">
+                Phase 2 will start with
+                <span class="font-semibold text-ink">{{
+                  primaryRole.name
+                }}</span
+                >.
+              </p>
+            </div>
+            <button
+              v-else
+              type="button"
+              class="cx-button-secondary w-full"
+              :disabled="isContinuing"
+            >
+              Select primary role
+            </button>
           </div>
         </article>
 
+        <!-- Alternative role cards -->
         <article
           v-for="(role, index) in alternativeRoles"
           :key="role.slug"
-          class="result-role-card p-5 md:p-6"
+          :class="[
+            'result-role-card p-5 md:p-6 transition-all duration-200 relative border cursor-pointer flex flex-col justify-between',
+            selectedRole?.slug === role.slug
+              ? 'border-accent ring-2 ring-accent/30 bg-accent/[0.02]'
+              : 'border-border-subtle hover:border-ink-soft/40',
+            isContinuing ? 'pointer-events-none opacity-80' : '',
+          ]"
+          @click="selectedRole = role"
         >
-          <p class="eyebrow">Alternative {{ index + 1 }}</p>
-          <div class="mt-3 flex items-start justify-between gap-4">
-            <h2 class="text-2xl font-black text-ink">{{ role.name }}</h2>
-            <p class="data-value text-lg font-black text-accent">
-              {{ getDisplayPercentForRole(role) }}
+          <div>
+            <div
+              v-if="selectedRole?.slug === role.slug"
+              class="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-white text-xs font-bold shadow-sm"
+              aria-hidden="true"
+            >
+              ✓
+            </div>
+            <p class="eyebrow">Close fit {{ index + 1 }}</p>
+            <h2 class="mt-3 text-2xl font-black text-ink">{{ role.name }}</h2>
+            <p class="mt-3 text-sm leading-7 text-ink-soft">
+              {{ getRoleDescription(role) }}
             </p>
           </div>
-          <p class="mt-3 text-sm leading-7 text-ink-soft">
-            {{ getRoleDescription(role) }}
-          </p>
-          <button
-            type="button"
-            class="cx-button-secondary mt-6 disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="Boolean(isSwitchingRoleSlug)"
-            @click="startPhase2ForRole(role)"
-          >
-            {{
-              isSwitchingRoleSlug === role.slug
-                ? 'Opening Assignment 2...'
-                : 'Use this role instead'
-            }}
-          </button>
+          <div class="mt-6">
+            <div
+              v-if="selectedRole?.slug === role.slug"
+              class="rounded-xl border border-accent/20 bg-accent/8 px-4 py-3"
+            >
+              <p
+                class="text-xs font-extrabold uppercase tracking-[0.08em] text-accent"
+              >
+                Selected
+              </p>
+              <p class="mt-2 text-sm leading-6 text-ink-soft">
+                Phase 2 will start with
+                <span class="font-semibold text-ink">{{ role.name }}</span
+                >.
+              </p>
+            </div>
+            <button
+              v-else
+              type="button"
+              class="cx-button-secondary w-full"
+              :disabled="isContinuing"
+            >
+              Use this role instead
+            </button>
+          </div>
         </article>
-      </section>
-
-      <section class="mt-8 rounded-xl border border-border-subtle bg-surface-card p-5 text-left md:p-6">
-        <h2 class="text-lg font-bold text-ink">How to read these numbers</h2>
-        <p class="mt-2 text-sm leading-7 text-ink-soft">
-          These percentages are normalized match shares, not raw model scores.
-          Higher means stronger alignment with your Survey 1 answers.
-        </p>
-        <p class="mt-2 text-sm leading-7 text-ink-soft">
-          Use the top role as your primary direction, and alternatives as nearby
-          paths you can still explore.
-        </p>
-        <p class="mt-2 text-sm leading-7 text-ink-soft">
-          The top-ranked role is already selected for Assignment 2. Choosing a
-          different ranked role will open Assignment 2 directly with that role.
-        </p>
       </section>
 
       <section
@@ -302,31 +308,44 @@ onMounted(async () => {
           <div class="max-w-2xl">
             <p class="eyebrow">Assignment 2</p>
             <h2 class="mt-3 text-2xl font-bold text-ink">
-              Continue with {{ phase2DefaultLabel }}
+              Continue with {{ selectedRoleName }}
             </h2>
             <p class="mt-2 text-sm leading-7 text-ink-soft">
-              Your recommended role is already prepared as the default path for
-              the next assignment.
+              {{
+                selectedRole?.slug === primaryRole?.slug
+                  ? 'Your recommended role is already prepared as the default path for the next assignment.'
+                  : 'You have selected an alternative software role for your skill assessment.'
+              }}
             </p>
           </div>
-          <div class="rounded-full border border-border-subtle bg-paper-strong px-4 py-2">
-            <p class="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-soft">
+          <div
+            class="rounded-full border border-border-subtle bg-paper-strong px-4 py-2"
+          >
+            <p
+              class="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-soft"
+            >
               Selected role
             </p>
             <p class="mt-1 text-sm font-bold text-ink">
-              {{ phase2DefaultLabel }}
+              {{ selectedRoleName }}
             </p>
           </div>
         </div>
       </section>
 
-      <NuxtLink
+      <button
         ref="continueButton"
-        :to="`/roadmaps/${route.params.sessionId}`"
-        class="cx-button-primary mt-10"
+        type="button"
+        class="cx-button-primary mt-10 inline-flex items-center gap-2 justify-center disabled:cursor-not-allowed disabled:opacity-60"
+        :disabled="isContinuing"
+        @click="handleContinue"
       >
-        Continue to Assignment 2
-      </NuxtLink>
+        {{
+          isContinuing
+            ? 'Preparing Assignment 2...'
+            : 'Continue to Assignment 2'
+        }}
+      </button>
     </motion.section>
   </main>
 </template>

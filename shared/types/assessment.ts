@@ -210,6 +210,7 @@ export interface RoadmapsCatalogQuestion {
   id: string
   prompt: string
   dimension_key: string
+  display_order?: number
 }
 
 export interface RoadmapsCatalog {
@@ -218,6 +219,10 @@ export interface RoadmapsCatalog {
   dimensions: RoadmapsCatalogDimension[]
   questions: RoadmapsCatalogQuestion[]
   role_guidance: string[]
+}
+
+export interface RoadmapsNextQuestionResponse {
+  next_question: RoadmapsCatalogQuestion | null
 }
 
 export interface SessionCreatePayload {

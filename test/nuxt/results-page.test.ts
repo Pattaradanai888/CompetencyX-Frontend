@@ -3,12 +3,13 @@ import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ResultsPage from '../../app/pages/results/[sessionId].vue'
 
-const { navigateToMock, getSessionMock, getResultsMock, createSessionMock } = vi.hoisted(() => ({
-  navigateToMock: vi.fn(),
-  getSessionMock: vi.fn(),
-  getResultsMock: vi.fn(),
-  createSessionMock: vi.fn(),
-}))
+const { navigateToMock, getSessionMock, getResultsMock, createSessionMock } =
+  vi.hoisted(() => ({
+    navigateToMock: vi.fn(),
+    getSessionMock: vi.fn(),
+    getResultsMock: vi.fn(),
+    createSessionMock: vi.fn(),
+  }))
 
 mockNuxtImport('navigateTo', () => navigateToMock)
 mockNuxtImport('useRoute', () => () => ({
@@ -138,27 +139,24 @@ describe('results page', () => {
     expect(wrapper.text()).toContain(
       'Backend Engineer looks like your strongest role direction.',
     )
-    expect(wrapper.text()).toContain('62%')
     expect(wrapper.text()).toContain('Data Engineer')
-    expect(wrapper.text()).toContain('24%')
     expect(wrapper.text()).toContain('DevOps Engineer')
-    expect(wrapper.text()).toContain('14%')
     expect(wrapper.text()).toContain('Systems Design')
-    expect(wrapper.text()).toContain('How to read these numbers')
     expect(wrapper.text()).toContain('Default selection')
     expect(wrapper.text()).toContain('Continue to Assignment 2')
     expect(wrapper.text()).toContain('Use this role instead')
-    expect(wrapper.text()).toContain(
-      'The top-ranked role is already selected for Assignment 2.',
-    )
     expect(wrapper.text()).toContain('Back to landing page')
+    expect(wrapper.text()).not.toContain('62%')
+    expect(wrapper.text()).not.toContain('24%')
+    expect(wrapper.text()).not.toContain('14%')
+    expect(wrapper.text()).not.toContain('How to read these numbers')
     expect(wrapper.text()).not.toContain('API Design')
     expect(wrapper.text()).not.toContain('Resolved')
     expect(wrapper.text()).not.toContain('Recommendation in progress')
     expect(navigateToMock).not.toHaveBeenCalled()
   })
 
-  it('starts Assignment 2 directly when the user picks an alternative role', async () => {
+  it('allows selecting an alternative role and starts Assignment 2 only when continuing', async () => {
     getSessionMock
       .mockResolvedValueOnce({
         id: 'session-1',
@@ -226,6 +224,22 @@ describe('results page', () => {
 
     expect(switchButton).toBeDefined()
     await switchButton!.trigger('click')
+    await flushPromises()
+
+    // verify that createSession is not called yet on selection
+    expect(createSessionMock).not.toHaveBeenCalled()
+    expect(navigateToMock).not.toHaveBeenCalled()
+
+    // Selected role displays at the bottom should have changed to Data Engineer
+    expect(wrapper.text()).toContain('Continue with Data Engineer')
+
+    // Find and click the Continue button at the bottom
+    const continueBtn = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('Continue to Assignment 2'))
+    expect(continueBtn).toBeDefined()
+
+    await continueBtn!.trigger('click')
     await flushPromises()
 
     expect(createSessionMock).toHaveBeenCalledWith({
