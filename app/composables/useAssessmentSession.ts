@@ -2,7 +2,7 @@ import type {
   AnswerSubmitPayload,
   AssessmentSession,
   SessionCreatePayload,
-} from '~/shared/types/assessment'
+} from '~~/shared/types/assessment'
 
 const STORAGE_KEY = 'competencyx:last-session-id'
 

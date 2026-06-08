@@ -3,15 +3,16 @@ import RoleCard from '~/components/catalog/RoleCard.vue'
 import { getErrorMessage } from '~/utils/api'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
 import { useCatalogApi } from '~/composables/useCatalogApi'
-import type { ApiError, RoadmapTopic, Role } from '~/shared/types/assessment'
+import { useLocale } from '~/composables/useLocale'
+import type { ApiError, RoadmapTopic, Role } from '~~/shared/types/assessment'
 
 const route = useRoute('/assessment/start')
 const { listRoleTopics, listRoles } = useCatalogApi()
 const { createSession, getSession, isSubmitting, lastSessionId } =
   useAssessmentSession()
+const { currentLanguage, isThai } = useLocale()
 
 const PREFERRED_ROLE_KEY = 'competencyx:preferred-role'
-const SELECTED_LANGUAGE_KEY = 'competencyx:preferred-language'
 
 const preferredRoleSlug = ref<string | null>(null)
 const pageError = ref<ApiError | null>(null)
@@ -19,8 +20,6 @@ const toast = useToast()
 const decisionMode = ref<'known' | 'unsure'>(
   typeof route.query.role === 'string' ? 'known' : 'unsure',
 )
-
-const currentLanguage = ref<'en' | 'th'>('en')
 
 if (typeof route.query.role === 'string') {
   preferredRoleSlug.value = route.query.role
@@ -35,22 +34,10 @@ onMounted(() => {
     preferredRoleSlug.value = stored
     decisionMode.value = 'known'
   }
-
-  const storedLang = localStorage.getItem(SELECTED_LANGUAGE_KEY)
-  if (storedLang === 'th' || storedLang === 'en') {
-    currentLanguage.value = storedLang
-  }
 })
 
-function selectLanguage(lang: 'en' | 'th') {
-  currentLanguage.value = lang
-  if (import.meta.client) {
-    localStorage.setItem(SELECTED_LANGUAGE_KEY, lang)
-  }
-}
-
 const t = computed(() => {
-  if (currentLanguage.value === 'th') {
+  if (isThai.value) {
     return {
       backLink: 'ย้อนกลับไปหน้าภาพรวม',
       resumeBtn: 'กลับไปทำเซสชันล่าสุด',
@@ -301,7 +288,7 @@ const resultSummary = computed(() => {
     return t.value.noRolesMatch
   }
 
-  if (currentLanguage.value === 'th') {
+  if (isThai.value) {
     return `กำลังแสดง ${filteredRoles.value.length} จากทั้งหมด ${roles.value.length} ตำแหน่งงาน`
   }
   return `Showing ${filteredRoles.value.length} of ${roles.value.length} roles.`
@@ -377,7 +364,7 @@ async function handleStart() {
   } catch (error) {
     pageError.value = error as ApiError
     toast.add({
-      title: currentLanguage.value === 'th' ? 'ไม่สามารถเริ่มต้นแบบประเมินได้' : 'Could not start assessment',
+      title: isThai.value ? 'ไม่สามารถเริ่มต้นแบบประเมินได้' : 'Could not start assessment',
       description: getErrorMessage(error as ApiError) ?? undefined,
       color: 'error',
     })
@@ -385,8 +372,8 @@ async function handleStart() {
 }
 
 useSeoMeta({
-  title: computed(() => currentLanguage.value === 'th' ? 'CompetencyX | เริ่มทำแบบประเมิน' : 'CompetencyX | Start assessment'),
-  description: computed(() => currentLanguage.value === 'th'
+  title: computed(() => isThai.value ? 'CompetencyX | เริ่มทำแบบประเมิน' : 'CompetencyX | Start assessment'),
+  description: computed(() => isThai.value
     ? 'เลือกตำแหน่งงานเป้าหมายของคุณ พรีวิวเนื้อหาการเรียนรู้ และเริ่มต้นการประเมินทักษะของคุณ'
     : 'Choose an optional preferred role, preview its roadmap themes, and begin the assessment.'),
 })
@@ -421,34 +408,8 @@ useSeoMeta({
               class="mt-1.5 rounded-full border border-accent-soft bg-accent/10 px-3 py-0.5 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-accent inline-block"
               aria-live="polite"
             >
-              {{ selectedRole ? (currentLanguage === 'th' ? 'เลือกตำแหน่งงานแล้ว' : 'Role selected') : (currentLanguage === 'th' ? 'โหมดค้นหาอิสระ' : 'Open discovery') }}
+              {{ selectedRole ? (isThai ? 'เลือกตำแหน่งงานแล้ว' : 'Role selected') : (isThai ? 'โหมดค้นหาอิสระ' : 'Open discovery') }}
             </p>
-          </div>
-
-          <div class="flex flex-col gap-1.5">
-            <span class="text-[9px] font-extrabold uppercase tracking-[0.18em] text-ink-soft text-right">
-              {{ currentLanguage === 'th' ? 'ภาษาของแบบประเมิน' : 'Assessment Language' }}
-            </span>
-            <div class="relative flex items-center rounded-full border border-border-subtle bg-surface-elevated/40 p-1 shadow-sm transition hover:border-ink/12">
-              <button
-                type="button"
-                class="relative flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.05em] transition-all duration-300"
-                :class="currentLanguage === 'en' ? 'bg-accent text-white shadow-[0_4px_12px_rgba(15,118,110,0.25)]' : 'text-ink-soft hover:text-ink hover:bg-surface-muted/50'"
-                @click="selectLanguage('en')"
-              >
-                <span>🇺🇸</span>
-                <span>English</span>
-              </button>
-              <button
-                type="button"
-                class="relative flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.05em] transition-all duration-300"
-                :class="currentLanguage === 'th' ? 'bg-accent text-white shadow-[0_4px_12px_rgba(15,118,110,0.25)]' : 'text-ink-soft hover:text-ink hover:bg-surface-muted/50'"
-                @click="selectLanguage('th')"
-              >
-                <span>🇹🇭</span>
-                <span>ไทย</span>
-              </button>
-            </div>
           </div>
         </div>
 
@@ -585,7 +546,7 @@ useSeoMeta({
           </div>
 
           <label class="block" for="role-search">
-            <span class="sr-only">{{ currentLanguage === 'th' ? 'ค้นหาตำแหน่งงาน' : 'Search roles' }}</span>
+            <span class="sr-only">{{ isThai ? 'ค้นหาตำแหน่งงาน' : 'Search roles' }}</span>
             <span class="relative block">
               <svg
                 aria-hidden="true"
@@ -690,7 +651,7 @@ useSeoMeta({
           role="alert"
           class="cx-error-panel mt-6 p-4 text-sm"
         >
-          {{ getErrorMessage(pageError) }} {{ currentLanguage === 'th' ? 'โปรดพยายามเริ่มต้นใหม่อีกครั้ง' : 'Please try starting again.' }}
+          {{ getErrorMessage(pageError) }} {{ isThai ? 'โปรดพยายามเริ่มต้นใหม่อีกครั้ง' : 'Please try starting again.' }}
         </div>
 
         <div class="mt-8 flex flex-wrap items-center gap-4">
@@ -769,7 +730,7 @@ useSeoMeta({
             <p class="mt-2 text-sm leading-6 text-ink-soft">
               {{
                 topic.description ||
-                (currentLanguage === 'th'
+                (isThai
                   ? 'หัวข้อนี้มีความสำคัญอย่างมากในเส้นทางการประเมินของบทบาทที่คุณเลือก'
                   : 'This topic appears in the roadmap preview for the selected role.')
               }}

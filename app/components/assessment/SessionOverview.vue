@@ -6,7 +6,7 @@ import {
   getRoleResolutionLabel,
   getTotalAnswered,
 } from '~/utils/assessment'
-import type { AssessmentSession } from '~/shared/types/assessment'
+import type { AssessmentSession } from '~~/shared/types/assessment'
 
 const props = defineProps<{
   session: AssessmentSession

@@ -8,19 +8,20 @@ import type {
   ApiError,
   RankedRoleInsight,
   Role,
-} from '~/shared/types/assessment'
+} from '~~/shared/types/assessment'
 
 const route = useRoute('/results/[sessionId]')
+const sessionId = computed(() => route.params.sessionId as string)
 const { getResults } = useAssessmentResults()
 const { createSession, getSession } = useAssessmentSession()
 const toast = useToast()
 
 const { data: _fetchData, error: fetchError } = await useAsyncData(
-  `results-${route.params.sessionId}`,
+  `results-${sessionId.value}`,
   async () => {
     const [sessionSnapshot, resultsAttempt] = await Promise.all([
-      getSession(route.params.sessionId),
-      getResults(route.params.sessionId).catch((error) => {
+      getSession(sessionId.value),
+      getResults(sessionId.value).catch((error) => {
         const apiError = error as ApiError
         if (apiError.statusCode === 404) return null
         throw error
@@ -31,10 +32,75 @@ const { data: _fetchData, error: fetchError } = await useAsyncData(
 )
 
 const sessionSnapshot = _fetchData.value?.sessionSnapshot
+const isThai = computed(() => sessionSnapshot?.language === 'th')
+
+const t = computed(() => {
+  if (isThai.value) {
+    return {
+      loadError: 'ไม่สามารถโหลดผลลัพธ์ได้',
+      startPhase2Error: 'ไม่สามารถเริ่มเฟส 2 ได้',
+      backLink: 'กลับไปหน้าหลัก',
+      phaseComplete: 'จบเฟส 1 แล้ว',
+      titleSuffix: 'คือทิศทางบทบาทที่เหมาะกับคุณที่สุด',
+      primaryRole: 'บทบาทหลัก',
+      closeFit: 'ตัวเลือกใกล้เคียง',
+      defaultSelection: 'ตัวเลือกเริ่มต้น',
+      selected: 'เลือกแล้ว',
+      phase2WillStartWith: 'เฟส 2 จะเริ่มด้วย',
+      selectPrimaryRole: 'เลือกบทบาทหลัก',
+      useThisRole: 'ใช้บทบาทนี้แทน',
+      assignment2: 'แบบประเมินที่ 2',
+      continueWith: 'ทำต่อด้วย',
+      defaultPath:
+        'บทบาทที่ระบบแนะนำถูกเตรียมไว้เป็นเส้นทางเริ่มต้นสำหรับแบบประเมินถัดไปแล้ว',
+      alternativePath:
+        'คุณเลือกบทบาทซอฟต์แวร์ทางเลือกสำหรับการประเมินทักษะแล้ว',
+      selectedRole: 'บทบาทที่เลือก',
+      preparing: 'กำลังเตรียมแบบประเมินที่ 2...',
+      continue: 'ไปต่อแบบประเมินที่ 2',
+      fallbackRole: 'บทบาทซอฟต์แวร์ที่แนะนำ',
+      fallbackDescription:
+        'คำตอบของคุณชี้ว่าบทบาทนี้เป็นทิศทางถัดไปที่ชัดเจนที่สุด',
+      strongestSignals: 'สัญญาณที่เด่นที่สุด',
+      closeFitDescription:
+        'เป็นบทบาทที่ใกล้เคียงจากรูปแบบการทำงานและความชอบของคุณ',
+    }
+  }
+
+  return {
+    loadError: 'Could not load results',
+    startPhase2Error: 'Could not start Phase 2',
+    backLink: 'Back to landing page',
+    phaseComplete: 'Phase 1 complete',
+    titleSuffix: 'looks like your strongest role direction.',
+    primaryRole: 'Primary role',
+    closeFit: 'Close fit',
+    defaultSelection: 'Default selection',
+    selected: 'Selected',
+    phase2WillStartWith: 'Phase 2 will start with',
+    selectPrimaryRole: 'Select primary role',
+    useThisRole: 'Use this role instead',
+    assignment2: 'Assignment 2',
+    continueWith: 'Continue with',
+    defaultPath:
+      'Your recommended role is already prepared as the default path for the next assignment.',
+    alternativePath:
+      'You have selected an alternative software role for your skill assessment.',
+    selectedRole: 'Selected role',
+    preparing: 'Preparing Assignment 2...',
+    continue: 'Continue to Assignment 2',
+    fallbackRole: 'Recommended software role',
+    fallbackDescription:
+      'Your answers point toward this path as the clearest next direction.',
+    strongestSignals: 'Strongest signals',
+    closeFitDescription:
+      'A close fit based on your work-style and preference pattern.',
+  }
+})
 
 if (fetchError.value) {
   toast.add({
-    title: 'Could not load results',
+    title: t.value.loadError,
     description: getErrorMessage(fetchError.value as ApiError) ?? undefined,
     color: 'error',
   })
@@ -66,7 +132,7 @@ const primaryRole = computed(
     ({
       id: 0,
       slug: primaryRankedRole.value?.slug ?? 'recommended-role',
-      name: primaryRankedRole.value?.name ?? 'Recommended software role',
+      name: primaryRankedRole.value?.name ?? t.value.fallbackRole,
     } satisfies Role),
 )
 
@@ -83,12 +149,15 @@ watch(
 )
 
 const selectedRoleName = computed(
-  () => selectedRole.value?.name ?? primaryRole.value?.name ?? 'Selected role',
+  () =>
+    selectedRole.value?.name ??
+    primaryRole.value?.name ??
+    t.value.selectedRole,
 )
 
 function getRoleDescription(role: RankedRoleInsight | Role | null): string {
   if (!role) {
-    return 'Your answers point toward this path as the clearest next direction.'
+    return t.value.fallbackDescription
   }
 
   if ('description' in role && role.description) {
@@ -96,10 +165,10 @@ function getRoleDescription(role: RankedRoleInsight | Role | null): string {
   }
 
   if ('top_supporting_pillars' in role && role.top_supporting_pillars.length) {
-    return `Strongest signals: ${role.top_supporting_pillars.join(', ')}.`
+    return `${t.value.strongestSignals}: ${role.top_supporting_pillars.join(', ')}.`
   }
 
-  return 'A close fit based on your work-style and preference pattern.'
+  return t.value.closeFitDescription
 }
 
 async function handleContinue() {
@@ -118,6 +187,7 @@ async function handleContinue() {
   try {
     const session = await createSession({
       preferred_role_slug: role.slug,
+      language: sessionSnapshot?.language,
     })
 
     const maxAttempts = 4
@@ -134,7 +204,7 @@ async function handleContinue() {
     await navigateTo(`/roadmaps/${session.id}`)
   } catch (error) {
     toast.add({
-      title: 'Could not start Phase 2',
+      title: t.value.startPhase2Error,
       description: getErrorMessage(error as ApiError) ?? undefined,
       color: 'error',
     })
@@ -144,9 +214,16 @@ async function handleContinue() {
 }
 
 useSeoMeta({
-  title: 'CompetencyX | Role recommendation',
-  description:
-    'Review your primary recommended software role and top alternatives before continuing to skill assessment.',
+  title: computed(() =>
+    isThai.value
+      ? 'CompetencyX | ผลแนะนำบทบาท'
+      : 'CompetencyX | Role recommendation',
+  ),
+  description: computed(() =>
+    isThai.value
+      ? 'ทบทวนบทบาทซอฟต์แวร์ที่ระบบแนะนำและตัวเลือกใกล้เคียงก่อนทำแบบประเมินทักษะต่อ'
+      : 'Review your primary recommended software role and top alternatives before continuing to skill assessment.',
+  ),
 })
 
 onMounted(async () => {
@@ -158,9 +235,9 @@ onMounted(async () => {
 <template>
   <main v-if="results" id="main-content" class="page-wrap">
     <div class="mb-4">
-      <NuxtLink to="/" class="editorial-link text-sm"
-        >Back to landing page</NuxtLink
-      >
+      <NuxtLink to="/" class="editorial-link text-sm">
+        {{ t.backLink }}
+      </NuxtLink>
     </div>
 
     <motion.section
@@ -175,14 +252,14 @@ onMounted(async () => {
           class="inline-flex items-center gap-2 rounded-full border border-accent/15 bg-accent/10 px-4 py-2 text-sm font-bold text-accent"
         >
           <span aria-hidden="true">✓</span>
-          Phase 1 complete
+          {{ t.phaseComplete }}
         </div>
 
         <h1
           id="results-title"
           class="mx-auto mt-8 max-w-4xl font-display text-4xl font-semibold leading-tight text-ink md:text-6xl"
         >
-          {{ primaryRole.name }} looks like your strongest role direction.
+          {{ primaryRole.name }} {{ t.titleSuffix }}
         </h1>
         <p class="mx-auto mt-5 max-w-2xl text-base leading-8 text-ink-soft">
           {{ getRoleDescription(primaryRankedRole || primaryRole) }}
@@ -209,7 +286,7 @@ onMounted(async () => {
             >
               ✓
             </div>
-            <p class="eyebrow">Primary role</p>
+            <p class="eyebrow">{{ t.primaryRole }}</p>
             <h2 class="mt-3 text-2xl font-black text-ink">
               {{ primaryRole.name }}
             </h2>
@@ -225,10 +302,10 @@ onMounted(async () => {
               <p
                 class="text-xs font-extrabold uppercase tracking-[0.08em] text-accent"
               >
-                Default selection
+                {{ t.defaultSelection }}
               </p>
               <p class="mt-2 text-sm leading-6 text-ink-soft">
-                Phase 2 will start with
+                {{ t.phase2WillStartWith }}
                 <span class="font-semibold text-ink">{{
                   primaryRole.name
                 }}</span
@@ -241,7 +318,7 @@ onMounted(async () => {
               class="cx-button-secondary w-full"
               :disabled="isContinuing"
             >
-              Select primary role
+              {{ t.selectPrimaryRole }}
             </button>
           </div>
         </article>
@@ -267,7 +344,7 @@ onMounted(async () => {
             >
               ✓
             </div>
-            <p class="eyebrow">Close fit {{ index + 1 }}</p>
+            <p class="eyebrow">{{ t.closeFit }} {{ index + 1 }}</p>
             <h2 class="mt-3 text-2xl font-black text-ink">{{ role.name }}</h2>
             <p class="mt-3 text-sm leading-7 text-ink-soft">
               {{ getRoleDescription(role) }}
@@ -281,10 +358,10 @@ onMounted(async () => {
               <p
                 class="text-xs font-extrabold uppercase tracking-[0.08em] text-accent"
               >
-                Selected
+                {{ t.selected }}
               </p>
               <p class="mt-2 text-sm leading-6 text-ink-soft">
-                Phase 2 will start with
+                {{ t.phase2WillStartWith }}
                 <span class="font-semibold text-ink">{{ role.name }}</span
                 >.
               </p>
@@ -295,7 +372,7 @@ onMounted(async () => {
               class="cx-button-secondary w-full"
               :disabled="isContinuing"
             >
-              Use this role instead
+              {{ t.useThisRole }}
             </button>
           </div>
         </article>
@@ -306,15 +383,15 @@ onMounted(async () => {
       >
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div class="max-w-2xl">
-            <p class="eyebrow">Assignment 2</p>
+            <p class="eyebrow">{{ t.assignment2 }}</p>
             <h2 class="mt-3 text-2xl font-bold text-ink">
-              Continue with {{ selectedRoleName }}
+              {{ t.continueWith }} {{ selectedRoleName }}
             </h2>
             <p class="mt-2 text-sm leading-7 text-ink-soft">
               {{
                 selectedRole?.slug === primaryRole?.slug
-                  ? 'Your recommended role is already prepared as the default path for the next assignment.'
-                  : 'You have selected an alternative software role for your skill assessment.'
+                  ? t.defaultPath
+                  : t.alternativePath
               }}
             </p>
           </div>
@@ -324,7 +401,7 @@ onMounted(async () => {
             <p
               class="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-soft"
             >
-              Selected role
+              {{ t.selectedRole }}
             </p>
             <p class="mt-1 text-sm font-bold text-ink">
               {{ selectedRoleName }}
@@ -341,9 +418,7 @@ onMounted(async () => {
         @click="handleContinue"
       >
         {{
-          isContinuing
-            ? 'Preparing Assignment 2...'
-            : 'Continue to Assignment 2'
+          isContinuing ? t.preparing : t.continue
         }}
       </button>
     </motion.section>

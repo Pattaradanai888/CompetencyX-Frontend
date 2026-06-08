@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PillarInsight } from '~/shared/types/assessment'
+import type { PillarInsight } from '~~/shared/types/assessment'
 
 const props = defineProps<{
   pillars: PillarInsight[]

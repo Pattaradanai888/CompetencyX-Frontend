@@ -1,13 +1,9 @@
 <script setup lang="ts">
 import { motion } from 'motion-v'
 import { useAssessmentResults } from '~/composables/useAssessmentResults'
-import {
-  sortMasteryDescending,
-  sortTopicsByDisplayOrder,
-} from '~/utils/assessment'
+import { sortTopicsByDisplayOrder } from '~/utils/assessment'
 import { buildRoadmapsEvaluation } from '~/utils/roadmaps'
 import type { RadarDimension } from '~/utils/roadmaps'
-import MasteryMeter from '~/components/results/MasteryMeter.vue'
 import SkillSpiderChart from '~/components/results/SkillSpiderChart.vue'
 import { getErrorMessage } from '~/utils/api'
 import type {
@@ -15,10 +11,13 @@ import type {
   AssessmentSession,
   PillarInsight,
   RoadmapTopic,
+  RoadmapsCatalogDimension,
   RoadmapsCatalogQuestion,
-} from '~/shared/types/assessment'
+  RoadmapsScaleOption,
+} from '~~/shared/types/assessment'
 
 const route = useRoute('/roadmaps/[sessionId]')
+const sessionId = computed(() => route.params.sessionId as string)
 const {
   getResults,
   getHistory,
@@ -35,13 +34,13 @@ const AUTO_ADVANCE_DELAY_MS = 220
 let autoAdvanceTimer: ReturnType<typeof setTimeout> | null = null
 
 const { data: _roadmapsData } = await useAsyncData(
-  `roadmaps-${route.params.sessionId}`,
+  `roadmaps-${sessionId.value}`,
   async () => {
-    const session = await getSession(route.params.sessionId).catch(
+    const session = await getSession(sessionId.value).catch(
       () => null as AssessmentSession | null,
     )
 
-    const assessmentResult = await getResults(route.params.sessionId).catch(
+    const assessmentResult = await getResults(sessionId.value).catch(
       (error) => {
         if ((error as ApiError).statusCode === 409) {
           return null
@@ -53,9 +52,9 @@ const { data: _roadmapsData } = await useAsyncData(
     const [result, history, roadmapsCatalog, roadmapsState] = await Promise.all(
       [
         Promise.resolve(assessmentResult),
-        getHistory(route.params.sessionId).catch(() => null),
-        getRoadmapsCatalog(route.params.sessionId),
-        getRoadmapsState(route.params.sessionId).catch(() => ({
+        getHistory(sessionId.value).catch(() => null),
+        getRoadmapsCatalog(sessionId.value),
+        getRoadmapsState(sessionId.value).catch(() => ({
           completed: false,
           answers: {},
           completed_at: null,
@@ -71,6 +70,181 @@ const result = _roadmapsData.value!.result
 const history = _roadmapsData.value!.history
 const roadmapsCatalog = _roadmapsData.value!.roadmapsCatalog
 const roadmapsState = _roadmapsData.value!.roadmapsState
+const isThai = computed(() => session?.language === 'th')
+
+const t = computed(() => {
+  if (isThai.value) {
+    return {
+      backToSurvey1: 'กลับไปผลลัพธ์ Survey 1',
+      session: 'เซสชัน',
+      finalDashboard: 'แดชบอร์ดผลลัพธ์สุดท้าย',
+      phase2Assessment: 'แบบประเมินเฟส 2',
+      readinessRoadmap: 'แผนพัฒนาความพร้อม',
+      calibrateSkills: 'ประเมินทักษะที่อยู่เบื้องหลังบทบาทที่แนะนำ',
+      completeIntro:
+        'โปรไฟล์นี้รวมผลค้นหาบทบาทกับแบบประเมินทักษะเฟส 2 เพื่อสรุประดับปัจจุบัน จุดแข็ง ช่องว่างสำคัญ และก้าวถัดไป',
+      incompleteIntro:
+        'ตอบคำถามทักษะสั้น ๆ ที่สัมพันธ์กับบทบาท ระบบจะแสดงกราฟ แผนพัฒนา และคำแนะนำฉบับเต็มหลังทำขั้นตอนนี้เสร็จ',
+      assessmentComplete: 'ทำแบบประเมินเสร็จแล้ว',
+      readinessOrganized: 'ถูกจัดเป็นแผนพัฒนาที่ชัดเจน',
+      viewIntro:
+        'หน้านี้แยกสรุปโปรไฟล์ สัญญาณความเหมาะสม ลำดับการเรียนรู้ และข้อมูลวิเคราะห์เพื่อให้อ่านขั้นตอนถัดไปได้ง่าย',
+      personalityResult: 'ผลบุคลิกภาพ',
+      personalityFit: 'ความเหมาะสมด้านบุคลิกภาพ',
+      basedOnProfile: 'อิงจากโปรไฟล์หลัก',
+      heroMetrics: 'ตัวชี้วัดหลัก',
+      overallReadiness: 'ความพร้อมโดยรวม',
+      readinessStatus: 'สถานะความพร้อม',
+      strongestNow: 'จุดแข็งตอนนี้',
+      capabilityMap: 'แผนภาพความสามารถ',
+      profileCenterpiece: 'ภาพรวมโปรไฟล์',
+      mapCopy:
+        'แผนภาพนี้ช่วยให้เห็นรูปแบบการทำงานปัจจุบัน ขณะที่ส่วนอื่นของหน้าช่วยตีความและวางก้าวถัดไป',
+      section: 'ส่วนที่',
+      knowledgePersonalityFit: 'ความรู้ + ความเหมาะสมด้านบุคลิกภาพ',
+      section2Copy:
+        'แยกสัญญาณความสามารถออกจากสัญญาณบุคลิกภาพ เพื่อให้อ่านภาพรวมความเหมาะสมได้ชัดเจน',
+      knowledgeFit: 'ความเหมาะสมด้านความรู้',
+      capabilityAlignment: 'ความสอดคล้องของความสามารถ',
+      currentReadiness: 'ความพร้อมปัจจุบัน',
+      knowledgeFitCopy:
+        'ความเหมาะสมด้านความรู้ผสมสัญญาณจาก Survey 1 กับหลักฐานการทำงานจาก Survey 2 ในมิติ PSP และ SDLC',
+      strongest: 'เด่นสุด',
+      behavioralAlignment: 'ความสอดคล้องเชิงพฤติกรรม',
+      profileCoherence: 'ความสอดคล้องของโปรไฟล์',
+      behaviorCopy:
+        'การ์ดนี้สรุปเรดาร์บุคลิกภาพและคำแนะนำบทบาทให้เป็นสัญญาณสั้น ๆ แทนข้อความยาว',
+      recommendedSequence: 'ลำดับการเรียนรู้ที่แนะนำ',
+      sequenceCopy:
+        'แผนพัฒนาที่เปลี่ยนโปรไฟล์ความเหมาะสมของคุณให้เป็นขั้นตอนปฏิบัติสำหรับสร้างหลักฐานตามบทบาท',
+      step: 'ขั้นตอน',
+      roleGap: 'ช่องว่างบทบาท',
+      prerequisite: 'เรื่องพื้นฐานก่อนหน้า',
+      prerequisites: 'เรื่องพื้นฐานก่อนหน้า',
+      followOn: 'ต่อยอด',
+      additionalInsights: 'ข้อมูลวิเคราะห์เพิ่มเติม',
+      insightsCopy:
+        'รายละเอียดสนับสนุนถูกจัดเป็นการ์ดเล็ก ๆ เพื่อให้หน้ายังอ่านง่ายและไม่แน่นเกินไป',
+      strengthDistribution: 'การกระจายจุดแข็ง',
+      strongestDimensions: 'มิติที่แข็งแรงที่สุด',
+      strongestDimensionsCopy:
+        'พื้นที่ความสามารถที่ได้คะแนนสูงและกำลังช่วยสนับสนุนความเหมาะสมของคุณ',
+      developmentPriorities: 'ลำดับความสำคัญในการพัฒนา',
+      improveNext: 'ควรพัฒนาถัดไป',
+      improveNextCopy:
+        'พื้นที่คะแนนต่ำที่ช่วยเพิ่มความพร้อมได้เร็วที่สุด',
+      roleReady: 'พร้อมสำหรับบทบาท',
+      projectReady: 'พร้อมเริ่มโปรเจกต์',
+      foundationBuilding: 'กำลังสร้างพื้นฐาน',
+      readyToReview: 'พร้อมทบทวน',
+      buildingConfidence: 'กำลังสร้างความมั่นใจ',
+      stillCalibrating: 'กำลังปรับเทียบ',
+      answered: 'ตอบแล้ว',
+      saving: 'กำลังบันทึก',
+      inProgress: 'กำลังทำ',
+      savingSignal: 'กำลังบันทึกสัญญาณคำตอบและเตรียมขั้นตอนถัดไป',
+      movingNext: 'กำลังไปยังข้อความถัดไป',
+      selectOne: 'เลือกหนึ่งคำตอบเพื่อไปต่ออัตโนมัติ',
+      preparingPrompt: 'กำลังเตรียมคำถามถัดไป',
+      promptContext: 'วางข้อความนี้บนระดับความคิดเห็นแล้วไปต่อ',
+      foundation: 'พื้นฐาน',
+      intermediate: 'ระดับกลาง',
+      advanced: 'ขั้นสูง',
+      targeted: 'เฉพาะจุด',
+      previous: 'ย้อนกลับ',
+      refreshPrompt:
+        'รีเฟรชเซสชันเพื่อแสดงคำถามถัดไปโดยไม่สูญเสียความคืบหน้า',
+      resolvingQuestion: 'ระบบกำลังจัดเตรียมคำถามปรับเทียบถัดไป',
+      noTopicDescription:
+        'หัวข้อนี้ถูกจัดลำดับจากช่องว่างของบทบาทที่คุณเลือก',
+    }
+  }
+
+  return {
+    backToSurvey1: 'Back to Survey 1 results',
+    session: 'Session',
+    finalDashboard: 'Final result dashboard',
+    phase2Assessment: 'Phase 2 assessment',
+    readinessRoadmap: 'readiness roadmap',
+    calibrateSkills: 'Calibrate the skills behind your recommended role',
+    completeIntro:
+      'This profile blends your role discovery result with the Phase 2 skill assessment to map your current level, strongest signals, priority gaps, and next portfolio moves.',
+    incompleteIntro:
+      'Answer a short set of role-aware skill prompts. The full chart, roadmap, and recommendations stay hidden until this step is complete.',
+    assessmentComplete: 'Assessment complete',
+    readinessOrganized: 'readiness, organized into a clear growth plan.',
+    viewIntro:
+      'This view separates your profile summary, fit signals, learning sequence, and supporting analytics so the next actions are easy to scan.',
+    personalityResult: 'Personality result',
+    personalityFit: 'Personality fit',
+    basedOnProfile: 'Based on pillar profile',
+    heroMetrics: 'Hero metrics',
+    overallReadiness: 'Overall readiness',
+    readinessStatus: 'Readiness status',
+    strongestNow: 'Strongest now',
+    capabilityMap: 'Capability map',
+    profileCenterpiece: 'Profile centerpiece',
+    mapCopy:
+      'The map keeps your current execution shape visible while the rest of the page focuses on interpretation and next steps.',
+    section: 'Section',
+    knowledgePersonalityFit: 'Knowledge + personality fit',
+    section2Copy:
+      'Separate the execution signal from the personality signal so the fit story is readable at a glance.',
+    knowledgeFit: 'Knowledge fit',
+    capabilityAlignment: 'Capability alignment',
+    currentReadiness: 'current readiness',
+    knowledgeFitCopy:
+      'Your knowledge fit blends Survey 1 signals with Survey 2 execution evidence across PSP and SDLC dimensions.',
+    strongest: 'Strongest',
+    behavioralAlignment: 'Behavioral alignment',
+    profileCoherence: 'profile coherence',
+    behaviorCopy:
+      'This card translates your personality radar and role guidance into concise signals instead of long narrative blocks.',
+    recommendedSequence: 'Recommended learning sequence',
+    sequenceCopy:
+      'A focused roadmap that turns your fit profile into a practical step-by-step path for building stronger role evidence.',
+    step: 'Step',
+    roleGap: 'Role gap',
+    prerequisite: 'prerequisite',
+    prerequisites: 'prerequisites',
+    followOn: 'Follow-on',
+    additionalInsights: 'Additional insights and analytics',
+    insightsCopy:
+      'Supporting detail is grouped into smaller cards so the page stays analytical without becoming dense.',
+    strengthDistribution: 'Strength distribution',
+    strongestDimensions: 'Strongest dimensions',
+    strongestDimensionsCopy:
+      'The highest-scoring capability areas currently carrying your fit.',
+    developmentPriorities: 'Development priorities',
+    improveNext: 'Improve next',
+    improveNextCopy:
+      'The lowest-scoring areas that will move readiness fastest.',
+    roleReady: 'Role ready',
+    projectReady: 'Project ready',
+    foundationBuilding: 'Foundation building',
+    readyToReview: 'Ready to review',
+    buildingConfidence: 'Building confidence',
+    stillCalibrating: 'Still calibrating',
+    answered: 'answered',
+    saving: 'Saving',
+    inProgress: 'In progress',
+    savingSignal: 'Saving your assessment signal and preparing the next step.',
+    movingNext: 'Moving to the next statement.',
+    selectOne: 'Select one response to continue automatically.',
+    preparingPrompt: 'Preparing prompt',
+    promptContext: 'Place the statement on the agreement scale and continue.',
+    foundation: 'Foundation',
+    intermediate: 'Intermediate',
+    advanced: 'Advanced',
+    targeted: 'Targeted',
+    previous: 'Previous',
+    refreshPrompt:
+      'Refreshing the session should surface the next prompt without losing your progress.',
+    resolvingQuestion: 'We are resolving the next calibration question.',
+    noTopicDescription:
+      'This topic is prioritized from your preferred-role gap profile.',
+  }
+})
 
 const preferredRoleName = computed(
   () => result?.preferred_role?.name ?? session?.preferred_role?.name ?? null,
@@ -79,7 +253,10 @@ const bestFitRoleName = computed(
   () => result?.best_fit_role?.name ?? session?.best_fit_role?.name ?? null,
 )
 const survey2RoleTitle = computed(
-  () => bestFitRoleName.value ?? preferredRoleName.value ?? 'Software role',
+  () =>
+    bestFitRoleName.value ??
+    preferredRoleName.value ??
+    (isThai.value ? 'บทบาทซอฟต์แวร์' : 'Software role'),
 )
 
 const evaluation = computed(() => {
@@ -130,7 +307,7 @@ const roadmapQuestions: RoadmapQuestion[] = roadmapsCatalog.questions.map(
 )
 
 const answerScale = roadmapsCatalog.scale
-const answerScaleValues = answerScale.map((option) => option.value)
+const answerScaleValues = answerScale.map((option: RoadmapsScaleOption) => option.value)
 const answerScaleMin = answerScaleValues.length
   ? Math.min(...answerScaleValues)
   : 1
@@ -176,7 +353,7 @@ function normalizeRoadmapsAnswer(raw: number): number {
 
 function getQuestionInfluence(question: RoadmapQuestion): number | null {
   const raw = roadmapAnswers.value[question.id]
-  if (!Number.isFinite(raw)) {
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) {
     return null
   }
 
@@ -185,8 +362,8 @@ function getQuestionInfluence(question: RoadmapQuestion): number | null {
 
 const catalogByKey = computed(
   () =>
-    new Map(
-      roadmapsCatalog.dimensions.map((item: { key: string }) => [
+    new Map<string, RoadmapsCatalogDimension>(
+      roadmapsCatalog.dimensions.map((item: RoadmapsCatalogDimension) => [
         item.key,
         item,
       ]),
@@ -206,7 +383,7 @@ const blendedDimensions = computed<RadarDimension[]>(() => {
       .map((question) => getQuestionInfluence(question))
       .filter((score): score is number => score !== null)
     const questionScore = influences.length
-      ? influences.reduce((sum, value) => sum + value, 0) / influences.length
+      ? influences.reduce((sum: number, value: number) => sum + value, 0) / influences.length
       : dimension.value
 
     const capabilityValue = clamp(questionScore)
@@ -247,7 +424,7 @@ function getDimensionMastery(dimensionKey: string): number {
     normalizeRoadmapsAnswer(value),
   )
   const average =
-    normalized.reduce((sum, value) => sum + value, 0) / normalized.length
+    normalized.reduce((sum: number, value: number) => sum + value, 0) / normalized.length
   return clamp(average)
 }
 
@@ -274,7 +451,7 @@ async function pickNextQuestionWithRl(): Promise<RoadmapQuestion | null> {
 
   try {
     const response = await getRoadmapsNextQuestion(
-      route.params.sessionId,
+      sessionId.value,
       roadmapAnswers.value,
     )
     const nextQuestionId = response.next_question?.id
@@ -282,11 +459,12 @@ async function pickNextQuestionWithRl(): Promise<RoadmapQuestion | null> {
       return null
     }
     return (
-      roadmapQuestions.find((question) => question.id === nextQuestionId) ?? null
+      roadmapQuestions.find((question) => question.id === nextQuestionId) ??
+      null
     )
   } catch {
     return unanswered.reduce(
-      (best, current) => {
+      (best: RoadmapQuestion | null, current: RoadmapQuestion) => {
         if (!best) {
           return current
         }
@@ -330,7 +508,7 @@ const recalculatedGrowthAreas = computed(() =>
 const overallCapabilityScore = computed(() => {
   if (!blendedDimensions.value.length) return 0
   const total = blendedDimensions.value.reduce(
-    (sum, dimension) => sum + dimension.value,
+    (sum: number, dimension: RadarDimension) => sum + dimension.value,
     0,
   )
   return Math.round((total / blendedDimensions.value.length) * 100)
@@ -342,9 +520,7 @@ const roadmapsProgressPercent = computed(() => {
   const answeredCount = roadmapQuestions.filter((question) =>
     Number.isFinite(roadmapAnswers.value[question.id]),
   ).length
-  return Math.round(
-    (answeredCount / roadmapQuestions.length) * 100,
-  )
+  return Math.round((answeredCount / roadmapQuestions.length) * 100)
 })
 
 const answeredPromptCount = computed(() => {
@@ -371,7 +547,7 @@ const selectedScaleOption = computed(() => {
   }
 
   return (
-    answerScale.find((option) => option.value === activeQuestionAnswer.value) ??
+    answerScale.find((option: RoadmapsScaleOption) => option.value === activeQuestionAnswer.value) ??
     null
   )
 })
@@ -384,250 +560,50 @@ const phase2GuidanceTitle = computed(() => {
 
 const phase2ProgressSummary = computed(() => {
   const calibrationState = hasAnsweredAll.value
-    ? 'Ready to review'
+    ? t.value.readyToReview
     : answeredPromptCount.value
-      ? 'Building confidence'
-      : 'Still calibrating'
-  const progressState = isSavingRoadmaps.value ? 'Saving' : 'In progress'
+      ? t.value.buildingConfidence
+      : t.value.stillCalibrating
+  const progressState = isSavingRoadmaps.value
+    ? t.value.saving
+    : t.value.inProgress
 
-  return `Q${answeredPromptCount.value} answered • ${calibrationState} • ${progressState}`
+  return `Q${answeredPromptCount.value} ${t.value.answered} • ${calibrationState} • ${progressState}`
 })
 
 const phase2Microcopy = computed(() => {
   if (isSavingRoadmaps.value) {
-    return 'Saving your assessment signal and preparing the next step.'
+    return t.value.savingSignal
   }
 
   if (isAutoAdvancing.value && selectedScaleOption.value) {
-    return `${selectedScaleOption.value.label}. Moving to the next statement.`
+    return `${getRoadmapScaleLabel(selectedScaleOption.value)}. ${t.value.movingNext}`
   }
 
   if (selectedScaleOption.value) {
-    return `${selectedScaleOption.value.label}.`
+    return `${getRoadmapScaleLabel(selectedScaleOption.value)}.`
   }
 
-  return 'Select one response to continue automatically.'
+  return t.value.selectOne
 })
 
 const phase2PromptContext = computed(() => {
   if (!activeQuestion.value) {
-    return 'We are preparing the next calibration prompt.'
+    return t.value.preparingPrompt
   }
 
-  return 'Place the statement on the agreement scale and continue.'
+  return t.value.promptContext
 })
 
 const readinessStatus = computed(() => {
-  if (overallCapabilityScore.value >= 78) return 'Role ready'
-  if (overallCapabilityScore.value >= 58) return 'Project ready'
-  return 'Foundation building'
+  if (overallCapabilityScore.value >= 78) return t.value.roleReady
+  if (overallCapabilityScore.value >= 58) return t.value.projectReady
+  return t.value.foundationBuilding
 })
 
-const topRoadmapTopics = computed(() =>
+const topRoadmapTopics = computed<RoadmapTopic[]>(() =>
   sortTopicsByDisplayOrder(result?.preferred_role_gap_topics ?? []).slice(0, 6),
 )
-
-const suggestedTechnologies = computed(() => {
-  const roleName = result?.best_fit_role?.name?.toLowerCase() ?? ''
-  if (roleName.includes('frontend')) {
-    return ['HTML/CSS systems', 'JavaScript', 'Vue or React', 'Accessibility']
-  }
-  if (roleName.includes('backend')) {
-    return ['REST APIs', 'SQL', 'Authentication', 'System design basics']
-  }
-  if (roleName.includes('data')) {
-    return ['Python', 'SQL', 'Pipelines', 'Visualization']
-  }
-  if (roleName.includes('devops')) {
-    return ['Linux', 'Docker', 'CI/CD', 'Cloud fundamentals']
-  }
-  return [
-    'Git workflow',
-    'Testing basics',
-    'Architecture fundamentals',
-    'Portfolio delivery',
-  ]
-})
-
-type ProjectSuggestion = {
-  title: string
-  copy: string
-}
-
-function getRoleProjectTemplates(roleName: string): ProjectSuggestion[] {
-  if (roleName.includes('frontend')) {
-    return [
-      {
-        title: 'Accessibility-First Feature Sprint',
-        copy: 'Build a responsive feature with keyboard navigation, semantic landmarks, and screen-reader-tested flows.',
-      },
-      {
-        title: 'State & API Integration Module',
-        copy: 'Implement a real API-backed page with loading/error states, caching behavior, and clear UX fallbacks.',
-      },
-      {
-        title: 'Performance Refactor Case Study',
-        copy: 'Optimize rendering and bundle size, then document before/after metrics and engineering tradeoffs.',
-      },
-    ]
-  }
-
-  if (roleName.includes('backend')) {
-    return [
-      {
-        title: 'Service API + Data Integrity Pack',
-        copy: 'Design and implement REST endpoints with validation, pagination, structured errors, and migration-safe schema updates.',
-      },
-      {
-        title: 'Reliability & Observability Slice',
-        copy: 'Add request tracing, health checks, retry-safe jobs, and production-ready logging for one backend service.',
-      },
-      {
-        title: 'Auth + Permission Boundary',
-        copy: 'Implement role-based access with tests for authorization edges and abuse-case handling.',
-      },
-    ]
-  }
-
-  if (roleName.includes('data')) {
-    return [
-      {
-        title: 'Pipeline-to-Dashboard Flow',
-        copy: 'Build an ETL pipeline from raw data to a clean analytics table and publish a dashboard with key decisions.',
-      },
-      {
-        title: 'Data Quality Guardrails',
-        copy: 'Create validation checks, anomaly alerts, and a quality report for critical business dimensions.',
-      },
-      {
-        title: 'Experiment Analysis Notebook',
-        copy: 'Run a hypothesis-driven analysis with reproducible notebook steps and clear recommendation notes.',
-      },
-    ]
-  }
-
-  if (roleName.includes('devops')) {
-    return [
-      {
-        title: 'CI/CD Reliability Upgrade',
-        copy: 'Implement lint/test/security gates, artifact versioning, and rollback-safe deploy strategy in one pipeline.',
-      },
-      {
-        title: 'Infra Provisioning Baseline',
-        copy: 'Provision a minimal environment with IaC, secrets handling, and reproducible deployment scripts.',
-      },
-      {
-        title: 'Incident Readiness Drill',
-        copy: 'Create monitoring alerts, runbook steps, and a post-incident review template for common outages.',
-      },
-    ]
-  }
-
-  return [
-    {
-      title: 'End-to-End Delivery Case',
-      copy: 'Take one feature from requirements to release with tests, documentation, and measurable outcome.',
-    },
-    {
-      title: 'Quality & Maintenance Sprint',
-      copy: 'Improve an existing module by fixing defects, increasing test confidence, and reducing change risk.',
-    },
-    {
-      title: 'Architecture Communication Brief',
-      copy: 'Document one technical decision with constraints, alternatives, risks, and operational impact.',
-    },
-  ]
-}
-
-const suggestedProjects = computed(() => {
-  const roleName = survey2RoleTitle.value.toLowerCase()
-  const templates = getRoleProjectTemplates(roleName)
-  const topicHints = topRoadmapTopics.value.slice(0, 3)
-
-  return templates.map((template, index) => {
-    const topic = topicHints[index]
-    if (!topic) {
-      return template
-    }
-
-    return {
-      title: template.title,
-      copy: `${template.copy} Focus scope on ${topic.title.toLowerCase()}.`,
-    }
-  })
-})
-
-const recommendedRoadmapActions = computed(() => {
-  const roleName = survey2RoleTitle.value.toLowerCase()
-  const weakest = sortedDimensionsDesc.value.slice(-4)
-
-  return weakest.map((dimension) => {
-    const defaultAction =
-      catalogByKey.value.get(dimension.key)?.low_score_action ??
-      'Practice this area while completing your next roadmap topic.'
-
-    let roleActionPrefix = 'Execution focus'
-    if (roleName.includes('frontend')) roleActionPrefix = 'UI delivery focus'
-    else if (roleName.includes('backend'))
-      roleActionPrefix = 'Service reliability focus'
-    else if (roleName.includes('data')) roleActionPrefix = 'Data trust focus'
-    else if (roleName.includes('devops'))
-      roleActionPrefix = 'Platform stability focus'
-
-    return {
-      dimension: dimension.label,
-      action: `${roleActionPrefix}: ${defaultAction}`,
-    }
-  })
-})
-
-const recommendedResources = computed(() => {
-  const roleName = survey2RoleTitle.value.toLowerCase()
-  const shared = [
-    'Project README template: problem, architecture, tradeoffs, tests, and next improvements',
-    'Engineering review checklist for quality, risk, and maintainability',
-  ]
-
-  if (roleName.includes('frontend')) {
-    return [
-      ...shared,
-      'MDN Web Docs for platform APIs and browser behavior',
-      'WCAG + accessible component patterns reference',
-      'Frontend performance audits with Lighthouse and DevTools',
-    ]
-  }
-  if (roleName.includes('backend')) {
-    return [
-      ...shared,
-      'REST API design guidelines and OpenAPI examples',
-      'PostgreSQL docs for schema/index/query fundamentals',
-      'Observability stack docs (structured logging, metrics, traces)',
-    ]
-  }
-  if (roleName.includes('data')) {
-    return [
-      ...shared,
-      'SQL style and query optimization references',
-      'Pandas + data validation framework documentation',
-      'Dashboard storytelling and metric design examples',
-    ]
-  }
-  if (roleName.includes('devops')) {
-    return [
-      ...shared,
-      'Docker and container runtime production practices',
-      'CI/CD pipeline hardening and rollback strategy guides',
-      'Cloud monitoring and incident response runbook examples',
-    ]
-  }
-
-  return [
-    ...shared,
-    'Official docs for your selected framework and runtime',
-    'Testing strategy guide for unit, integration, and end-to-end coverage',
-    'Architecture decision record (ADR) examples for technical communication',
-  ]
-})
 
 const displayPersonalitySignals = computed(() => {
   if (evaluation.value.personalitySignals.length) {
@@ -636,10 +612,47 @@ const displayPersonalitySignals = computed(() => {
 
   const roleName = survey2RoleTitle.value
   return [
-    `Current profile is calibrated for ${roleName}.`,
-    `Survey 2 scores reflect execution habits across PSP and SDLC dimensions.`,
-    'Use low-scoring dimensions as immediate next-improvement priorities.',
+    isThai.value
+      ? `โปรไฟล์ปัจจุบันถูกปรับเทียบกับทิศทาง ${roleName}`
+      : `Current profile is calibrated for ${roleName}.`,
+    isThai.value
+      ? 'คะแนน Survey 2 สะท้อนนิสัยการทำงานในมิติ PSP และ SDLC'
+      : `Survey 2 scores reflect execution habits across PSP and SDLC dimensions.`,
+    isThai.value
+      ? 'ใช้มิติคะแนนต่ำเป็นลำดับสำคัญในการพัฒนาถัดไป'
+      : 'Use low-scoring dimensions as immediate next-improvement priorities.',
   ]
+})
+
+const personalityFitNarrative = computed(() => {
+  const roleName = survey2RoleTitle.value
+  const strongestSignals = [...blendedDimensions.value]
+    .sort((left, right) => right.value - left.value)
+    .slice(0, 2)
+    .map((item) => item.label)
+
+  const signalSummary = strongestSignals.length
+    ? isThai.value
+      ? `สัญญาณพฤติกรรมที่เด่นที่สุดอยู่ที่ ${strongestSignals.join(' และ ')}`
+      : `Your strongest behavioral signals appear around ${strongestSignals.join(
+          ' and ',
+        )}.`
+    : isThai.value
+      ? 'โปรไฟล์พฤติกรรมของคุณยังอยู่ระหว่างการปรับเทียบตามมิติของแผนพัฒนา'
+      : 'Your behavioral profile is still being calibrated across the roadmap dimensions.'
+
+  const confidenceSummary =
+    result?.role_alignment_status === 'aligned'
+      ? isThai.value
+        ? 'รูปแบบคำตอบบอกว่าคุณมีความมั่นใจในบทบาทค่อนข้างชัดเจน แผนพัฒนาจึงควรเน้นเปลี่ยนนิสัยการทำงานเหล่านี้ให้เป็นหลักฐานที่แข็งแรงขึ้น'
+        : 'The pattern suggests stable role confidence, so the roadmap can focus on turning those work habits into stronger execution evidence.'
+      : isThai.value
+        ? 'รูปแบบคำตอบบอกว่ายังมีพื้นที่ให้สำรวจก่อนล็อกเส้นทางแน่นเกินไป แผนพัฒนาจึงควรใช้มิติคะแนนต่ำเป็น feedback เชิงปฏิบัติ'
+        : 'The pattern suggests there is still room to explore before locking the path too tightly, so the roadmap should use low-scoring dimensions as practical feedback.'
+
+  return isThai.value
+    ? `โปรไฟล์ปัจจุบันสอดคล้องกับทิศทาง ${roleName} มากที่สุด ${signalSummary} ${confidenceSummary}`
+    : `Your current profile is most consistent with the ${roleName} direction. ${signalSummary} ${confidenceSummary}`
 })
 
 const personalityPillars = computed(() => result?.pillar_profile ?? [])
@@ -653,28 +666,27 @@ const topPersonalityPillars = computed(() =>
 const personalityFitScore = computed(() => {
   if (!personalityPillars.value.length) return 0
   const total = personalityPillars.value.reduce(
-    (sum, pillar) => sum + pillar.normalized_score,
+    (sum: number, pillar: PillarInsight) => sum + pillar.normalized_score,
     0,
   )
   return Math.round((total / personalityPillars.value.length) * 100)
 })
 
-const topMasteryScores = computed(() =>
-  sortMasteryDescending(result?.mastery_scores ?? []).slice(0, 4),
-)
-
 const trackHighlights = computed(() => {
   const tracks = [
     {
       key: 'psp',
-      label: 'PSP discipline',
-      description: 'Planning, quality discipline, and engineering consistency.',
+      label: isThai.value ? 'วินัยแบบ PSP' : 'PSP discipline',
+      description: isThai.value
+        ? 'การวางแผน วินัยด้านคุณภาพ และความสม่ำเสมอทางวิศวกรรม'
+        : 'Planning, quality discipline, and engineering consistency.',
     },
     {
       key: 'sdlc',
-      label: 'SDLC delivery',
-      description:
-        'Execution across analysis, build, testing, release, and support.',
+      label: isThai.value ? 'การส่งมอบแบบ SDLC' : 'SDLC delivery',
+      description: isThai.value
+        ? 'การทำงานตั้งแต่วิเคราะห์ สร้าง ทดสอบ ปล่อยใช้งาน และดูแลระบบ'
+        : 'Execution across analysis, build, testing, release, and support.',
     },
   ] as const
 
@@ -684,7 +696,7 @@ const trackHighlights = computed(() => {
     )
     const average = dimensions.length
       ? Math.round(
-          (dimensions.reduce((sum, dimension) => sum + dimension.value, 0) /
+          (dimensions.reduce((sum: number, dimension: RadarDimension) => sum + dimension.value, 0) /
             dimensions.length) *
             100,
         )
@@ -695,7 +707,8 @@ const trackHighlights = computed(() => {
       average,
       strongest:
         [...dimensions].sort((left, right) => right.value - left.value)[0]
-          ?.label ?? 'Not enough signal yet',
+          ?.label ??
+        (isThai.value ? 'สัญญาณยังไม่เพียงพอ' : 'Not enough signal yet'),
     }
   })
 })
@@ -725,42 +738,51 @@ function getTopicDifficultyLabel(topic: RoadmapTopic): string {
   }
 
   if (typeof raw === 'number') {
-    if (raw <= 2) return 'Foundation'
-    if (raw <= 4) return 'Intermediate'
-    return 'Advanced'
+    if (raw <= 2) return t.value.foundation
+    if (raw <= 4) return t.value.intermediate
+    return t.value.advanced
   }
 
-  return 'Targeted'
-}
-
-function getTopicDuration(topic: RoadmapTopic): string {
-  const raw = topic.difficulty
-
-  if (typeof raw === 'number') {
-    if (raw <= 2) return '1 to 2 weeks'
-    if (raw <= 4) return '2 to 4 weeks'
-    return '4 to 6 weeks'
-  }
-
-  return 'Focused sprint'
+  return t.value.targeted
 }
 
 function getTopicTags(topic: RoadmapTopic): string[] {
-  const tags = ['Role gap']
+  const tags = [t.value.roleGap]
 
   if (topic.prerequisites?.length) {
     tags.push(
       topic.prerequisites.length === 1
-        ? '1 prerequisite'
-        : `${topic.prerequisites.length} prerequisites`,
+        ? `1 ${t.value.prerequisite}`
+        : `${topic.prerequisites.length} ${t.value.prerequisites}`,
     )
   }
 
   if (topic.parent_id !== null) {
-    tags.push('Follow-on')
+    tags.push(t.value.followOn)
   }
 
   return tags
+}
+
+function getRoadmapScaleLabel(option: { label: string; value: number }): string {
+  if (!isThai.value) {
+    return option.label
+  }
+
+  switch (option.value) {
+    case 1:
+      return 'ไม่เห็นด้วยอย่างยิ่ง'
+    case 2:
+      return 'ไม่เห็นด้วย'
+    case 3:
+      return 'เป็นกลาง'
+    case 4:
+      return 'เห็นด้วย'
+    case 5:
+      return 'เห็นด้วยอย่างยิ่ง'
+    default:
+      return option.label
+  }
 }
 
 function formatPercent(value: number): string {
@@ -779,7 +801,7 @@ async function submitRoadmaps() {
   isSavingRoadmaps.value = true
 
   try {
-    const savePromise = saveRoadmapsState(route.params.sessionId, {
+    const savePromise = saveRoadmapsState(sessionId.value, {
       completed: true,
       answers: { ...roadmapAnswers.value },
       completed_at: new Date().toISOString(),
@@ -797,7 +819,7 @@ async function submitRoadmaps() {
       description:
         error instanceof Error && error.message === 'Save timeout'
           ? 'Saving took too long. Please try again.'
-          : getErrorMessage(error as ApiError),
+          : getErrorMessage(error as ApiError) ?? undefined,
       color: 'error',
     })
   } finally {
@@ -806,7 +828,11 @@ async function submitRoadmaps() {
 }
 
 function selectAnswer(value: number) {
-  if (!activeQuestion.value || isSavingRoadmaps.value || isAutoAdvancing.value) {
+  if (
+    !activeQuestion.value ||
+    isSavingRoadmaps.value ||
+    isAutoAdvancing.value
+  ) {
     return
   }
 
@@ -879,29 +905,31 @@ useSeoMeta({
         :to="`/results/${route.params.sessionId}`"
         class="editorial-link text-sm"
       >
-        Back to Survey 1 results
+        {{ t.backToSurvey1 }}
       </NuxtLink>
-      <p class="text-sm text-ink-soft">Session {{ route.params.sessionId }}</p>
+      <p class="text-sm text-ink-soft">
+        {{ t.session }} {{ route.params.sessionId }}
+      </p>
     </div>
 
     <section v-if="isRoadmapsComplete" class="glass-panel mt-6 p-6 md:p-8">
       <p class="eyebrow">
         {{
-          isRoadmapsComplete ? 'Final result dashboard' : 'Phase 2 assessment'
+          isRoadmapsComplete ? t.finalDashboard : t.phase2Assessment
         }}
       </p>
       <h1 class="mt-4 font-display text-4xl leading-tight text-ink md:text-6xl">
         {{
           isRoadmapsComplete
-            ? `${survey2RoleTitle} readiness roadmap`
-            : 'Calibrate the skills behind your recommended role'
+            ? `${survey2RoleTitle} ${t.readinessRoadmap}`
+            : t.calibrateSkills
         }}
       </h1>
       <p class="mt-4 max-w-3xl text-sm leading-7 text-ink-soft">
         {{
           isRoadmapsComplete
-            ? 'This profile blends your role discovery result with the Phase 2 skill assessment to map your current level, strongest signals, priority gaps, and next portfolio moves.'
-            : 'Answer a short set of role-aware skill prompts. The full chart, roadmap, and recommendations stay hidden until this step is complete.'
+            ? t.completeIntro
+            : t.incompleteIntro
         }}
       </p>
       <div class="mt-5 flex flex-wrap items-center gap-2">
@@ -1090,7 +1118,7 @@ useSeoMeta({
                     <span class="phase2-scale__orb-core" />
                   </span>
                   <span class="phase2-scale__option-label">
-                    {{ option.label }}
+                    {{ getRoadmapScaleLabel(option) }}
                   </span>
                 </button>
               </div>
@@ -1108,22 +1136,23 @@ useSeoMeta({
                 :disabled="currentQuestionIndex === 0"
                 @click="goToPreviousQuestion"
               >
-                Previous
+                {{ t.previous }}
               </button>
             </div>
           </div>
         </motion.div>
 
         <div v-else class="phase2-question-card phase2-question-card--empty">
-          <p class="phase2-question-card__prompt-label">Preparing prompt</p>
+          <p class="phase2-question-card__prompt-label">
+            {{ t.preparingPrompt }}
+          </p>
           <h2
             class="phase2-question-card__prompt phase2-question-card__prompt--compact"
           >
-            We are resolving the next calibration question.
+            {{ t.resolvingQuestion }}
           </h2>
           <p class="phase2-panel__lead mt-4">
-            Refreshing the session should surface the next prompt without losing
-            your progress.
+            {{ t.refreshPrompt }}
           </p>
         </div>
       </section>
@@ -1137,26 +1166,23 @@ useSeoMeta({
               class="inline-flex items-center gap-2 rounded-full border border-accent/15 bg-accent/10 px-4 py-2 text-sm font-bold text-accent"
             >
               <span aria-hidden="true">✓</span>
-              Assessment complete
+              {{ t.assessmentComplete }}
             </div>
 
             <h2
               class="mt-6 max-w-4xl font-display text-4xl leading-tight text-ink md:text-6xl"
             >
-              {{ survey2RoleTitle }} readiness, organized into a clear growth
-              plan.
+              {{ survey2RoleTitle }} {{ t.readinessOrganized }}
             </h2>
             <p
               class="mt-5 max-w-2xl text-sm leading-8 text-ink-soft md:text-base"
             >
-              This view separates your profile summary, fit signals, learning
-              sequence, and supporting analytics so the next actions are easy to
-              scan.
+              {{ t.viewIntro }}
             </p>
 
             <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:max-w-3xl">
               <article class="paper-panel p-6">
-                <p class="eyebrow">Personality result</p>
+                <p class="eyebrow">{{ t.personalityResult }}</p>
                 <h3 class="mt-3 text-2xl font-bold text-ink">
                   {{ survey2RoleTitle }}
                 </h3>
@@ -1171,14 +1197,14 @@ useSeoMeta({
                     <p
                       class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
                     >
-                      Personality fit
+                      {{ t.personalityFit }}
                     </p>
                     <div class="mt-2 flex items-end justify-between gap-3">
                       <p class="data-value text-3xl font-black text-ink">
                         {{ personalityFitScore }}%
                       </p>
                       <p class="text-xs font-semibold text-ink-soft">
-                        Based on pillar profile
+                        {{ t.basedOnProfile }}
                       </p>
                     </div>
                   </div>
@@ -1209,13 +1235,13 @@ useSeoMeta({
               </article>
 
               <article class="paper-panel p-6">
-                <p class="eyebrow">Hero metrics</p>
+                <p class="eyebrow">{{ t.heroMetrics }}</p>
                 <div class="mt-4 grid gap-3">
                   <div class="metric-card p-4">
                     <p
                       class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
                     >
-                      Overall readiness
+                      {{ t.overallReadiness }}
                     </p>
                     <p class="mt-2 data-value text-4xl font-black text-ink">
                       {{ overallCapabilityScore }}%
@@ -1225,7 +1251,7 @@ useSeoMeta({
                     <p
                       class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
                     >
-                      Readiness status
+                      {{ t.readinessStatus }}
                     </p>
                     <p class="mt-2 text-2xl font-black text-ink">
                       {{ readinessStatus }}
@@ -1235,7 +1261,7 @@ useSeoMeta({
                     <p
                       class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
                     >
-                      Strongest now
+                      {{ t.strongestNow }}
                     </p>
                     <p class="mt-2 text-sm leading-7 text-ink-soft">
                       {{ recalculatedStrengths.join(' • ') }}
@@ -1248,13 +1274,12 @@ useSeoMeta({
 
           <div class="grid gap-4">
             <div class="paper-panel p-5 md:p-6">
-              <p class="eyebrow">Capability map</p>
+              <p class="eyebrow">{{ t.capabilityMap }}</p>
               <h3 class="mt-3 font-display text-3xl text-ink">
-                Profile centerpiece
+                {{ t.profileCenterpiece }}
               </h3>
               <p class="mt-2 max-w-md text-sm leading-7 text-ink-soft">
-                The map keeps your current execution shape visible while the
-                rest of the page focuses on interpretation and next steps.
+                {{ t.mapCopy }}
               </p>
               <div class="mt-6">
                 <SkillSpiderChart :dimensions="blendedDimensions" />
@@ -1267,15 +1292,14 @@ useSeoMeta({
       <section class="section-band mt-24 py-12 md:py-16">
         <div class="mx-auto max-w-6xl">
           <div class="max-w-3xl">
-            <p class="eyebrow">Section 2</p>
+            <p class="eyebrow">{{ t.section }} 2</p>
             <h2 class="mt-4 font-display text-4xl text-ink md:text-5xl">
-              Knowledge + personality fit
+              {{ t.knowledgePersonalityFit }}
             </h2>
             <p
               class="mt-4 max-w-2xl text-sm leading-8 text-ink-soft md:text-base"
             >
-              Separate the execution signal from the personality signal so the
-              fit story is readable at a glance.
+              {{ t.section2Copy }}
             </p>
           </div>
 
@@ -1283,9 +1307,9 @@ useSeoMeta({
             <article class="paper-panel p-6 md:p-8">
               <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p class="eyebrow">Knowledge fit</p>
+                  <p class="eyebrow">{{ t.knowledgeFit }}</p>
                   <h3 class="mt-3 text-2xl font-bold text-ink">
-                    Capability alignment
+                    {{ t.capabilityAlignment }}
                   </h3>
                 </div>
                 <div class="text-right">
@@ -1295,14 +1319,13 @@ useSeoMeta({
                   <p
                     class="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft"
                   >
-                    current readiness
+                    {{ t.currentReadiness }}
                   </p>
                 </div>
               </div>
 
               <p class="mt-4 max-w-xl text-sm leading-7 text-ink-soft">
-                Your knowledge fit blends Survey 1 signals with Survey 2
-                execution evidence across PSP and SDLC dimensions.
+                {{ t.knowledgeFitCopy }}
               </p>
 
               <div class="mt-8 grid gap-4 sm:grid-cols-2">
@@ -1333,7 +1356,7 @@ useSeoMeta({
                   <p
                     class="mt-3 text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft"
                   >
-                    Strongest: {{ track.strongest }}
+                    {{ t.strongest }}: {{ track.strongest }}
                   </p>
                 </div>
               </div>
@@ -1364,9 +1387,9 @@ useSeoMeta({
             <article class="paper-panel p-6 md:p-8">
               <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p class="eyebrow">Personality fit</p>
+                  <p class="eyebrow">{{ t.personalityFit }}</p>
                   <h3 class="mt-3 text-2xl font-bold text-ink">
-                    Behavioral alignment
+                    {{ t.behavioralAlignment }}
                   </h3>
                 </div>
                 <div class="text-right">
@@ -1376,25 +1399,20 @@ useSeoMeta({
                   <p
                     class="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft"
                   >
-                    profile coherence
+                    {{ t.profileCoherence }}
                   </p>
                 </div>
               </div>
 
               <p class="mt-4 max-w-xl text-sm leading-7 text-ink-soft">
-                This card translates your personality radar and role guidance
-                into concise signals instead of long narrative blocks.
+                {{ t.behaviorCopy }}
               </p>
 
-              <div class="mt-8 space-y-3">
-                <div
-                  v-for="signal in displayPersonalitySignals"
-                  :key="signal"
-                  class="metric-card p-4"
-                >
-                  <p class="text-sm leading-7 text-ink-soft">{{ signal }}</p>
-                </div>
-              </div>
+              <p
+                class="mt-8 max-w-xl rounded-2xl border border-border-subtle bg-surface-card px-5 py-4 text-sm leading-8 text-ink-soft"
+              >
+                {{ personalityFitNarrative }}
+              </p>
 
               <div class="mt-8 space-y-4">
                 <div v-for="pillar in topPersonalityPillars" :key="pillar.key">
@@ -1416,98 +1434,79 @@ useSeoMeta({
                   </div>
                 </div>
               </div>
-
-              <div class="mt-8 grid gap-3">
-                <div
-                  v-for="guidance in roadmapsCatalog.role_guidance.slice(0, 2)"
-                  :key="guidance"
-                  class="rounded-2xl border border-accent/18 bg-accent/8 p-4"
-                >
-                  <p class="text-sm leading-7 text-ink">{{ guidance }}</p>
-                </div>
-              </div>
             </article>
           </div>
         </div>
       </section>
 
       <section class="mt-24">
-        <div class="max-w-3xl">
-          <p class="eyebrow">Section 3</p>
-          <h2 class="mt-4 font-display text-4xl text-ink md:text-5xl">
-            Recommended learning sequence
-          </h2>
-          <p
-            class="mt-4 max-w-2xl text-sm leading-8 text-ink-soft md:text-base"
-          >
-            A guided roadmap that turns your gap profile into a paced, visible
-            progression.
-          </p>
+        <div
+          class="rounded-[2rem] border border-border-subtle bg-surface-elevated/70 p-6 shadow-[0_24px_70px_rgba(74,54,35,0.08)] md:p-8"
+        >
+          <div class="max-w-3xl">
+            <p class="eyebrow">{{ t.section }} 3</p>
+            <h2 class="mt-4 font-display text-4xl text-ink md:text-5xl">
+              {{ t.recommendedSequence }}
+            </h2>
+            <p
+              class="mt-4 max-w-2xl text-sm leading-8 text-ink-soft md:text-base"
+            >
+              {{ t.sequenceCopy }}
+            </p>
+          </div>
         </div>
 
-        <div class="mt-12 grid gap-6">
+        <div class="mt-10 grid gap-5">
           <div
             v-for="(topic, index) in topRoadmapTopics"
             :key="topic.id"
-            class="relative pl-8 md:pl-12"
+            class="relative"
           >
             <div
               v-if="index !== topRoadmapTopics.length - 1"
-              class="absolute left-[1rem] top-16 hidden h-[calc(100%+1.5rem)] w-px bg-[linear-gradient(180deg,rgba(234,112,31,0.36),rgba(33,122,111,0.18))] md:block"
+              class="absolute left-5 top-14 hidden h-[calc(100%+1.25rem)] w-px bg-[linear-gradient(180deg,rgba(234,112,31,0.28),rgba(33,122,111,0.14))] md:block"
             />
             <div
-              class="absolute left-0 top-8 grid h-8 w-8 place-items-center rounded-full border border-accent/20 bg-white text-xs font-black text-accent shadow-[0_10px_24px_rgba(234,112,31,0.16)] md:left-[0.05rem]"
+              class="absolute left-0 top-6 z-10 grid h-10 w-10 place-items-center rounded-full border border-accent/20 bg-white text-sm font-black text-accent shadow-[0_10px_24px_rgba(234,112,31,0.16)]"
             >
               {{ index + 1 }}
             </div>
 
-            <article class="paper-panel p-6 md:p-8">
-              <div class="flex flex-wrap items-start justify-between gap-4">
-                <div class="max-w-2xl">
-                  <p class="eyebrow">Step {{ index + 1 }}</p>
+            <article class="paper-panel ml-5 overflow-hidden p-0 md:ml-14">
+              <div
+                class="grid gap-5 p-6 md:grid-cols-[minmax(0,1fr)_auto] md:p-8"
+              >
+                <div class="max-w-3xl">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <p class="eyebrow">{{ t.step }} {{ index + 1 }}</p>
+                    <span
+                      class="rounded-full border border-accent/16 bg-accent/8 px-3 py-1 text-xs font-bold uppercase tracking-[0.06em] text-accent"
+                    >
+                      {{ getTopicDifficultyLabel(topic) }}
+                    </span>
+                  </div>
                   <h3 class="mt-3 text-2xl font-bold text-ink">
                     {{ topic.title }}
                   </h3>
                   <p class="mt-3 max-w-2xl text-sm leading-7 text-ink-soft">
                     {{
                       topic.description ||
-                      'This topic is prioritized from your preferred-role gap profile.'
+                      t.noTopicDescription
                     }}
                   </p>
                 </div>
 
-                <div class="grid min-w-[13rem] gap-3 sm:grid-cols-2 sm:gap-2">
-                  <div class="metric-card p-4">
-                    <p
-                      class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
-                    >
-                      Difficulty
-                    </p>
-                    <p class="mt-2 text-sm font-bold text-ink">
-                      {{ getTopicDifficultyLabel(topic) }}
-                    </p>
-                  </div>
-                  <div class="metric-card p-4">
-                    <p
-                      class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
-                    >
-                      Duration
-                    </p>
-                    <p class="mt-2 text-sm font-bold text-ink">
-                      {{ getTopicDuration(topic) }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="mt-6 flex flex-wrap gap-2">
-                <span
-                  v-for="tag in getTopicTags(topic)"
-                  :key="tag"
-                  class="rounded-full border border-border-subtle bg-surface-card px-3 py-1 text-xs font-semibold uppercase tracking-[0.06em] text-ink-soft"
+                <div
+                  class="flex flex-wrap content-start gap-2 md:max-w-56 md:justify-end"
                 >
-                  {{ tag }}
-                </span>
+                  <span
+                    v-for="tag in getTopicTags(topic)"
+                    :key="tag"
+                    class="rounded-full border border-border-subtle bg-surface-card px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-ink-soft"
+                  >
+                    {{ tag }}
+                  </span>
+                </div>
               </div>
             </article>
           </div>
@@ -1517,27 +1516,25 @@ useSeoMeta({
       <section class="section-band mt-24 py-12 md:py-16">
         <div class="mx-auto max-w-6xl">
           <div class="max-w-3xl">
-            <p class="eyebrow">Section 4</p>
+            <p class="eyebrow">{{ t.section }} 4</p>
             <h2 class="mt-4 font-display text-4xl text-ink md:text-5xl">
-              Additional insights and analytics
+              {{ t.additionalInsights }}
             </h2>
             <p
               class="mt-4 max-w-2xl text-sm leading-8 text-ink-soft md:text-base"
             >
-              Supporting detail is grouped into smaller cards so the page stays
-              analytical without becoming dense.
+              {{ t.insightsCopy }}
             </p>
           </div>
 
-          <div class="mt-10 grid gap-6 lg:grid-cols-3">
+          <div class="mt-10 grid gap-6 lg:grid-cols-2">
             <article class="paper-panel p-6">
-              <p class="eyebrow">Strength distribution</p>
+              <p class="eyebrow">{{ t.strengthDistribution }}</p>
               <h3 class="mt-3 text-2xl font-bold text-ink">
-                Strongest dimensions
+                {{ t.strongestDimensions }}
               </h3>
               <p class="mt-2 text-sm leading-7 text-ink-soft">
-                The highest-scoring capability areas currently carrying your
-                fit.
+                {{ t.strongestDimensionsCopy }}
               </p>
               <div class="mt-6 grid gap-4">
                 <div
@@ -1564,10 +1561,12 @@ useSeoMeta({
             </article>
 
             <article class="paper-panel p-6">
-              <p class="eyebrow">Development priorities</p>
-              <h3 class="mt-3 text-2xl font-bold text-ink">Improve next</h3>
+              <p class="eyebrow">{{ t.developmentPriorities }}</p>
+              <h3 class="mt-3 text-2xl font-bold text-ink">
+                {{ t.improveNext }}
+              </h3>
               <p class="mt-2 text-sm leading-7 text-ink-soft">
-                The lowest-scoring areas that will move readiness fastest.
+                {{ t.improveNextCopy }}
               </p>
               <div class="mt-6 grid gap-4">
                 <div
@@ -1592,97 +1591,10 @@ useSeoMeta({
                 </div>
               </div>
             </article>
-
-            <article v-if="topMasteryScores.length" class="paper-panel p-6">
-              <p class="eyebrow">Mastery snapshot</p>
-              <h3 class="mt-3 text-2xl font-bold text-ink">
-                Strongest topic evidence
-              </h3>
-              <p class="mt-2 text-sm leading-7 text-ink-soft">
-                Topic-level proof where current confidence and mastery are
-                already strongest.
-              </p>
-              <div class="mt-6 grid gap-3">
-                <MasteryMeter
-                  v-for="mastery in topMasteryScores"
-                  :key="mastery.topic_id"
-                  :mastery="mastery"
-                />
-              </div>
-            </article>
-          </div>
-
-          <div class="mt-10 grid gap-6 lg:grid-cols-3">
-            <article class="paper-panel p-6">
-              <p class="eyebrow">Career alignment</p>
-              <h3 class="mt-3 text-2xl font-bold text-ink">Learn next</h3>
-              <div class="mt-6 flex flex-wrap gap-2">
-                <span
-                  v-for="technology in suggestedTechnologies"
-                  :key="technology"
-                  class="rounded-full border border-border-subtle bg-surface-card px-3 py-2 text-sm font-bold text-ink"
-                >
-                  {{ technology }}
-                </span>
-              </div>
-            </article>
-
-            <article class="paper-panel p-6 lg:col-span-2">
-              <p class="eyebrow">Project evidence</p>
-              <h3 class="mt-3 text-2xl font-bold text-ink">Build for proof</h3>
-              <div class="mt-6 grid gap-4 md:grid-cols-3">
-                <div
-                  v-for="project in suggestedProjects"
-                  :key="project.title"
-                  class="metric-card p-4"
-                >
-                  <p class="text-sm font-bold text-ink">{{ project.title }}</p>
-                  <p class="mt-2 text-sm leading-6 text-ink-soft">
-                    {{ project.copy }}
-                  </p>
-                </div>
-              </div>
-            </article>
-          </div>
-
-          <div class="mt-10 grid gap-6 lg:grid-cols-2">
-            <article class="paper-panel p-6">
-              <p class="eyebrow">Action guidance</p>
-              <h3 class="mt-3 text-2xl font-bold text-ink">
-                Soft skill and execution analysis
-              </h3>
-              <div class="mt-6 grid gap-3">
-                <div
-                  v-for="item in recommendedRoadmapActions"
-                  :key="item.dimension"
-                  class="flow-node p-4 pl-5"
-                >
-                  <p class="text-sm font-bold text-ink">{{ item.dimension }}</p>
-                  <p class="mt-2 text-sm leading-6 text-ink-soft">
-                    {{ item.action }}
-                  </p>
-                </div>
-              </div>
-            </article>
-
-            <article class="paper-panel p-6">
-              <p class="eyebrow">Learning readiness</p>
-              <h3 class="mt-3 text-2xl font-bold text-ink">
-                Keep the plan practical
-              </h3>
-              <div class="mt-6 grid gap-3">
-                <div
-                  v-for="resource in recommendedResources"
-                  :key="resource"
-                  class="metric-card p-4"
-                >
-                  <p class="text-sm leading-6 text-ink">{{ resource }}</p>
-                </div>
-              </div>
-            </article>
           </div>
         </div>
       </section>
     </template>
   </main>
 </template>
+/template>

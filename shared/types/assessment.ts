@@ -192,6 +192,22 @@ export interface RoadmapsSessionState {
   completed: boolean
   answers: Record<string, number>
   completed_at: string | null
+  current_question_id?: string | null
+  next_question_id?: string | null
+  policy_type?: PolicyType | null
+  policy_version?: string | null
+  state_key?: string | null
+  last_reward?: number | null
+}
+
+export interface RoadmapsStepPayload {
+  question_id: string
+  answer_value: number
+  response_time_ms?: number
+}
+
+export interface RoadmapsStepResult extends RoadmapsSessionState {
+  selected_question_id?: string | null
 }
 
 export interface RoadmapsScaleOption {

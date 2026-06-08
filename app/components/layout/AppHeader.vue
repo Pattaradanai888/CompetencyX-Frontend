@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
+import { useLocale } from '~/composables/useLocale'
 
 const route = useRoute()
 const { lastSessionId } = useAssessmentSession()
+const { isThai } = useLocale()
 const mobileMenuOpen = ref(false)
 
-const navItems = [
-  { label: 'Overview', to: '/' },
-  { label: 'Start', to: '/assessment/start' },
-]
+const navItems = computed(() => [
+  { label: isThai.value ? 'ภาพรวม' : 'Overview', to: '/' },
+  { label: isThai.value ? 'เริ่มต้น' : 'Start', to: '/assessment/start' },
+])
 
 function isActive(path: string) {
   if (path === '/') {
@@ -68,10 +70,10 @@ watch(
           :to="`/assessment/${lastSessionId}`"
           class="app-header__ghost"
         >
-          Resume
+          {{ isThai ? 'ทำต่อ' : 'Resume' }}
         </NuxtLink>
         <NuxtLink to="/assessment/start" class="app-header__cta">
-          Begin
+          {{ isThai ? 'เริ่มเลย' : 'Begin' }}
         </NuxtLink>
         <button
           type="button"
@@ -134,10 +136,10 @@ watch(
         :to="`/assessment/${lastSessionId}`"
         class="app-header__mobile-link"
       >
-        Resume session
+        {{ isThai ? 'ทำเซสชันต่อ' : 'Resume session' }}
       </NuxtLink>
       <NuxtLink to="/assessment/start" class="app-header__mobile-cta">
-        Start assessment
+        {{ isThai ? 'เริ่มการประเมิน' : 'Start assessment' }}
       </NuxtLink>
     </div>
   </header>

@@ -3,7 +3,7 @@ import {
   getRecommendationHeadline,
   hasTopicRecommendation,
 } from '~/utils/assessment'
-import type { Recommendation } from '~/shared/types/assessment'
+import type { Recommendation } from '~~/shared/types/assessment'
 
 defineProps<{
   eyebrow: string

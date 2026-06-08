@@ -83,6 +83,7 @@ describe('assessment start page', () => {
 
     expect(createSessionMock).toHaveBeenCalledWith({
       preferred_role_slug: 'backend-engineer',
+      language: 'en',
     })
     expect(navigateToMock).toHaveBeenCalledWith('/roadmaps/session-1')
   })

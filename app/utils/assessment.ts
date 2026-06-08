@@ -9,7 +9,7 @@ import type {
   RoleResolutionStatus,
   SessionMilestones,
   TopicMastery,
-} from '~/shared/types/assessment'
+} from '~~/shared/types/assessment'
 
 export function isSessionComplete(
   session: AssessmentSession | AssessmentResult,
@@ -171,7 +171,8 @@ export function sortTopicsByDisplayOrder<
   T extends { display_order?: number | null },
 >(items: T[]): T[] {
   return [...items].sort(
-    (left, right) => (left.display_order ?? 0) - (right.display_order ?? 0),
+    (left, right) =>
+      (Number(left.display_order) || 0) - (Number(right.display_order) || 0),
   )
 }
 

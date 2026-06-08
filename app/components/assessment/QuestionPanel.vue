@@ -6,7 +6,7 @@ import type {
   LikertScaleValue,
   QuestionOption,
   ResponseScaleOption,
-} from '~/shared/types/assessment'
+} from '~~/shared/types/assessment'
 
 type AnswerSelection =
   | { kind: 'option'; option: QuestionOption }
@@ -46,6 +46,17 @@ const orderedScaleOptions = computed(() => {
   )
 })
 
+const isTrueFalseMaybeChoice = computed(() => {
+  const labels = (currentQuestion.value?.options || []).map(
+    (option: QuestionOption) => option.label.trim().toLowerCase(),
+  )
+
+  return (
+    labels.length === 3 &&
+    ['true', 'false', 'maybe'].every((label) => labels.includes(label))
+  )
+})
+
 const activeScaleIndex = computed(() => {
   if (selectedScaleValue.value === null) return -1
   return orderedScaleOptions.value.findIndex(
@@ -54,6 +65,45 @@ const activeScaleIndex = computed(() => {
 })
 
 const isThai = computed(() => props.session.language === 'th')
+
+function getLocalizedOptionLabel(option: QuestionOption): string {
+  if (!isThai.value) {
+    return option.label
+  }
+
+  const key = option.key.trim().toLowerCase()
+  const label = option.label.trim().toLowerCase()
+  const normalized = key || label
+
+  if (normalized === 'true' || label === 'true') return 'จริง'
+  if (normalized === 'false' || label === 'false') return 'เท็จ'
+  if (normalized === 'maybe' || label === 'maybe') return 'ไม่แน่ใจ'
+  if (normalized === 'yes' || label === 'yes') return 'ใช่'
+  if (normalized === 'no' || label === 'no') return 'ไม่ใช่'
+
+  return option.label
+}
+
+function getLocalizedScaleLabel(option: ResponseScaleOption): string {
+  if (!isThai.value) {
+    return option.label
+  }
+
+  switch (option.value) {
+    case -2:
+      return 'ไม่เห็นด้วยอย่างยิ่ง'
+    case -1:
+      return 'ไม่เห็นด้วย'
+    case 0:
+      return 'เป็นกลาง'
+    case 1:
+      return 'เห็นด้วย'
+    case 2:
+      return 'เห็นด้วยอย่างยิ่ง'
+    default:
+      return option.label
+  }
+}
 
 const questionModeCopy = computed(() => {
   if (isThai.value) {
@@ -99,7 +149,10 @@ function handleOptionSelect(option: QuestionOption) {
   <section class="glass-panel p-6 md:p-8" aria-live="polite">
     <div class="flex flex-wrap items-center gap-3">
       <span class="eyebrow">{{
-        getQuestionStageLabel(session.current_question?.stage || 'role', session.language)
+        getQuestionStageLabel(
+          session.current_question?.stage || 'role',
+          session.language,
+        )
       }}</span>
       <span
         class="rounded-full border border-border-subtle bg-surface-elevated px-3 py-1 text-[0.72rem] font-bold uppercase tracking-[0.08em] text-ink-soft"
@@ -129,7 +182,9 @@ function handleOptionSelect(option: QuestionOption) {
       <h1 class="font-display text-3xl leading-tight text-ink md:text-5xl">
         {{
           session.current_question?.prompt ||
-          (isThai ? 'ระบบกำลังวิเคราะห์ความถนัดตำแหน่งงานของคุณ' : 'We are resolving your role signal.')
+          (isThai
+            ? 'ระบบกำลังวิเคราะห์ความถนัดตำแหน่งงานของคุณ'
+            : 'We are resolving your role signal.')
         }}
       </h1>
       <p
@@ -162,12 +217,20 @@ function handleOptionSelect(option: QuestionOption) {
         :disabled="isSubmitting"
       >
         <legend class="sr-only">
-          {{ isThai ? 'สเกลความเห็นจากไม่เห็นด้วยอย่างยิ่งถึงเห็นด้วยอย่างยิ่ง' : 'Agreement scale from strongly disagree to strongly agree' }}
+          {{
+            isThai
+              ? 'สเกลความเห็นจากไม่เห็นด้วยอย่างยิ่งถึงเห็นด้วยอย่างยิ่ง'
+              : 'Agreement scale from strongly disagree to strongly agree'
+          }}
         </legend>
 
         <div class="likert-spectrum__labels" aria-hidden="true">
-          <span>{{ isThai ? 'ไม่เห็นด้วยอย่างยิ่ง' : 'Strongly disagree' }}</span>
-          <span class="hidden sm:inline-flex">{{ isThai ? 'เป็นกลาง' : 'Neutral' }}</span>
+          <span>{{
+            isThai ? 'ไม่เห็นด้วยอย่างยิ่ง' : 'Strongly disagree'
+          }}</span>
+          <span class="hidden sm:inline-flex">{{
+            isThai ? 'เป็นกลาง' : 'Neutral'
+          }}</span>
           <span>{{ isThai ? 'เห็นด้วยอย่างยิ่ง' : 'Strongly agree' }}</span>
         </div>
 
@@ -204,21 +267,29 @@ function handleOptionSelect(option: QuestionOption) {
               <span class="likert-spectrum__orb-pulse" />
             </span>
             <span class="likert-spectrum__option-label">
-              {{ option.label }}
+              {{ getLocalizedScaleLabel(option) }}
             </span>
           </label>
         </div>
       </fieldset>
 
-      <template v-else>
+      <div
+        v-else
+        :class="
+          isTrueFalseMaybeChoice ? 'grid grid-cols-3 gap-3' : 'grid gap-3'
+        "
+      >
         <motion.button
           v-for="(option, index) in session.current_question?.options || []"
           :key="option.id"
           type="button"
-          class="answer-option answer-option--choice rounded-md p-4 text-left md:p-5"
+          class="answer-option answer-option--choice rounded-md p-4 md:p-5"
           :disabled="isSubmitting"
-          :aria-label="option.label"
-          :class="selectedOptionId === option.id ? 'is-selected' : ''"
+          :aria-label="getLocalizedOptionLabel(option)"
+          :class="[
+            selectedOptionId === option.id ? 'is-selected' : '',
+            isTrueFalseMaybeChoice ? 'text-center' : 'text-left',
+          ]"
           :initial="
             prefersReduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }
           "
@@ -232,7 +303,28 @@ function handleOptionSelect(option: QuestionOption) {
           :while-press="prefersReduced ? {} : { scale: 0.985 }"
           @click="handleOptionSelect(option)"
         >
-          <div class="flex items-start gap-4">
+          <div
+            v-if="isTrueFalseMaybeChoice"
+            class="flex min-h-16 flex-col items-center justify-center gap-2"
+          >
+            <div
+              class="answer-option__number flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-xs font-semibold"
+            >
+              {{ index + 1 }}
+            </div>
+            <p class="text-base font-bold leading-tight text-ink">
+              {{ getLocalizedOptionLabel(option) }}
+            </p>
+            <p v-if="selectedOptionId === option.id" class="sr-only">
+              {{
+                isThai
+                  ? 'เลือกแล้ว กำลังบันทึกคำตอบ...'
+                  : 'Selected. Saving your response...'
+              }}
+            </p>
+          </div>
+
+          <div v-else class="flex items-start gap-4">
             <div
               class="answer-option__number flex h-11 w-11 shrink-0 items-center justify-center rounded-sm text-sm font-semibold"
             >
@@ -242,13 +334,17 @@ function handleOptionSelect(option: QuestionOption) {
               <p
                 class="wrap-break-word text-base font-semibold leading-7 text-ink md:text-[1.05rem]"
               >
-                {{ option.label }}
+                {{ getLocalizedOptionLabel(option) }}
               </p>
               <p class="mt-1 text-sm leading-6 text-ink-soft">
                 {{
                   selectedOptionId === option.id
-                    ? (isThai ? 'เลือกแล้ว กำลังบันทึกคำตอบ...' : 'Selected. Saving your response...')
-                    : (isThai ? 'คลิกเลือกคำตอบนี้เพื่อไปต่อ' : 'Choose this response to continue.')
+                    ? isThai
+                      ? 'เลือกแล้ว กำลังบันทึกคำตอบ...'
+                      : 'Selected. Saving your response...'
+                    : isThai
+                      ? 'คลิกเลือกคำตอบนี้เพื่อไปต่อ'
+                      : 'Choose this response to continue.'
                 }}
               </p>
             </div>
@@ -261,7 +357,7 @@ function handleOptionSelect(option: QuestionOption) {
             </span>
           </div>
         </motion.button>
-      </template>
+      </div>
     </div>
 
     <div
@@ -271,10 +367,16 @@ function handleOptionSelect(option: QuestionOption) {
       <p class="status-copy">
         {{
           isSubmitting
-            ? (isThai ? 'กำลังบันทึกคำตอบ...' : 'Saving your answer...')
+            ? isThai
+              ? 'กำลังบันทึกคำตอบ...'
+              : 'Saving your answer...'
             : isLikertQuestion
-              ? (isThai ? 'ระดับความคิดเห็น ระบบจะบันทึกคำตอบทันที' : 'Agreement response. Immediate next step.')
-              : (isThai ? 'เลือกตอบข้อเดียว ระบบจะบันทึกคำตอบทันที' : 'Single decision. Immediate next step.')
+              ? isThai
+                ? 'ระดับความคิดเห็น ระบบจะบันทึกคำตอบทันที'
+                : 'Agreement response. Immediate next step.'
+              : isThai
+                ? 'เลือกตอบข้อเดียว ระบบจะบันทึกคำตอบทันที'
+                : 'Single decision. Immediate next step.'
         }}
       </p>
       <div
@@ -283,10 +385,16 @@ function handleOptionSelect(option: QuestionOption) {
         <span class="inline-flex h-2 w-2 rounded-full bg-accent" />
         {{
           isLikertQuestion
-            ? (isThai ? 'สเกลความเห็น' : 'Agreement scale')
+            ? isThai
+              ? 'สเกลความเห็น'
+              : 'Agreement scale'
             : session.current_question.question_type === 'ranked_choice'
-              ? (isThai ? 'จัดอันดับความสำคัญ' : 'Priority response')
-              : (isThai ? 'คลิกเพื่อไปต่อ' : 'Tap to continue')
+              ? isThai
+                ? 'จัดอันดับความสำคัญ'
+                : 'Priority response'
+              : isThai
+                ? 'คลิกเพื่อไปต่อ'
+                : 'Tap to continue'
         }}
       </div>
     </div>
@@ -295,7 +403,11 @@ function handleOptionSelect(option: QuestionOption) {
       v-else
       class="mt-8 rounded-lg border border-border-subtle bg-surface-card p-5 text-sm leading-7 text-ink-soft"
     >
-      {{ isThai ? 'เซสชันนี้ไม่มีคำถามให้ทำต่อในขณะนี้ โปรดรีเฟรชหน้าจอเพื่อตรวจสอบขั้นตอนความถนัดถัดไป' : 'This session does not have an answerable question right now. Refresh the page to check whether the next step has resolved.' }}
+      {{
+        isThai
+          ? 'เซสชันนี้ไม่มีคำถามให้ทำต่อในขณะนี้ โปรดรีเฟรชหน้าจอเพื่อตรวจสอบขั้นตอนความถนัดถัดไป'
+          : 'This session does not have an answerable question right now. Refresh the page to check whether the next step has resolved.'
+      }}
     </div>
   </section>
 </template>

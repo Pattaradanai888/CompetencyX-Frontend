@@ -1,4 +1,4 @@
-import type { RoadmapTopic, Role } from '~/shared/types/assessment'
+import type { RoadmapTopic, Role } from '~~/shared/types/assessment'
 import { sortTopicsByDisplayOrder } from '~/utils/assessment'
 
 export function useCatalogApi() {

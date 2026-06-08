@@ -3,7 +3,7 @@ import type {
   AssessmentHistory,
   AssessmentResult,
   PillarInsight,
-} from '~/shared/types/assessment'
+} from '~~/shared/types/assessment'
 
 export interface RadarDimension {
   key: string

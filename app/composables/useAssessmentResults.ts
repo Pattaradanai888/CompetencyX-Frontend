@@ -6,7 +6,7 @@ import type {
   RoadmapsCatalog,
   RoadmapsNextQuestionResponse,
   RoadmapsSessionState,
-} from '~/shared/types/assessment'
+} from '~~/shared/types/assessment'
 
 export function useAssessmentResults() {
   const { apiFetch } = useApiClient()

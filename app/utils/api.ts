@@ -1,4 +1,4 @@
-import type { ApiError } from '~/shared/types/assessment'
+import type { ApiError } from '~~/shared/types/assessment'
 
 export function normalizeApiError(error: unknown): ApiError {
   const source = error as {

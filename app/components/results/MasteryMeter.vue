@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { formatMasteryPercent } from '~/utils/assessment'
-import type { TopicMastery } from '~/shared/types/assessment'
+import type { TopicMastery } from '~~/shared/types/assessment'
 
 defineProps<{
   mastery: TopicMastery

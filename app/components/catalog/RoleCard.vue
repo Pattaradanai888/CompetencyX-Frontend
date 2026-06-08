@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { motion } from 'motion-v'
-import type { Role } from '~/shared/types/assessment'
+import { useLocale } from '~/composables/useLocale'
+import type { Role } from '~~/shared/types/assessment'
 
 defineProps<{
   role: Role
@@ -13,6 +14,7 @@ const emit = defineEmits<{
   select: [roleSlug: string]
 }>()
 
+const { isThai } = useLocale()
 const prefersReduced = useReducedMotion()
 </script>
 
@@ -21,7 +23,7 @@ const prefersReduced = useReducedMotion()
     type="button"
     class="option-card role-card group flex h-full w-full flex-col text-left"
     :class="compact ? 'rounded-md p-4' : 'rounded-xl p-5 md:p-6'"
-    :aria-label="`Choose ${role.name}`"
+    :aria-label="`${isThai ? 'เลือก' : 'Choose'} ${role.name}`"
     :aria-pressed="selected ? 'true' : 'false'"
     :while-hover="prefersReduced ? {} : { y: compact ? -2 : -4 }"
     :while-press="prefersReduced ? {} : { scale: 0.99 }"
@@ -87,7 +89,7 @@ const prefersReduced = useReducedMotion()
 
     <div v-if="compact" class="mt-auto flex items-center pt-2">
       <span v-if="topicsCount" class="text-xs text-ink-soft">
-        {{ topicsCount }} topics
+        {{ topicsCount }} {{ isThai ? 'หัวข้อ' : 'topics' }}
       </span>
     </div>
   </motion.button>

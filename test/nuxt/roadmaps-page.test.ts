@@ -199,6 +199,5 @@ describe('roadmaps page', () => {
     expect(wrapper.text()).toContain('Strength distribution')
     expect(wrapper.text()).toContain('API Design')
     expect(wrapper.text()).toContain('Auth Boundaries')
-    expect(wrapper.text()).toContain('Build for proof')
   })
 })

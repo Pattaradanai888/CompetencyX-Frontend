@@ -9,9 +9,10 @@ import type {
   ApiError,
   LikertScaleValue,
   QuestionOption,
-} from '~/shared/types/assessment'
+} from '~~/shared/types/assessment'
 
 const route = useRoute('/assessment/[sessionId]')
+const sessionId = computed(() => route.params.sessionId as string)
 const { clearSession, getSession, session, submitAnswer, isSubmitting } =
   useAssessmentSession()
 
@@ -19,7 +20,7 @@ const pageError = ref<ApiError | null>(null)
 const toast = useToast()
 const questionShownAt = ref(Date.now())
 
-await useAsyncData(`assessment-session-${route.params.sessionId}`, loadSession)
+await useAsyncData(`assessment-session-${sessionId.value}`, loadSession)
 
 watch(
   () => session.value?.current_question?.id,
@@ -33,7 +34,7 @@ async function loadSession() {
   pageError.value = null
 
   try {
-    const nextSession = await getSession(route.params.sessionId)
+    const nextSession = await getSession(sessionId.value)
 
     if (isSessionComplete(nextSession)) {
       await navigateTo(`/results/${nextSession.id}`)
@@ -42,7 +43,7 @@ async function loadSession() {
     pageError.value = error as ApiError
     toast.add({
       title: 'Could not load session',
-      description: getErrorMessage(error as ApiError),
+      description: getErrorMessage(error as ApiError) ?? undefined,
       color: 'error',
     })
   }
@@ -82,7 +83,7 @@ async function handleSelect(answer: QuestionAnswerSelection) {
 
   try {
     const nextSession = await submitAnswer(
-      route.params.sessionId,
+      sessionId.value,
       buildAnswerPayload(answer),
     )
 
@@ -162,7 +163,7 @@ useSeoMeta({
             class="inline-flex items-center justify-center rounded-full border border-ink/12 bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/35"
             @click="handleResetSession"
           >
-            Reset session
+            {{ isThai ? 'รีเซ็ตเซสชัน' : 'Reset session' }}
           </button>
           <button
             type="button"
