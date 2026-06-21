@@ -74,11 +74,11 @@ describe('assessment start page', () => {
     localStorage.clear()
   })
 
-  it('creates a session with the selected role and navigates to the assessment route', async () => {
+  it('creates a session with the selected role and navigates to the roadmap route', async () => {
     const wrapper = await mountSuspended(StartPage)
 
     await flushPromises()
-    await wrapper.get('button[role="radio"][aria-checked="false"]').trigger('click')
+    await wrapper.get('button.role-card').trigger('click')
     await wrapper.get('button.cx-button-primary').trigger('click')
 
     expect(createSessionMock).toHaveBeenCalledWith({

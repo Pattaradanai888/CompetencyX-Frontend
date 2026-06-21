@@ -21,14 +21,20 @@ export function isSessionComplete(
   )
 }
 
-export function getQuestionStageLabel(stage: QuestionStage, lang?: string): string {
+export function getQuestionStageLabel(
+  stage: QuestionStage,
+  lang?: string,
+): string {
   if (lang === 'th') {
     return stage === 'role' ? 'ค้นหาบทบาท' : 'ประเมินทักษะ'
   }
   return stage === 'role' ? 'Role discovery' : 'Skill assessment'
 }
 
-export function getQuestionTypeLabel(questionType: QuestionType, lang?: string): string {
+export function getQuestionTypeLabel(
+  questionType: QuestionType,
+  lang?: string,
+): string {
   if (lang === 'th') {
     switch (questionType) {
       case 'yes_no':
@@ -71,7 +77,10 @@ export function getAlignmentTone(
   return 'neutral'
 }
 
-export function getAlignmentLabel(status: RoleAlignmentStatus, lang?: string): string {
+export function getAlignmentLabel(
+  status: RoleAlignmentStatus,
+  lang?: string,
+): string {
   if (lang === 'th') {
     if (status === 'aligned') {
       return 'ตรงตามเป้าหมาย'
@@ -100,7 +109,10 @@ export function getAlignmentLabel(status: RoleAlignmentStatus, lang?: string): s
   return 'Still calibrating'
 }
 
-export function getRoleResolutionLabel(status: RoleResolutionStatus, lang?: string): string {
+export function getRoleResolutionLabel(
+  status: RoleResolutionStatus,
+  lang?: string,
+): string {
   if (lang === 'th') {
     if (status === 'resolved') {
       return 'วิเคราะห์แล้ว'

@@ -131,8 +131,7 @@ const t = computed(() => {
         'พื้นที่ความสามารถที่ได้คะแนนสูงและกำลังช่วยสนับสนุนความเหมาะสมของคุณ',
       developmentPriorities: 'ลำดับความสำคัญในการพัฒนา',
       improveNext: 'ควรพัฒนาถัดไป',
-      improveNextCopy:
-        'พื้นที่คะแนนต่ำที่ช่วยเพิ่มความพร้อมได้เร็วที่สุด',
+      improveNextCopy: 'พื้นที่คะแนนต่ำที่ช่วยเพิ่มความพร้อมได้เร็วที่สุด',
       roleReady: 'พร้อมสำหรับบทบาท',
       projectReady: 'พร้อมเริ่มโปรเจกต์',
       foundationBuilding: 'กำลังสร้างพื้นฐาน',
@@ -152,11 +151,9 @@ const t = computed(() => {
       advanced: 'ขั้นสูง',
       targeted: 'เฉพาะจุด',
       previous: 'ย้อนกลับ',
-      refreshPrompt:
-        'รีเฟรชเซสชันเพื่อแสดงคำถามถัดไปโดยไม่สูญเสียความคืบหน้า',
+      refreshPrompt: 'รีเฟรชเซสชันเพื่อแสดงคำถามถัดไปโดยไม่สูญเสียความคืบหน้า',
       resolvingQuestion: 'ระบบกำลังจัดเตรียมคำถามปรับเทียบถัดไป',
-      noTopicDescription:
-        'หัวข้อนี้ถูกจัดลำดับจากช่องว่างของบทบาทที่คุณเลือก',
+      noTopicDescription: 'หัวข้อนี้ถูกจัดลำดับจากช่องว่างของบทบาทที่คุณเลือก',
     }
   }
 
@@ -307,7 +304,9 @@ const roadmapQuestions: RoadmapQuestion[] = roadmapsCatalog.questions.map(
 )
 
 const answerScale = roadmapsCatalog.scale
-const answerScaleValues = answerScale.map((option: RoadmapsScaleOption) => option.value)
+const answerScaleValues = answerScale.map(
+  (option: RoadmapsScaleOption) => option.value,
+)
 const answerScaleMin = answerScaleValues.length
   ? Math.min(...answerScaleValues)
   : 1
@@ -383,7 +382,8 @@ const blendedDimensions = computed<RadarDimension[]>(() => {
       .map((question) => getQuestionInfluence(question))
       .filter((score): score is number => score !== null)
     const questionScore = influences.length
-      ? influences.reduce((sum: number, value: number) => sum + value, 0) / influences.length
+      ? influences.reduce((sum: number, value: number) => sum + value, 0) /
+        influences.length
       : dimension.value
 
     const capabilityValue = clamp(questionScore)
@@ -424,7 +424,8 @@ function getDimensionMastery(dimensionKey: string): number {
     normalizeRoadmapsAnswer(value),
   )
   const average =
-    normalized.reduce((sum: number, value: number) => sum + value, 0) / normalized.length
+    normalized.reduce((sum: number, value: number) => sum + value, 0) /
+    normalized.length
   return clamp(average)
 }
 
@@ -547,8 +548,10 @@ const selectedScaleOption = computed(() => {
   }
 
   return (
-    answerScale.find((option: RoadmapsScaleOption) => option.value === activeQuestionAnswer.value) ??
-    null
+    answerScale.find(
+      (option: RoadmapsScaleOption) =>
+        option.value === activeQuestionAnswer.value,
+    ) ?? null
   )
 })
 
@@ -696,7 +699,10 @@ const trackHighlights = computed(() => {
     )
     const average = dimensions.length
       ? Math.round(
-          (dimensions.reduce((sum: number, dimension: RadarDimension) => sum + dimension.value, 0) /
+          (dimensions.reduce(
+            (sum: number, dimension: RadarDimension) => sum + dimension.value,
+            0,
+          ) /
             dimensions.length) *
             100,
         )
@@ -764,7 +770,10 @@ function getTopicTags(topic: RoadmapTopic): string[] {
   return tags
 }
 
-function getRoadmapScaleLabel(option: { label: string; value: number }): string {
+function getRoadmapScaleLabel(option: {
+  label: string
+  value: number
+}): string {
   if (!isThai.value) {
     return option.label
   }
@@ -819,7 +828,7 @@ async function submitRoadmaps() {
       description:
         error instanceof Error && error.message === 'Save timeout'
           ? 'Saving took too long. Please try again.'
-          : getErrorMessage(error as ApiError) ?? undefined,
+          : (getErrorMessage(error as ApiError) ?? undefined),
       color: 'error',
     })
   } finally {
@@ -914,9 +923,7 @@ useSeoMeta({
 
     <section v-if="isRoadmapsComplete" class="glass-panel mt-6 p-6 md:p-8">
       <p class="eyebrow">
-        {{
-          isRoadmapsComplete ? t.finalDashboard : t.phase2Assessment
-        }}
+        {{ isRoadmapsComplete ? t.finalDashboard : t.phase2Assessment }}
       </p>
       <h1 class="mt-4 font-display text-4xl leading-tight text-ink md:text-6xl">
         {{
@@ -926,11 +933,7 @@ useSeoMeta({
         }}
       </h1>
       <p class="mt-4 max-w-3xl text-sm leading-7 text-ink-soft">
-        {{
-          isRoadmapsComplete
-            ? t.completeIntro
-            : t.incompleteIntro
-        }}
+        {{ isRoadmapsComplete ? t.completeIntro : t.incompleteIntro }}
       </p>
       <div class="mt-5 flex flex-wrap items-center gap-2">
         <span
@@ -1489,10 +1492,7 @@ useSeoMeta({
                     {{ topic.title }}
                   </h3>
                   <p class="mt-3 max-w-2xl text-sm leading-7 text-ink-soft">
-                    {{
-                      topic.description ||
-                      t.noTopicDescription
-                    }}
+                    {{ topic.description || t.noTopicDescription }}
                   </p>
                 </div>
 

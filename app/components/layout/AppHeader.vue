@@ -9,7 +9,10 @@ const mobileMenuOpen = ref(false)
 
 const navItems = computed(() => [
   { label: isThai.value ? 'ภาพรวม' : 'Overview', to: '/' },
-  { label: isThai.value ? 'เริ่มต้น' : 'Start', to: '/assessment/start' },
+  {
+    label: isThai.value ? 'เริ่มต้น' : 'Start',
+    to: '/assessment/preferred-role',
+  },
 ])
 
 function isActive(path: string) {
@@ -72,7 +75,7 @@ watch(
         >
           {{ isThai ? 'ทำต่อ' : 'Resume' }}
         </NuxtLink>
-        <NuxtLink to="/assessment/start" class="app-header__cta">
+        <NuxtLink to="/assessment/preferred-role" class="app-header__cta">
           {{ isThai ? 'เริ่มเลย' : 'Begin' }}
         </NuxtLink>
         <button
@@ -138,7 +141,7 @@ watch(
       >
         {{ isThai ? 'ทำเซสชันต่อ' : 'Resume session' }}
       </NuxtLink>
-      <NuxtLink to="/assessment/start" class="app-header__mobile-cta">
+      <NuxtLink to="/assessment/preferred-role" class="app-header__mobile-cta">
         {{ isThai ? 'เริ่มการประเมิน' : 'Start assessment' }}
       </NuxtLink>
     </div>

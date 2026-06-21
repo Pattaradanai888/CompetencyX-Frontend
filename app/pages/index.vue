@@ -497,16 +497,19 @@ onMounted(async () => {
           {{ t.heroSub }}
         </p>
 
-        <div
-          class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row"
-        >
-          <NuxtLink to="/assessment/start" class="cx-button-primary">
-            {{ t.startBtn }}
+        <div class="landing-cta-stack">
+          <NuxtLink
+            to="/assessment/preferred-role"
+            class="cx-button-primary cx-button-primary--hero"
+            :aria-label="t.startBtn"
+          >
+            <span>{{ t.startBtn }}</span>
+            <span class="cx-button-primary__icon" aria-hidden="true">→</span>
           </NuxtLink>
           <NuxtLink
             v-if="lastSessionId && lastSessionRoute"
             :to="lastSessionRoute"
-            class="cx-button-secondary"
+            class="landing-cta-stack__secondary"
           >
             {{ t.resumeLabel }}
           </NuxtLink>
@@ -699,8 +702,12 @@ onMounted(async () => {
             {{ t.processSub }}
           </h2>
         </div>
-        <NuxtLink to="/assessment/start" class="cx-button-primary">
-          {{ t.startNow }}
+        <NuxtLink
+          to="/assessment/preferred-role"
+          class="cx-button-primary cx-button-primary--hero"
+        >
+          <span>{{ t.startNow }}</span>
+          <span class="cx-button-primary__icon" aria-hidden="true">→</span>
         </NuxtLink>
       </div>
 
@@ -826,11 +833,10 @@ onMounted(async () => {
             {{ t.footerSub }}
           </p>
         </div>
-        <NuxtLink to="/assessment/start" class="cx-button-secondary">
+        <NuxtLink to="/assessment/preferred-role" class="cx-button-secondary">
           {{ t.beginAssessment }}
         </NuxtLink>
       </div>
     </footer>
   </main>
 </template>
-

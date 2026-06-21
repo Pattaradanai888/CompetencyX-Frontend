@@ -126,7 +126,13 @@ describe('roadmaps page', () => {
           difficulty: 4,
           display_order: 2,
           parent_id: 1,
-          prerequisites: [{ topic_id: 1, required_mastery_threshold: 0.6, dependency_weight: 1 }],
+          prerequisites: [
+            {
+              topic_id: 1,
+              required_mastery_threshold: 0.6,
+              dependency_weight: 1,
+            },
+          ],
         },
       ],
       mastery_scores: [

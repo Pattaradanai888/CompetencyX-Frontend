@@ -1,0 +1,25 @@
+
+[41m[30m ERROR [39m[49m
+Another Nuxt dev server is already running:
+
+  URL:     http://127.0.0.1:3000
+  PID:     15176
+  Dir:     E:/SE/code/CompetencyX-Frontend
+  Started: 21/6/2569 14:41:27
+
+Run [36mtaskkill /PID 15176 /F[39m to stop it, or connect to http://127.0.0.1:3000
+Set NUXT_IGNORE_LOCK=1 to bypass this check.
+
+
+
+[41m[30m ERROR [39m[49m Another Nuxt dev is already running (PID 15176).
+
+    [90mat [39m#acquireDevLock ([36m/E:/SE/code/CompetencyX-Frontend/node_modules/@nuxt/cli/dist/dev-CttXIKD2.mjs:564:10[39m)
+    [90mat [39mNuxtDevServer.init ([36m/E:/SE/code/CompetencyX-Frontend/node_modules/@nuxt/cli/dist/dev-CttXIKD2.mjs:383:23[39m)
+    [90mat [39masync initialize ([36m/E:/SE/code/CompetencyX-Frontend/node_modules/@nuxt/cli/dist/dev-CttXIKD2.mjs:721:2[39m)
+    [90mat [39masync Object.run ([36m/E:/SE/code/CompetencyX-Frontend/node_modules/@nuxt/cli/dist/dev-BpSDPS5S.mjs:198:51[39m)
+    [90mat [39masync runCommand ([36m/E:/SE/code/CompetencyX-Frontend/node_modules/citty/dist/index.mjs:228:47[39m)
+    [90mat [39masync runCommand ([36m/E:/SE/code/CompetencyX-Frontend/node_modules/citty/dist/index.mjs:217:5[39m)
+    [90mat [39masync runMain ([36m/E:/SE/code/CompetencyX-Frontend/node_modules/citty/dist/index.mjs:394:10[39m) 
+
+

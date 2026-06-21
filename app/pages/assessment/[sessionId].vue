@@ -106,7 +106,7 @@ async function handleSelect(answer: QuestionAnswerSelection) {
 
 async function handleResetSession() {
   clearSession()
-  await navigateTo('/assessment/start')
+  await navigateTo('/assessment/preferred-role')
 }
 
 const responseErrorMessage = computed(() => getErrorMessage(pageError.value))
@@ -121,17 +121,23 @@ const isAwaitingResolution = computed(() => {
 const isThai = computed(() => session.value?.language === 'th')
 
 useSeoMeta({
-  title: computed(() => isThai.value ? 'CompetencyX | ทำแบบประเมินเชิงรุก' : 'CompetencyX | Active assessment'),
-  description: computed(() => isThai.value
-    ? 'ตอบคำถามการประเมินทีละข้อและทบทวนคำแนะนำสดใหม่เมื่อการประเมินดำเนินไป'
-    : 'Answer the assessment questions one at a time and review your live guidance as the session progresses.'),
+  title: computed(() =>
+    isThai.value
+      ? 'CompetencyX | ทำแบบประเมินเชิงรุก'
+      : 'CompetencyX | Active assessment',
+  ),
+  description: computed(() =>
+    isThai.value
+      ? 'ตอบคำถามการประเมินทีละข้อและทบทวนคำแนะนำสดใหม่เมื่อการประเมินดำเนินไป'
+      : 'Answer the assessment questions one at a time and review your live guidance as the session progresses.',
+  ),
 })
 </script>
 
 <template>
   <main id="main-content" class="page-wrap">
     <div class="flex items-center justify-between gap-4">
-      <NuxtLink to="/assessment/start" class="editorial-link text-sm">
+      <NuxtLink to="/assessment/preferred-role" class="editorial-link text-sm">
         {{ isThai ? 'เริ่มใหม่ตั้งแต่ต้น' : 'Restart from onboarding' }}
       </NuxtLink>
       <span class="data-value text-sm text-ink-soft"
@@ -194,7 +200,7 @@ useSeoMeta({
         }}
       </p>
       <NuxtLink
-        to="/assessment/start"
+        to="/assessment/preferred-role"
         class="mt-6 inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-accent-shadow transition hover:-translate-y-0.5 hover:bg-accent-hover"
       >
         {{ isThai ? 'กลับไปหน้าเริ่มต้น' : 'Return to start' }}

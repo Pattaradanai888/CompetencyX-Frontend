@@ -150,9 +150,7 @@ watch(
 
 const selectedRoleName = computed(
   () =>
-    selectedRole.value?.name ??
-    primaryRole.value?.name ??
-    t.value.selectedRole,
+    selectedRole.value?.name ?? primaryRole.value?.name ?? t.value.selectedRole,
 )
 
 function getRoleDescription(role: RankedRoleInsight | Role | null): string {
@@ -417,9 +415,7 @@ onMounted(async () => {
         :disabled="isContinuing"
         @click="handleContinue"
       >
-        {{
-          isContinuing ? t.preparing : t.continue
-        }}
+        {{ isContinuing ? t.preparing : t.continue }}
       </button>
     </motion.section>
   </main>
