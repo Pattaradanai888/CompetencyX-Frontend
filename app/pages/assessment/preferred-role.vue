@@ -2,12 +2,14 @@
 import { getErrorMessage } from '~/utils/api'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
 import { useLocale } from '~/composables/useLocale'
-import type { ApiError } from '~~/shared/types/assessment'
+import type { ApiError, AssessmentSession } from '~~/shared/types/assessment'
 
-const { createSession, isSubmitting, lastSessionId } = useAssessmentSession()
+const { createSession, getSession, isSubmitting, lastSessionId } =
+  useAssessmentSession()
 const { currentLanguage, isThai } = useLocale()
 const toast = useToast()
 const pageError = ref<ApiError | null>(null)
+const lastSessionSnapshot = ref<AssessmentSession | null>(null)
 
 const PREFERRED_ROLE_KEY = 'competencyx:preferred-role'
 
@@ -87,6 +89,53 @@ async function chooseDiscovery() {
   }
 }
 
+const isSurvey2Complete = computed(() => {
+  const profile = lastSessionSnapshot.value?.profile
+  if (!profile) return false
+  const survey2 = (profile as Record<string, unknown>).survey2
+  return (
+    typeof survey2 === 'object' &&
+    survey2 !== null &&
+    (survey2 as Record<string, unknown>).completed === true
+  )
+})
+
+const lastSessionRoute = computed(() => {
+  if (!lastSessionId.value) return null
+  const snap = lastSessionSnapshot.value
+  if (!snap) return `/assessment/${lastSessionId.value}`
+
+  if (isSurvey2Complete.value || snap.preferred_role)
+    return `/roadmaps/${lastSessionId.value}`
+
+  if (snap.status === 'completed')
+    return `/results/${lastSessionId.value}`
+
+  return `/assessment/${lastSessionId.value}`
+})
+
+const resumeLabel = computed(() => {
+  if (!lastSessionSnapshot.value) return t.value.resumeBtn
+  if (isSurvey2Complete.value) {
+    return isThai.value
+      ? 'ดูผลลัพธ์เซสชันล่าสุด'
+      : 'View last session result'
+  }
+  if (lastSessionSnapshot.value.status === 'completed') {
+    return isThai.value ? 'ดูผลการประเมินล่าสุด' : 'View last evaluation'
+  }
+  return t.value.resumeBtn
+})
+
+onMounted(async () => {
+  if (!lastSessionId.value) return
+  try {
+    lastSessionSnapshot.value = await getSession(lastSessionId.value)
+  } catch {
+    lastSessionSnapshot.value = null
+  }
+})
+
 useSeoMeta({
   title: computed(() =>
     isThai.value
@@ -109,10 +158,10 @@ useSeoMeta({
       </NuxtLink>
       <NuxtLink
         v-if="lastSessionId"
-        :to="`/assessment/${lastSessionId}`"
+        :to="lastSessionRoute ?? `/assessment/${lastSessionId}`"
         class="inline-flex items-center justify-center rounded-full border border-border-subtle bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:-translate-y-0.5 hover:border-accent/35 hover:text-accent"
       >
-        {{ t.resumeBtn }}
+        {{ resumeLabel }}
       </NuxtLink>
     </div>
 

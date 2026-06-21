@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { motion } from 'motion-v'
 import { useAssessmentResults } from '~/composables/useAssessmentResults'
+import { useLocale } from '~/composables/useLocale'
 import { sortTopicsByDisplayOrder } from '~/utils/assessment'
 import { buildRoadmapsEvaluation } from '~/utils/roadmaps'
+import { getRoadmapTopics } from '~/utils/roadmapTopics'
 import type { RadarDimension } from '~/utils/roadmaps'
 import SkillSpiderChart from '~/components/results/SkillSpiderChart.vue'
 import { getErrorMessage } from '~/utils/api'
@@ -10,10 +12,12 @@ import type {
   ApiError,
   AssessmentSession,
   PillarInsight,
+  Recommendation,
   RoadmapTopic,
   RoadmapsCatalogDimension,
   RoadmapsCatalogQuestion,
   RoadmapsScaleOption,
+  TopicMastery,
 } from '~~/shared/types/assessment'
 
 const route = useRoute('/roadmaps/[sessionId]')
@@ -33,7 +37,7 @@ const isGuidanceExpanded = ref(false)
 const AUTO_ADVANCE_DELAY_MS = 220
 let autoAdvanceTimer: ReturnType<typeof setTimeout> | null = null
 
-const { data: _roadmapsData } = await useAsyncData(
+const { data: _roadmapsData, refresh } = await useAsyncData(
   `roadmaps-${sessionId.value}`,
   async () => {
     const session = await getSession(sessionId.value).catch(
@@ -65,16 +69,19 @@ const { data: _roadmapsData } = await useAsyncData(
   },
 )
 
-const session = _roadmapsData.value!.session
-const result = _roadmapsData.value!.result
-const history = _roadmapsData.value!.history
-const roadmapsCatalog = _roadmapsData.value!.roadmapsCatalog
-const roadmapsState = _roadmapsData.value!.roadmapsState
-const isThai = computed(() => session?.language === 'th')
+const _roadmapsSnapshot = _roadmapsData.value!
+const roadmapsCatalog = _roadmapsSnapshot.roadmapsCatalog
+const result = computed(() => _roadmapsData.value?.result ?? _roadmapsSnapshot.result)
+const session = _roadmapsSnapshot.session
+const history = _roadmapsSnapshot.history
+const roadmapsState = _roadmapsSnapshot.roadmapsState
+const { isThai: globalIsThai } = useLocale()
+const isThai = computed(() => session?.language === 'th' || globalIsThai.value)
 
 const t = computed(() => {
   if (isThai.value) {
     return {
+      backToHome: 'กลับไปหน้าแรก',
       backToSurvey1: 'กลับไปผลลัพธ์ Survey 1',
       session: 'เซสชัน',
       finalDashboard: 'แดชบอร์ดผลลัพธ์สุดท้าย',
@@ -96,6 +103,14 @@ const t = computed(() => {
       overallReadiness: 'ความพร้อมโดยรวม',
       readinessStatus: 'สถานะความพร้อม',
       strongestNow: 'จุดแข็งตอนนี้',
+      roleGapInsight: 'ข้อมูลช่องว่างบทบาท',
+      currentCapability: 'ความสามารถปัจจุบันของคุณ',
+      asIs: 'ปัจจุบัน',
+      toBe: 'เป้าหมาย',
+      gapInsightCopy:
+        'เปรียบเทียบระดับความสามารถปัจจุบันของคุณกับสิ่งที่บทบาทเป้าหมายต้องการ',
+      topGaps: 'ช่องว่างที่ควรพัฒนา',
+      gapTopicsCount: 'หัวข้อลำดับถัดไป',
       capabilityMap: 'แผนภาพความสามารถ',
       profileCenterpiece: 'ภาพรวมโปรไฟล์',
       mapCopy:
@@ -104,6 +119,9 @@ const t = computed(() => {
       knowledgePersonalityFit: 'ความรู้ + ความเหมาะสมด้านบุคลิกภาพ',
       section2Copy:
         'แยกสัญญาณความสามารถออกจากสัญญาณบุคลิกภาพ เพื่อให้อ่านภาพรวมความเหมาะสมได้ชัดเจน',
+      section2AltTitle: 'ระดับความสามารถปัจจุบัน',
+      section2AltCopy:
+        'คะแนนความสามารถของคุณในแต่ละมิติ แบ่งตามทักษะ PSP และ SDLC',
       knowledgeFit: 'ความเหมาะสมด้านความรู้',
       capabilityAlignment: 'ความสอดคล้องของความสามารถ',
       currentReadiness: 'ความพร้อมปัจจุบัน',
@@ -158,6 +176,7 @@ const t = computed(() => {
   }
 
   return {
+    backToHome: 'Back to Home',
     backToSurvey1: 'Back to Survey 1 results',
     session: 'Session',
     finalDashboard: 'Final result dashboard',
@@ -179,6 +198,14 @@ const t = computed(() => {
     overallReadiness: 'Overall readiness',
     readinessStatus: 'Readiness status',
     strongestNow: 'Strongest now',
+    roleGapInsight: 'Role gap insight',
+    currentCapability: 'Your current capability',
+    asIs: 'As-Is',
+    toBe: 'To-Be',
+    gapInsightCopy:
+      'Compare your current capability level against what the target role requires.',
+    topGaps: 'Top gap areas',
+    gapTopicsCount: 'topics to focus on next',
     capabilityMap: 'Capability map',
     profileCenterpiece: 'Profile centerpiece',
     mapCopy:
@@ -187,6 +214,9 @@ const t = computed(() => {
     knowledgePersonalityFit: 'Knowledge + personality fit',
     section2Copy:
       'Separate the execution signal from the personality signal so the fit story is readable at a glance.',
+    section2AltTitle: 'Current capability breakdown',
+    section2AltCopy:
+      'Your capability scores across each dimension, grouped by PSP and SDLC tracks.',
     knowledgeFit: 'Knowledge fit',
     capabilityAlignment: 'Capability alignment',
     currentReadiness: 'current readiness',
@@ -243,11 +273,15 @@ const t = computed(() => {
   }
 })
 
+const hasRoleAnswers = computed(() => {
+  return (session?.milestones?.answered_role_questions ?? 0) > 0
+})
+
 const preferredRoleName = computed(
-  () => result?.preferred_role?.name ?? session?.preferred_role?.name ?? null,
+  () => result.value?.preferred_role?.name ?? session?.preferred_role?.name ?? null,
 )
 const bestFitRoleName = computed(
-  () => result?.best_fit_role?.name ?? session?.best_fit_role?.name ?? null,
+  () => result.value?.best_fit_role?.name ?? session?.best_fit_role?.name ?? null,
 )
 const survey2RoleTitle = computed(
   () =>
@@ -257,7 +291,7 @@ const survey2RoleTitle = computed(
 )
 
 const evaluation = computed(() => {
-  if (!result) {
+  if (!result.value) {
     return {
       dimensions: [],
       strengths: [],
@@ -266,7 +300,7 @@ const evaluation = computed(() => {
     }
   }
 
-  return buildRoadmapsEvaluation(result, history)
+  return buildRoadmapsEvaluation(result.value, history)
 })
 
 const baseDimensions = computed<RadarDimension[]>(() => {
@@ -495,6 +529,22 @@ const sortedDimensionsDesc = computed(() =>
   [...blendedDimensions.value].sort((left, right) => right.value - left.value),
 )
 
+const currentRoleSlug = computed(
+  () => result.value?.preferred_role?.slug ?? session?.preferred_role?.slug ?? null,
+)
+
+const roadmapShTopics = ref<RoadmapTopic[]>([])
+
+watch(
+  currentRoleSlug,
+  async (slug) => {
+    if (slug) {
+      roadmapShTopics.value = await getRoadmapTopics(slug)
+    }
+  },
+  { immediate: true },
+)
+
 const recalculatedStrengths = computed(() =>
   sortedDimensionsDesc.value.slice(0, 3).map((item) => item.label),
 )
@@ -604,9 +654,80 @@ const readinessStatus = computed(() => {
   return t.value.foundationBuilding
 })
 
-const topRoadmapTopics = computed<RoadmapTopic[]>(() =>
-  sortTopicsByDisplayOrder(result?.preferred_role_gap_topics ?? []).slice(0, 6),
-)
+const topRoadmapTopics = computed<RoadmapTopic[]>(() => {
+  const gapTopics = sortTopicsByDisplayOrder(
+    result.value?.preferred_role_gap_topics ?? [],
+  ).slice(0, 6)
+
+  if (gapTopics.length) return gapTopics
+
+  const masteryTopics = (result.value?.mastery_scores ?? [])
+    .filter((m: TopicMastery) => m.topic_title)
+    .sort(
+      (a: TopicMastery, b: TopicMastery) =>
+        (a.mastery_score ?? 0) - (b.mastery_score ?? 0),
+    )
+    .slice(0, 6)
+    .map((m: TopicMastery, index: number) => ({
+      id: m.topic_id,
+      slug: m.topic_slug,
+      title: m.topic_title,
+      description: undefined,
+      difficulty: 0,
+      display_order: index,
+      parent_id: null,
+      prerequisites: [],
+    }))
+
+  if (masteryTopics.length) return masteryTopics
+
+  if (roadmapShTopics.value.length) return roadmapShTopics.value
+
+  const recs = [
+    result.value?.preferred_path_recommendation,
+    result.value?.best_fit_path_recommendation,
+  ].filter((r): r is Recommendation => r != null && r.topic_title != null)
+
+  if (recs.length) {
+    return recs.slice(0, 6).map((rec, index) => ({
+      id: rec.topic_id ?? -(index + 1),
+      slug: rec.topic_slug ?? '',
+      title: rec.topic_title!,
+      description: rec.reason,
+      difficulty: 0,
+      display_order: index,
+      parent_id: null,
+      prerequisites: [],
+    }))
+  }
+
+  if (evaluation.value.growthAreas.length) {
+    return evaluation.value.growthAreas.slice(0, 6).map((label, index) => ({
+      id: -(index + 10),
+      slug: label.toLowerCase().replace(/\s+/g, '-'),
+      title: label,
+      description: undefined,
+      difficulty: 0,
+      display_order: index,
+      parent_id: null,
+      prerequisites: [],
+    }))
+  }
+
+  return sortedDimensionsDesc.value
+    .slice(-6)
+    .reverse()
+    .map((dim, index) => ({
+      id: -(index + 20),
+      slug: dim.key,
+      title: dim.label,
+      description: undefined,
+      difficulty: 0,
+      display_order: index,
+      parent_id: null,
+      prerequisites: [],
+    }))
+})
 
 const displayPersonalitySignals = computed(() => {
   if (evaluation.value.personalitySignals.length) {
@@ -645,7 +766,7 @@ const personalityFitNarrative = computed(() => {
       : 'Your behavioral profile is still being calibrated across the roadmap dimensions.'
 
   const confidenceSummary =
-    result?.role_alignment_status === 'aligned'
+    result.value?.role_alignment_status === 'aligned'
       ? isThai.value
         ? 'รูปแบบคำตอบบอกว่าคุณมีความมั่นใจในบทบาทค่อนข้างชัดเจน แผนพัฒนาจึงควรเน้นเปลี่ยนนิสัยการทำงานเหล่านี้ให้เป็นหลักฐานที่แข็งแรงขึ้น'
         : 'The pattern suggests stable role confidence, so the roadmap can focus on turning those work habits into stronger execution evidence.'
@@ -658,7 +779,7 @@ const personalityFitNarrative = computed(() => {
     : `Your current profile is most consistent with the ${roleName} direction. ${signalSummary} ${confidenceSummary}`
 })
 
-const personalityPillars = computed(() => result?.pillar_profile ?? [])
+const personalityPillars = computed(() => result.value?.pillar_profile ?? [])
 
 const topPersonalityPillars = computed(() =>
   [...personalityPillars.value]
@@ -723,6 +844,9 @@ const strongestDimensionCards = computed(() =>
   sortedDimensionsDesc.value.slice(0, 4).map((dimension) => ({
     ...dimension,
     percent: Math.round(dimension.value * 100),
+    description: isThai.value
+      ? 'คำตอบของคุณแสดงถึงความสามารถที่สม่ำเสมอในด้านนี้'
+      : 'Your responses reflect consistent strength in this area.',
   })),
 )
 
@@ -730,10 +854,17 @@ const growthDimensionCards = computed(() =>
   [...sortedDimensionsDesc.value]
     .reverse()
     .slice(0, 4)
-    .map((dimension) => ({
-      ...dimension,
-      percent: Math.round(dimension.value * 100),
-    })),
+    .map((dimension) => {
+      const cat = catalogByKey.value.get(dimension.key)
+      return {
+        ...dimension,
+        percent: Math.round(dimension.value * 100),
+        description: isThai.value
+          ? 'ให้ความสำคัญกับด้านนี้เพื่อเพิ่มความพร้อม'
+          : (cat?.low_score_action ??
+              'Focus on this area to improve overall readiness.'),
+      }
+    }),
 )
 
 function getTopicDifficultyLabel(topic: RoadmapTopic): string {
@@ -822,6 +953,7 @@ async function submitRoadmaps() {
 
     roadmapAnswers.value = { ...saved.answers }
     isRoadmapsComplete.value = saved.completed
+    await refresh()
   } catch (error) {
     toast.add({
       title: 'Could not save Roadmaps',
@@ -910,7 +1042,11 @@ useSeoMeta({
     :class="['page-wrap', !isRoadmapsComplete ? 'phase2-assessment-page' : '']"
   >
     <div class="flex flex-wrap items-center justify-between gap-4">
+      <NuxtLink to="/" class="editorial-link text-sm">
+        {{ t.backToHome }}
+      </NuxtLink>
       <NuxtLink
+        v-if="hasRoleAnswers"
         :to="`/results/${route.params.sessionId}`"
         class="editorial-link text-sm"
       >
@@ -1162,7 +1298,7 @@ useSeoMeta({
     </section>
 
     <template v-if="isRoadmapsComplete">
-      <section class="result-spotlight mt-24 overflow-hidden p-6 md:p-10">
+      <section class="result-spotlight mt-10 overflow-hidden p-6 md:p-10">
         <div class="grid gap-8 xl:grid-cols-[1.1fr_0.9fr] xl:items-start">
           <div>
             <div
@@ -1183,8 +1319,11 @@ useSeoMeta({
               {{ t.viewIntro }}
             </p>
 
-            <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:max-w-3xl">
-              <article class="paper-panel p-6">
+            <div
+              class="mt-8 grid gap-4"
+              :class="{ 'sm:grid-cols-2 xl:max-w-3xl': hasRoleAnswers }"
+            >
+              <article v-if="hasRoleAnswers" class="paper-panel p-6">
                 <p class="eyebrow">{{ t.personalityResult }}</p>
                 <h3 class="mt-3 text-2xl font-bold text-ink">
                   {{ survey2RoleTitle }}
@@ -1237,7 +1376,77 @@ useSeoMeta({
                 </div>
               </article>
 
-              <article class="paper-panel p-6">
+              <article v-else class="paper-panel p-6">
+                <p class="eyebrow">{{ t.roleGapInsight }}</p>
+                <h3 class="mt-3 text-2xl font-bold text-ink">
+                  {{ survey2RoleTitle }}
+                </h3>
+                <p class="mt-2 text-sm leading-7 text-ink-soft">
+                  {{ t.gapInsightCopy }}
+                </p>
+
+                <div class="mt-6 grid gap-5">
+                  <div
+                    class="rounded-xl border-l-4 border-l-blueprint bg-surface-card px-4 py-3"
+                  >
+                    <p
+                      class="text-xs font-extrabold uppercase tracking-[0.1em] text-blueprint"
+                    >
+                      {{ t.asIs }}
+                    </p>
+                    <p class="mt-1 text-sm font-bold text-ink">
+                      {{ t.currentCapability }}
+                    </p>
+                    <div class="mt-3 flex items-end justify-between gap-3">
+                      <p class="data-value text-3xl font-black text-ink">
+                        {{ overallCapabilityScore }}%
+                      </p>
+                      <p class="text-xs font-semibold text-ink-soft">
+                        {{ t.overallReadiness }}
+                      </p>
+                    </div>
+                    <div class="mt-3 h-2 rounded-full bg-ink/8">
+                      <div
+                        class="h-2 rounded-full bg-blueprint"
+                        :style="{ width: `${overallCapabilityScore}%` }"
+                      />
+                    </div>
+                    <p class="mt-2 text-xs leading-6 text-ink-soft">
+                      {{ t.topGaps }}: {{ recalculatedGrowthAreas.join(' • ') }}
+                    </p>
+                  </div>
+
+                  <div
+                    class="rounded-xl border-l-4 border-l-accent bg-surface-card px-4 py-3"
+                  >
+                    <p
+                      class="text-xs font-extrabold uppercase tracking-[0.1em] text-accent"
+                    >
+                      {{ t.toBe }}
+                    </p>
+                    <p class="mt-1 text-sm font-bold text-ink">
+                      {{ survey2RoleTitle }}
+                    </p>
+                    <p class="mt-3 text-xs leading-6 text-ink-soft">
+                      {{ topRoadmapTopics.length }} {{ t.gapTopicsCount }}
+                    </p>
+                    <div
+                      v-if="topRoadmapTopics.length"
+                      class="mt-2 flex flex-wrap gap-1.5"
+                    >
+                      <span
+                        v-for="topic in topRoadmapTopics.slice(0, 3)"
+                        :key="topic.id"
+                        class="rounded-full border border-border-subtle bg-surface-elevated/60 px-2.5 py-0.5 text-[11px] font-semibold text-ink-soft"
+                      >
+                        {{ topic.title }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <article v-if="hasRoleAnswers" class="paper-panel p-6">
                 <p class="eyebrow">{{ t.heroMetrics }}</p>
                 <div class="mt-4 grid gap-3">
                   <div class="metric-card p-4">
@@ -1292,21 +1501,26 @@ useSeoMeta({
         </div>
       </section>
 
-      <section class="section-band mt-24 py-12 md:py-16">
+      <section class="section-band mt-10 py-12 md:py-16">
         <div class="mx-auto max-w-6xl">
           <div class="max-w-3xl">
             <p class="eyebrow">{{ t.section }} 2</p>
-            <h2 class="mt-4 font-display text-4xl text-ink md:text-5xl">
-              {{ t.knowledgePersonalityFit }}
+            <h2
+              class="mt-4 font-display text-4xl text-ink md:text-5xl"
+            >
+              {{ hasRoleAnswers ? t.knowledgePersonalityFit : t.section2AltTitle }}
             </h2>
             <p
               class="mt-4 max-w-2xl text-sm leading-8 text-ink-soft md:text-base"
             >
-              {{ t.section2Copy }}
+              {{ hasRoleAnswers ? t.section2Copy : t.section2AltCopy }}
             </p>
           </div>
 
-          <div class="mt-10 grid gap-6 xl:grid-cols-2">
+          <div
+            class="mt-10 grid gap-6"
+            :class="{ 'xl:grid-cols-2': hasRoleAnswers }"
+          >
             <article class="paper-panel p-6 md:p-8">
               <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
@@ -1387,7 +1601,7 @@ useSeoMeta({
               </div>
             </article>
 
-            <article class="paper-panel p-6 md:p-8">
+            <article v-if="hasRoleAnswers" class="paper-panel p-6 md:p-8">
               <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p class="eyebrow">{{ t.personalityFit }}</p>
@@ -1442,7 +1656,7 @@ useSeoMeta({
         </div>
       </section>
 
-      <section class="mt-24">
+      <section class="mt-10">
         <div
           class="rounded-[2rem] border border-border-subtle bg-surface-elevated/70 p-6 shadow-[0_24px_70px_rgba(74,54,35,0.08)] md:p-8"
         >
@@ -1513,7 +1727,7 @@ useSeoMeta({
         </div>
       </section>
 
-      <section class="section-band mt-24 py-12 md:py-16">
+      <section class="section-band mt-10 py-12 md:py-16">
         <div class="mx-auto max-w-6xl">
           <div class="max-w-3xl">
             <p class="eyebrow">{{ t.section }} 4</p>
@@ -1550,7 +1764,10 @@ useSeoMeta({
                       {{ dimension.percent }}%
                     </p>
                   </div>
-                  <div class="mt-3 h-2 rounded-full bg-ink/8">
+                  <p class="mt-2 text-xs leading-5 text-ink-soft">
+                    {{ dimension.description }}
+                  </p>
+                  <div class="mt-2 h-2 rounded-full bg-ink/8">
                     <div
                       class="h-2 rounded-full bg-[linear-gradient(90deg,var(--color-blueprint),var(--color-accent))]"
                       :style="{ width: `${dimension.percent}%` }"
@@ -1582,7 +1799,10 @@ useSeoMeta({
                       {{ dimension.percent }}%
                     </p>
                   </div>
-                  <div class="mt-3 h-2 rounded-full bg-ink/8">
+                  <p class="mt-2 text-xs leading-5 text-ink-soft">
+                    {{ dimension.description }}
+                  </p>
+                  <div class="mt-2 h-2 rounded-full bg-ink/8">
                     <div
                       class="h-2 rounded-full bg-[linear-gradient(90deg,var(--color-accent),var(--color-blueprint))]"
                       :style="{ width: `${dimension.percent}%` }"
