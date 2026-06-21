@@ -3,6 +3,7 @@ import { motion } from 'motion-v'
 import { sortRankedRolesDescending } from '~/utils/assessment'
 import { useAssessmentResults } from '~/composables/useAssessmentResults'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
+import { useLocale } from '~/composables/useLocale'
 import { getErrorMessage } from '~/utils/api'
 import type {
   ApiError,
@@ -32,7 +33,8 @@ const { data: _fetchData, error: fetchError } = await useAsyncData(
 )
 
 const sessionSnapshot = _fetchData.value?.sessionSnapshot
-const isThai = computed(() => sessionSnapshot?.language === 'th')
+const { isThai: globalIsThai } = useLocale()
+const isThai = computed(() => sessionSnapshot?.language === 'th' || globalIsThai.value)
 
 const t = computed(() => {
   if (isThai.value) {

@@ -8,7 +8,7 @@ import type { AssessmentSession, Role } from '~~/shared/types/assessment'
 
 const { listRoles } = useCatalogApi()
 const { getSession, lastSessionId } = useAssessmentSession()
-const { currentLanguage, selectLanguage, isThai } = useLocale()
+const { isThai } = useLocale()
 const prefersReduced = useReducedMotion()
 const lastSessionSnapshot = ref<AssessmentSession | null>(null)
 
@@ -25,13 +25,28 @@ const featuredRoles = computed(() => {
   }
 })
 
+const isSurvey2Complete = computed(() => {
+  const profile = lastSessionSnapshot.value?.profile
+  if (!profile) return false
+  const survey2 = (profile as Record<string, unknown>).survey2
+  return (
+    typeof survey2 === 'object' &&
+    survey2 !== null &&
+    (survey2 as Record<string, unknown>).completed === true
+  )
+})
+
 const lastSessionRoute = computed(() => {
-  if (!lastSessionId.value) {
-    return null
-  }
-  if (lastSessionSnapshot.value?.status === 'completed') {
+  if (!lastSessionId.value) return null
+  const snap = lastSessionSnapshot.value
+  if (!snap) return `/assessment/${lastSessionId.value}`
+
+  if (isSurvey2Complete.value || snap.preferred_role)
+    return `/roadmaps/${lastSessionId.value}`
+
+  if (snap.status === 'completed')
     return `/results/${lastSessionId.value}`
-  }
+
   return `/assessment/${lastSessionId.value}`
 })
 
@@ -45,9 +60,11 @@ const t = computed(() => {
         'CompetencyX ช่วยให้นักศึกษาค้นพบตัวตนและวัดระดับทักษะเชิงเทคนิค เพื่อสร้างแผนการเรียนรู้ที่ชัดเจนและตอบโจทย์จริง',
       startBtn: 'เริ่มการค้นหา',
       resumeLabel:
-        lastSessionSnapshot.value?.status === 'completed'
-          ? 'ดูผลการประเมินล่าสุด'
-          : 'ทำเซสชันล่าสุดต่อ',
+        isSurvey2Complete.value
+          ? 'ดูผลลัพธ์เซสชันล่าสุด'
+          : lastSessionSnapshot.value?.status === 'completed'
+            ? 'ดูผลการประเมินล่าสุด'
+            : 'ทำเซสชันล่าสุดต่อ',
       heroFooter: 'ออกแบบมาเพื่อนักศึกษาที่กำลังมองหา 11+ เส้นทางซอฟต์แวร์',
       livePreview: 'ตัวอย่างเส้นทางสายอาชีพ',
       previewFormula: 'ค้นพบตัวตน + วัดระดับทักษะ = แผนพัฒนาอาชีพ',
@@ -72,7 +89,6 @@ const t = computed(() => {
       footerSub: 'การค้นหาตัวตนและแผนพัฒนาทักษะสำหรับนักศึกษาซอฟต์แวร์',
       beginAssessment: 'เริ่มทำแบบประเมิน',
       startNow: 'เริ่มเลย',
-      langLabel: 'ภาษา',
       processSteps: [
         {
           eyebrow: 'เฟส 1',
@@ -229,9 +245,11 @@ const t = computed(() => {
       'CompetencyX guides students through role discovery and technical skill calibration, then turns the result into a clear learning roadmap.',
     startBtn: 'Start discovery',
     resumeLabel:
-      lastSessionSnapshot.value?.status === 'completed'
-        ? 'View last evaluation'
-        : 'Resume last session',
+      isSurvey2Complete.value
+        ? 'View last session result'
+        : lastSessionSnapshot.value?.status === 'completed'
+          ? 'View last evaluation'
+          : 'Resume last session',
     heroFooter: 'Built for students choosing from 11+ software paths',
     livePreview: 'Live pathway preview',
     previewFormula: 'Discovery signal + skill signal = career roadmap',
@@ -256,7 +274,6 @@ const t = computed(() => {
     footerSub: 'Career discovery and skill roadmaps for software students.',
     beginAssessment: 'Begin assessment',
     startNow: 'Start now',
-    langLabel: 'Language',
     processSteps: [
       {
         eyebrow: 'Phase 1',
@@ -440,45 +457,6 @@ onMounted(async () => {
       :transition="prefersReduced ? { duration: 0 } : { duration: 0.45 }"
     >
       <div class="mx-auto max-w-4xl">
-        <!-- Language Switcher -->
-        <div class="mb-8 flex flex-col items-center gap-2">
-          <span
-            class="text-[9px] font-extrabold uppercase tracking-[0.18em] text-ink-soft"
-          >
-            {{ t.langLabel }}
-          </span>
-          <div
-            class="relative flex items-center rounded-full border border-border-subtle bg-surface-elevated/40 p-1 shadow-sm transition hover:border-ink/12"
-          >
-            <button
-              type="button"
-              class="relative flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.05em] transition-all duration-300"
-              :class="
-                currentLanguage === 'en'
-                  ? 'bg-accent text-white shadow-[0_4px_12px_rgba(15,118,110,0.25)]'
-                  : 'text-ink-soft hover:text-ink hover:bg-surface-muted/50'
-              "
-              @click="selectLanguage('en')"
-            >
-              <span>🇺🇸</span>
-              <span>English</span>
-            </button>
-            <button
-              type="button"
-              class="relative flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.05em] transition-all duration-300"
-              :class="
-                currentLanguage === 'th'
-                  ? 'bg-accent text-white shadow-[0_4px_12px_rgba(15,118,110,0.25)]'
-                  : 'text-ink-soft hover:text-ink hover:bg-surface-muted/50'
-              "
-              @click="selectLanguage('th')"
-            >
-              <span>🇹🇭</span>
-              <span>ไทย</span>
-            </button>
-          </div>
-        </div>
-
         <div
           class="inline-flex items-center gap-2 rounded-full border border-accent/15 bg-accent/10 px-4 py-2 text-sm font-bold text-accent"
         >
