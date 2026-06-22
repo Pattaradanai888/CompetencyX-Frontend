@@ -33,8 +33,11 @@ const { data: _fetchData, error: fetchError } = await useAsyncData(
 )
 
 const sessionSnapshot = _fetchData.value?.sessionSnapshot
-const { isThai: globalIsThai } = useLocale()
-const isThai = computed(() => sessionSnapshot?.language === 'th' || globalIsThai.value)
+const { isThai: globalIsThai, localeInitialized } = useLocale()
+const isThai = computed(() => {
+  if (localeInitialized.value) return globalIsThai.value
+  return sessionSnapshot?.language === 'th'
+})
 
 const t = computed(() => {
   if (isThai.value) {

@@ -2,18 +2,30 @@ export type Locale = 'en' | 'th'
 
 const SELECTED_LANGUAGE_KEY = 'competencyx:preferred-language'
 
+function readStoredLocale(): Locale | null {
+  if (import.meta.client) {
+    const stored = localStorage.getItem(SELECTED_LANGUAGE_KEY)
+    if (stored === 'th' || stored === 'en') return stored
+  }
+  return null
+}
+
 export function useLocale() {
-  const currentLanguage = useState<Locale>('locale', () => 'en')
+  const stored = readStoredLocale()
+  const currentLanguage = useState<Locale>('locale', () => stored ?? 'en')
+  const localeInitialized = useState<boolean>('locale-initialized', () => stored !== null)
 
   onMounted(() => {
-    const storedLang = localStorage.getItem(SELECTED_LANGUAGE_KEY)
-    if (storedLang === 'th' || storedLang === 'en') {
-      currentLanguage.value = storedLang as Locale
+    const lang = readStoredLocale()
+    if (lang) {
+      currentLanguage.value = lang
+      localeInitialized.value = true
     }
   })
 
   function selectLanguage(lang: Locale) {
     currentLanguage.value = lang
+    localeInitialized.value = true
     if (import.meta.client) {
       localStorage.setItem(SELECTED_LANGUAGE_KEY, lang)
     }
@@ -25,5 +37,6 @@ export function useLocale() {
     currentLanguage,
     selectLanguage,
     isThai,
+    localeInitialized,
   }
 }

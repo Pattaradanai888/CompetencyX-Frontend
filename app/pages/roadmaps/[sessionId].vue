@@ -4,7 +4,7 @@ import { useAssessmentResults } from '~/composables/useAssessmentResults'
 import { useLocale } from '~/composables/useLocale'
 import { sortTopicsByDisplayOrder } from '~/utils/assessment'
 import { buildRoadmapsEvaluation } from '~/utils/roadmaps'
-import { getRoadmapTopics } from '~/utils/roadmapTopics'
+import { getRoadmapTopics, fetchTopicResources, getRoadmapSlug } from '~/utils/roadmapTopics'
 import type { RadarDimension } from '~/utils/roadmaps'
 import SkillSpiderChart from '~/components/results/SkillSpiderChart.vue'
 import { getErrorMessage } from '~/utils/api'
@@ -13,6 +13,7 @@ import type {
   AssessmentSession,
   PillarInsight,
   Recommendation,
+  ResourceLink,
   RoadmapTopic,
   RoadmapsCatalogDimension,
   RoadmapsCatalogQuestion,
@@ -69,14 +70,23 @@ const { data: _roadmapsData, refresh } = await useAsyncData(
   },
 )
 
-const _roadmapsSnapshot = _roadmapsData.value!
+const _roadmapsSnapshot = _roadmapsData.value ?? {
+  session: null,
+  result: null,
+  history: null,
+  roadmapsCatalog: null,
+  roadmapsState: null,
+}
 const roadmapsCatalog = _roadmapsSnapshot.roadmapsCatalog
 const result = computed(() => _roadmapsData.value?.result ?? _roadmapsSnapshot.result)
 const session = _roadmapsSnapshot.session
 const history = _roadmapsSnapshot.history
 const roadmapsState = _roadmapsSnapshot.roadmapsState
-const { isThai: globalIsThai } = useLocale()
-const isThai = computed(() => session?.language === 'th' || globalIsThai.value)
+const { isThai: globalIsThai, localeInitialized } = useLocale()
+const isThai = computed(() => {
+  if (localeInitialized.value) return globalIsThai.value
+  return session?.language === 'th'
+})
 
 const t = computed(() => {
   if (isThai.value) {
@@ -137,9 +147,6 @@ const t = computed(() => {
         'แผนพัฒนาที่เปลี่ยนโปรไฟล์ความเหมาะสมของคุณให้เป็นขั้นตอนปฏิบัติสำหรับสร้างหลักฐานตามบทบาท',
       step: 'ขั้นตอน',
       roleGap: 'ช่องว่างบทบาท',
-      prerequisite: 'เรื่องพื้นฐานก่อนหน้า',
-      prerequisites: 'เรื่องพื้นฐานก่อนหน้า',
-      followOn: 'ต่อยอด',
       additionalInsights: 'ข้อมูลวิเคราะห์เพิ่มเติม',
       insightsCopy:
         'รายละเอียดสนับสนุนถูกจัดเป็นการ์ดเล็ก ๆ เพื่อให้หน้ายังอ่านง่ายและไม่แน่นเกินไป',
@@ -171,7 +178,23 @@ const t = computed(() => {
       previous: 'ย้อนกลับ',
       refreshPrompt: 'รีเฟรชเซสชันเพื่อแสดงคำถามถัดไปโดยไม่สูญเสียความคืบหน้า',
       resolvingQuestion: 'ระบบกำลังจัดเตรียมคำถามปรับเทียบถัดไป',
-      noTopicDescription: 'หัวข้อนี้ถูกจัดลำดับจากช่องว่างของบทบาทที่คุณเลือก',
+
+      gapToTarget: 'ช่องว่างสู่เป้าหมาย',
+      targetReadiness: 'เป้าหมายความพร้อม',
+      pointsNeeded: 'คะแนนที่ต้องพัฒนา',
+      gapClosed: 'ถึงเป้าหมายแล้ว',
+
+      priority: 'ลำดับความสำคัญ',
+      roadmap: 'แผนพัฒนา',
+      resources: 'แหล่งเรียนรู้',
+      labelBook: 'หนังสือ',
+      labelVideo: 'วิดีโอ',
+      labelArticle: 'บทความ',
+      labelCourse: 'คอร์ส',
+      labelOfficial: 'ทางการ',
+      labelWebsite: 'เว็บไซต์',
+      labelRoadmap: 'แผนพัฒนา',
+      labelFeed: 'ฟีด',
     }
   }
 
@@ -232,9 +255,6 @@ const t = computed(() => {
       'A focused roadmap that turns your fit profile into a practical step-by-step path for building stronger role evidence.',
     step: 'Step',
     roleGap: 'Role gap',
-    prerequisite: 'prerequisite',
-    prerequisites: 'prerequisites',
-    followOn: 'Follow-on',
     additionalInsights: 'Additional insights and analytics',
     insightsCopy:
       'Supporting detail is grouped into smaller cards so the page stays analytical without becoming dense.',
@@ -268,9 +288,22 @@ const t = computed(() => {
     refreshPrompt:
       'Refreshing the session should surface the next prompt without losing your progress.',
     resolvingQuestion: 'We are resolving the next calibration question.',
-    noTopicDescription:
-      'This topic is prioritized from your preferred-role gap profile.',
-  }
+      gapToTarget: 'Gap to target',
+      targetReadiness: 'Target readiness',
+      pointsNeeded: 'points needed',
+      gapClosed: 'At target level',
+      priority: 'Priority',
+      roadmap: 'Roadmap',
+      resources: 'Resources',
+      labelBook: 'Book',
+      labelVideo: 'Video',
+      labelArticle: 'Article',
+      labelCourse: 'Course',
+      labelOfficial: 'Official',
+      labelWebsite: 'Website',
+      labelRoadmap: 'Roadmap',
+      labelFeed: 'Feed',
+    }
 })
 
 const hasRoleAnswers = computed(() => {
@@ -308,7 +341,7 @@ const baseDimensions = computed<RadarDimension[]>(() => {
     evaluation.value.dimensions.map((item) => [item.key, item]),
   )
 
-  return roadmapsCatalog.dimensions.map(
+  return (roadmapsCatalog?.dimensions ?? []).map(
     (dimension: { key: string; label: string; track: 'psp' | 'sdlc' }) => {
       const existing = fromEvaluation.get(dimension.key)
       return {
@@ -329,7 +362,7 @@ type RoadmapQuestion = {
   dimensionKey: string
 }
 
-const roadmapQuestions: RoadmapQuestion[] = roadmapsCatalog.questions.map(
+const roadmapQuestions: RoadmapQuestion[] = (roadmapsCatalog?.questions ?? []).map(
   (question: RoadmapsCatalogQuestion) => ({
     id: question.id,
     prompt: question.prompt,
@@ -337,7 +370,7 @@ const roadmapQuestions: RoadmapQuestion[] = roadmapsCatalog.questions.map(
   }),
 )
 
-const answerScale = roadmapsCatalog.scale
+const answerScale = roadmapsCatalog?.scale ?? []
 const answerScaleValues = answerScale.map(
   (option: RoadmapsScaleOption) => option.value,
 )
@@ -396,7 +429,7 @@ function getQuestionInfluence(question: RoadmapQuestion): number | null {
 const catalogByKey = computed(
   () =>
     new Map<string, RoadmapsCatalogDimension>(
-      roadmapsCatalog.dimensions.map((item: RoadmapsCatalogDimension) => [
+      (roadmapsCatalog?.dimensions ?? []).map((item: RoadmapsCatalogDimension) => [
         item.key,
         item,
       ]),
@@ -530,10 +563,37 @@ const sortedDimensionsDesc = computed(() =>
 )
 
 const currentRoleSlug = computed(
-  () => result.value?.preferred_role?.slug ?? session?.preferred_role?.slug ?? null,
+  () =>
+    result.value?.preferred_role?.slug ??
+    session?.preferred_role?.slug ??
+    result.value?.ranked_roles?.[0]?.slug ??
+    null,
 )
 
 const roadmapShTopics = ref<RoadmapTopic[]>([])
+const topicResources = reactive(new Map<number, ResourceLink[]>())
+const loadingResources = ref<Set<number>>(new Set())
+
+async function loadTopicResources(topicId: number, topicTitle: string) {
+  if (topicResources.has(topicId) || loadingResources.value.has(topicId)) return
+  const slug = getRoadmapSlug(currentRoleSlug.value ?? '')
+  if (!slug) {
+    console.log(`[resources] no slug for ${topicTitle}`)
+    return
+  }
+  loadingResources.value = new Set([...loadingResources.value, topicId])
+  console.log(`[resources] loading ${slug}:${topicTitle}`)
+  const links = await fetchTopicResources(slug, topicTitle)
+  console.log(`[resources] ${slug}:${topicTitle} → ${links.length} links`)
+  if (links.length) {
+    topicResources.set(topicId, links)
+  }
+  const next = new Set(loadingResources.value)
+  next.delete(topicId)
+  loadingResources.value = next
+}
+
+
 
 watch(
   currentRoleSlug,
@@ -544,6 +604,10 @@ watch(
   },
   { immediate: true },
 )
+
+
+
+
 
 const recalculatedStrengths = computed(() =>
   sortedDimensionsDesc.value.slice(0, 3).map((item) => item.label),
@@ -654,12 +718,34 @@ const readinessStatus = computed(() => {
   return t.value.foundationBuilding
 })
 
+const TARGET_READINESS_SCORE = 78
+
+const capabilityGap = computed(() =>
+  Math.max(0, TARGET_READINESS_SCORE - overallCapabilityScore.value),
+)
+
+const isAtTarget = computed(() => overallCapabilityScore.value >= TARGET_READINESS_SCORE)
+
 const topRoadmapTopics = computed<RoadmapTopic[]>(() => {
   const gapTopics = sortTopicsByDisplayOrder(
     result.value?.preferred_role_gap_topics ?? [],
   ).slice(0, 6)
 
-  if (gapTopics.length) return gapTopics
+  if (gapTopics.length && !roadmapShTopics.value.length) {
+    return gapTopics
+  }
+
+  if (roadmapShTopics.value.length) {
+    const gapTitles = new Set(
+      gapTopics.map((t) => t.title.toLowerCase().trim()),
+    )
+    return roadmapShTopics.value.map((rt) => ({
+      ...rt,
+      is_gap:
+        gapTitles.has(rt.title.toLowerCase().trim()) ||
+        gapTitles.has(rt.slug.replace(/-/g, ' ')),
+    }))
+  }
 
   const masteryTopics = (result.value?.mastery_scores ?? [])
     .filter((m: TopicMastery) => m.topic_title)
@@ -680,8 +766,6 @@ const topRoadmapTopics = computed<RoadmapTopic[]>(() => {
     }))
 
   if (masteryTopics.length) return masteryTopics
-
-  if (roadmapShTopics.value.length) return roadmapShTopics.value
 
   const recs = [
     result.value?.preferred_path_recommendation,
@@ -729,6 +813,76 @@ const topRoadmapTopics = computed<RoadmapTopic[]>(() => {
     }))
 })
 
+const roadmapShTopicsByTitle = computed(() => {
+  const exact = new Map<string, RoadmapTopic>()
+  const fuzzy = new Map<string, RoadmapTopic>()
+  for (const t of roadmapShTopics.value) {
+    exact.set(t.title, t)
+    fuzzy.set(t.title.toLowerCase().trim(), t)
+    fuzzy.set(t.slug.replace(/-/g, ' '), t)
+  }
+  return { exact, fuzzy }
+})
+
+function findEnriched(
+  title: string,
+  slug: string,
+): RoadmapTopic | undefined {
+  const { exact, fuzzy } = roadmapShTopicsByTitle.value
+  const match = exact.get(title)
+  if (match) return match
+  const nl = title.toLowerCase().trim()
+  const fuzz = fuzzy.get(nl)
+  if (fuzz) return fuzz
+  const slugSpace = slug.replace(/-/g, ' ')
+  return fuzzy.get(slugSpace)
+}
+
+const displayTopics = computed<RoadmapTopic[]>(() =>
+  topRoadmapTopics.value.map((t) => {
+    const enriched = findEnriched(t.title, t.slug)
+    let prerequisite_titles = t.prerequisite_titles
+    let subtopic_titles = t.subtopic_titles
+    let follow_on_titles = t.follow_on_titles
+
+    if (!prerequisite_titles?.length && enriched?.prerequisite_titles?.length) {
+      prerequisite_titles = enriched.prerequisite_titles
+    }
+    if (!prerequisite_titles?.length) {
+      const titles = (t.prerequisites ?? [])
+        .map((p) => p.title)
+        .filter((title): title is string => !!title)
+      if (titles.length) {
+        prerequisite_titles = titles
+      }
+    }
+    if (!subtopic_titles?.length && enriched?.subtopic_titles?.length) {
+      subtopic_titles = enriched.subtopic_titles
+    }
+    if (!follow_on_titles?.length && enriched?.follow_on_titles?.length) {
+      follow_on_titles = enriched.follow_on_titles
+    }
+
+    return {
+      ...t,
+      topic_group: t.topic_group || enriched?.topic_group,
+      prerequisite_titles,
+      subtopic_titles,
+      follow_on_titles,
+    }
+  }),
+)
+
+watch(
+  () => displayTopics.value,
+  (topics) => {
+    for (const t of topics) {
+      loadTopicResources(t.id, t.title)
+    }
+  },
+  { immediate: true },
+)
+
 const displayPersonalitySignals = computed(() => {
   if (evaluation.value.personalitySignals.length) {
     return evaluation.value.personalitySignals
@@ -750,33 +904,36 @@ const displayPersonalitySignals = computed(() => {
 
 const personalityFitNarrative = computed(() => {
   const roleName = survey2RoleTitle.value
-  const strongestSignals = [...blendedDimensions.value]
-    .sort((left, right) => right.value - left.value)
-    .slice(0, 2)
-    .map((item) => item.label)
-
-  const signalSummary = strongestSignals.length
+  const topThree = topPersonalityPillars.value.slice(0, 3)
+  const pillarSummary = topThree.length
     ? isThai.value
-      ? `สัญญาณพฤติกรรมที่เด่นที่สุดอยู่ที่ ${strongestSignals.join(' และ ')}`
-      : `Your strongest behavioral signals appear around ${strongestSignals.join(
-          ' and ',
-        )}.`
+      ? `เสาหลักที่มีคะแนนสูงสุด: ${topThree.map((p) => `${p.label} ${(p.normalized_score * 10).toFixed(1)}/10`).join(', ')}`
+      : `Top profile pillars: ${topThree.map((p) => `${p.label} ${(p.normalized_score * 10).toFixed(1)}/10`).join(', ')}`
     : isThai.value
-      ? 'โปรไฟล์พฤติกรรมของคุณยังอยู่ระหว่างการปรับเทียบตามมิติของแผนพัฒนา'
-      : 'Your behavioral profile is still being calibrated across the roadmap dimensions.'
+      ? 'ยังไม่มีข้อมูลเสาหลักบุคลิกภาพที่เพียงพอ'
+      : 'Not enough personality pillar data yet.'
 
-  const confidenceSummary =
+  const avgScore = personalityPillars.value.length
+    ? (personalityPillars.value.reduce(
+        (sum: number, p: PillarInsight) => sum + p.normalized_score,
+        0,
+      ) / personalityPillars.value.length * 10).toFixed(1)
+    : '0.0'
+
+  const alignmentContext = isThai.value
+    ? `คะแนนความสอดคล้องบุคลิกภาพโดยรวมอยู่ที่ ${avgScore}/10`
+    : `Your overall personality alignment score is ${avgScore}/10`
+
+  const guidanceSummary =
     result.value?.role_alignment_status === 'aligned'
       ? isThai.value
-        ? 'รูปแบบคำตอบบอกว่าคุณมีความมั่นใจในบทบาทค่อนข้างชัดเจน แผนพัฒนาจึงควรเน้นเปลี่ยนนิสัยการทำงานเหล่านี้ให้เป็นหลักฐานที่แข็งแรงขึ้น'
-        : 'The pattern suggests stable role confidence, so the roadmap can focus on turning those work habits into stronger execution evidence.'
+        ? `คะแนนระดับนี้บ่งชี้ว่าคุณมีความสอดคล้องกับทิศทาง ${roleName} พอสมควร ควรใช้คะแนนเสาหลักต่ำเป็นจุดเน้นในการพัฒนา`
+        : `This alignment level suggests reasonable consistency with the ${roleName} direction. Use lower-scoring pillars as development focus areas.`
       : isThai.value
-        ? 'รูปแบบคำตอบบอกว่ายังมีพื้นที่ให้สำรวจก่อนล็อกเส้นทางแน่นเกินไป แผนพัฒนาจึงควรใช้มิติคะแนนต่ำเป็น feedback เชิงปฏิบัติ'
-        : 'The pattern suggests there is still room to explore before locking the path too tightly, so the roadmap should use low-scoring dimensions as practical feedback.'
+        ? `คะแนนระดับนี้บ่งชี้ว่ายังมีโอกาสสำรวจเพิ่มเติมก่อน锁定เส้นทาง ใช้เสาหลักที่ได้คะแนนต่ำเป็น feedback เพื่อปรับทิศทาง`
+        : `This suggests room to explore before locking a path. Use low-scoring pillars as directional feedback.`
 
-  return isThai.value
-    ? `โปรไฟล์ปัจจุบันสอดคล้องกับทิศทาง ${roleName} มากที่สุด ${signalSummary} ${confidenceSummary}`
-    : `Your current profile is most consistent with the ${roleName} direction. ${signalSummary} ${confidenceSummary}`
+  return `${pillarSummary}. ${alignmentContext}. ${guidanceSummary}`
 })
 
 const personalityPillars = computed(() => result.value?.pillar_profile ?? [])
@@ -786,15 +943,6 @@ const topPersonalityPillars = computed(() =>
     .sort((left, right) => right.normalized_score - left.normalized_score)
     .slice(0, 4),
 )
-
-const personalityFitScore = computed(() => {
-  if (!personalityPillars.value.length) return 0
-  const total = personalityPillars.value.reduce(
-    (sum: number, pillar: PillarInsight) => sum + pillar.normalized_score,
-    0,
-  )
-  return Math.round((total / personalityPillars.value.length) * 100)
-})
 
 const trackHighlights = computed(() => {
   const tracks = [
@@ -884,21 +1032,32 @@ function getTopicDifficultyLabel(topic: RoadmapTopic): string {
 }
 
 function getTopicTags(topic: RoadmapTopic): string[] {
-  const tags = [t.value.roleGap]
+  const tags: string[] = []
 
-  if (topic.prerequisites?.length) {
-    tags.push(
-      topic.prerequisites.length === 1
-        ? `1 ${t.value.prerequisite}`
-        : `${topic.prerequisites.length} ${t.value.prerequisites}`,
-    )
+  if (topic.is_gap) {
+    tags.push(t.value.priority)
   }
-
-  if (topic.parent_id !== null) {
-    tags.push(t.value.followOn)
+  if (topic.topic_group) {
+    tags.push(topic.topic_group)
+  } else if (!topic.is_gap) {
+    tags.push(t.value.roadmap)
   }
 
   return tags
+}
+
+function getResourceTypeLabel(type: ResourceLink['type']): string {
+  const labels: Record<ResourceLink['type'], string> = {
+    book: t.value.labelBook,
+    video: t.value.labelVideo,
+    article: t.value.labelArticle,
+    course: t.value.labelCourse,
+    official: t.value.labelOfficial,
+    website: t.value.labelWebsite,
+    roadmap: t.value.labelRoadmap,
+    feed: t.value.labelFeed,
+  }
+  return labels[type] ?? type
 }
 
 function getRoadmapScaleLabel(option: {
@@ -925,12 +1084,17 @@ function getRoadmapScaleLabel(option: {
   }
 }
 
-function formatPercent(value: number): string {
-  return `${Math.round(value)}%`
-}
+const personalityFitScoreDisplay = computed(() => {
+  if (!personalityPillars.value.length) return '0/10'
+  const avg = personalityPillars.value.reduce(
+    (sum: number, p: PillarInsight) => sum + p.normalized_score,
+    0,
+  ) / personalityPillars.value.length
+  return `${(avg * 10).toFixed(1)}/10`
+})
 
-function formatPillarPercent(pillar: PillarInsight): string {
-  return formatPercent(pillar.normalized_score * 100)
+function formatPillarScore(pillar: PillarInsight): string {
+  return `${(pillar.normalized_score * 10).toFixed(1)}/10`
 }
 
 async function submitRoadmaps() {
@@ -1298,54 +1462,52 @@ useSeoMeta({
     </section>
 
     <template v-if="isRoadmapsComplete">
-      <section class="result-spotlight mt-10 overflow-hidden p-6 md:p-10">
-        <div class="grid gap-8 xl:grid-cols-[1.1fr_0.9fr] xl:items-start">
-          <div>
-            <div
-              class="inline-flex items-center gap-2 rounded-full border border-accent/15 bg-accent/10 px-4 py-2 text-sm font-bold text-accent"
-            >
-              <span aria-hidden="true">✓</span>
-              {{ t.assessmentComplete }}
-            </div>
+      <section class="result-spotlight mt-10 overflow-hidden p-5 md:p-10">
+        <div
+          class="inline-flex items-center gap-2 rounded-full border border-accent/15 bg-accent/10 px-4 py-2 text-sm font-bold text-accent"
+        >
+          <span aria-hidden="true">✓</span>
+          {{ t.assessmentComplete }}
+        </div>
 
-            <h2
-              class="mt-6 max-w-4xl font-display text-4xl leading-tight text-ink md:text-6xl"
-            >
-              {{ survey2RoleTitle }} {{ t.readinessOrganized }}
-            </h2>
-            <p
-              class="mt-5 max-w-2xl text-sm leading-8 text-ink-soft md:text-base"
-            >
-              {{ t.viewIntro }}
-            </p>
+        <h2
+          class="mt-6 max-w-4xl font-display text-4xl leading-tight text-ink md:text-6xl"
+        >
+          {{ survey2RoleTitle }} {{ t.readinessOrganized }}
+        </h2>
+        <p class="mt-5 max-w-2xl text-sm leading-8 text-ink-soft md:text-base">
+          {{ t.viewIntro }}
+        </p>
 
-            <div
-              class="mt-8 grid gap-4"
-              :class="{ 'sm:grid-cols-2 xl:max-w-3xl': hasRoleAnswers }"
-            >
-              <article v-if="hasRoleAnswers" class="paper-panel p-6">
+        <div
+          class="mt-8 grid gap-5 xl:grid-cols-[1.15fr_0.85fr] xl:items-start"
+        >
+          <!-- Left column: cards -->
+          <div class="grid gap-5">
+            <div v-if="hasRoleAnswers" class="grid gap-5 sm:grid-cols-2">
+              <article class="paper-panel p-5">
                 <p class="eyebrow">{{ t.personalityResult }}</p>
-                <h3 class="mt-3 text-2xl font-bold text-ink">
+                <h3 class="mt-2 text-xl font-bold text-ink">
                   {{ survey2RoleTitle }}
                 </h3>
-                <p class="mt-2 text-sm leading-7 text-ink-soft">
+                <p class="mt-1 text-xs leading-6 text-ink-soft">
                   {{ displayPersonalitySignals[0] }}
                 </p>
 
-                <div class="mt-6 grid gap-3">
+                <div class="mt-4 grid gap-2">
                   <div
-                    class="rounded-2xl border border-border-subtle bg-surface-card px-4 py-3"
+                    class="rounded-xl border border-border-subtle bg-surface-card px-4 py-3"
                   >
                     <p
-                      class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
+                      class="text-[11px] font-bold uppercase tracking-[0.08em] text-ink-soft"
                     >
                       {{ t.personalityFit }}
                     </p>
-                    <div class="mt-2 flex items-end justify-between gap-3">
-                      <p class="data-value text-3xl font-black text-ink">
-                        {{ personalityFitScore }}%
+                    <div class="mt-1 flex items-end justify-between gap-3">
+                      <p class="data-value text-2xl font-black text-ink">
+                        {{ personalityFitScoreDisplay }}
                       </p>
-                      <p class="text-xs font-semibold text-ink-soft">
+                      <p class="text-[11px] font-semibold text-ink-soft">
                         {{ t.basedOnProfile }}
                       </p>
                     </div>
@@ -1354,19 +1516,19 @@ useSeoMeta({
                   <div
                     v-for="pillar in topPersonalityPillars.slice(0, 3)"
                     :key="pillar.key"
-                    class="rounded-2xl border border-border-subtle bg-surface-card px-4 py-3"
+                    class="rounded-xl border border-border-subtle bg-surface-card px-4 py-2.5"
                   >
                     <div class="flex items-center justify-between gap-3">
                       <p class="text-sm font-semibold text-ink">
                         {{ pillar.label }}
                       </p>
                       <p class="data-value text-sm font-bold text-accent">
-                        {{ formatPillarPercent(pillar) }}
+                        {{ formatPillarScore(pillar) }}
                       </p>
                     </div>
-                    <div class="mt-3 h-2 rounded-full bg-ink/8">
+                    <div class="mt-2 h-1.5 rounded-full bg-ink/8">
                       <div
-                        class="h-2 rounded-full bg-[linear-gradient(90deg,var(--color-blueprint),var(--color-accent))]"
+                        class="h-1.5 rounded-full bg-[linear-gradient(90deg,var(--color-blueprint),var(--color-accent))]"
                         :style="{
                           width: `${Math.round(pillar.normalized_score * 100)}%`,
                         }"
@@ -1376,126 +1538,183 @@ useSeoMeta({
                 </div>
               </article>
 
-              <article v-else class="paper-panel p-6">
-                <p class="eyebrow">{{ t.roleGapInsight }}</p>
-                <h3 class="mt-3 text-2xl font-bold text-ink">
-                  {{ survey2RoleTitle }}
-                </h3>
-                <p class="mt-2 text-sm leading-7 text-ink-soft">
-                  {{ t.gapInsightCopy }}
-                </p>
-
-                <div class="mt-6 grid gap-5">
-                  <div
-                    class="rounded-xl border-l-4 border-l-blueprint bg-surface-card px-4 py-3"
-                  >
-                    <p
-                      class="text-xs font-extrabold uppercase tracking-[0.1em] text-blueprint"
-                    >
-                      {{ t.asIs }}
-                    </p>
-                    <p class="mt-1 text-sm font-bold text-ink">
-                      {{ t.currentCapability }}
-                    </p>
-                    <div class="mt-3 flex items-end justify-between gap-3">
-                      <p class="data-value text-3xl font-black text-ink">
-                        {{ overallCapabilityScore }}%
-                      </p>
-                      <p class="text-xs font-semibold text-ink-soft">
-                        {{ t.overallReadiness }}
-                      </p>
-                    </div>
-                    <div class="mt-3 h-2 rounded-full bg-ink/8">
-                      <div
-                        class="h-2 rounded-full bg-blueprint"
-                        :style="{ width: `${overallCapabilityScore}%` }"
-                      />
-                    </div>
-                    <p class="mt-2 text-xs leading-6 text-ink-soft">
-                      {{ t.topGaps }}: {{ recalculatedGrowthAreas.join(' • ') }}
-                    </p>
-                  </div>
-
-                  <div
-                    class="rounded-xl border-l-4 border-l-accent bg-surface-card px-4 py-3"
-                  >
-                    <p
-                      class="text-xs font-extrabold uppercase tracking-[0.1em] text-accent"
-                    >
-                      {{ t.toBe }}
-                    </p>
-                    <p class="mt-1 text-sm font-bold text-ink">
-                      {{ survey2RoleTitle }}
-                    </p>
-                    <p class="mt-3 text-xs leading-6 text-ink-soft">
-                      {{ topRoadmapTopics.length }} {{ t.gapTopicsCount }}
-                    </p>
-                    <div
-                      v-if="topRoadmapTopics.length"
-                      class="mt-2 flex flex-wrap gap-1.5"
-                    >
-                      <span
-                        v-for="topic in topRoadmapTopics.slice(0, 3)"
-                        :key="topic.id"
-                        class="rounded-full border border-border-subtle bg-surface-elevated/60 px-2.5 py-0.5 text-[11px] font-semibold text-ink-soft"
-                      >
-                        {{ topic.title }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </article>
-
-              <article v-if="hasRoleAnswers" class="paper-panel p-6">
+              <article class="paper-panel p-5 flex flex-col">
                 <p class="eyebrow">{{ t.heroMetrics }}</p>
-                <div class="mt-4 grid gap-3">
+                <div class="mt-4 grid flex-1 gap-2 grid-rows-3">
                   <div class="metric-card p-4">
                     <p
-                      class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
+                      class="text-[11px] font-bold uppercase tracking-[0.08em] text-ink-soft"
                     >
                       {{ t.overallReadiness }}
                     </p>
-                    <p class="mt-2 data-value text-4xl font-black text-ink">
+                    <p class="mt-1 data-value text-3xl font-black text-ink">
                       {{ overallCapabilityScore }}%
                     </p>
+                    <div class="mt-2 h-1.5 rounded-full bg-ink/8">
+                      <div
+                        class="h-1.5 rounded-full bg-accent"
+                        :style="{ width: `${overallCapabilityScore}%` }"
+                      />
+                    </div>
                   </div>
                   <div class="metric-card p-4">
                     <p
-                      class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
+                      class="text-[11px] font-bold uppercase tracking-[0.08em] text-ink-soft"
                     >
                       {{ t.readinessStatus }}
                     </p>
-                    <p class="mt-2 text-2xl font-black text-ink">
+                    <p class="mt-1 text-xl font-black text-ink">
                       {{ readinessStatus }}
                     </p>
                   </div>
                   <div class="metric-card p-4">
                     <p
-                      class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
+                      class="text-[11px] font-bold uppercase tracking-[0.08em] text-ink-soft"
                     >
                       {{ t.strongestNow }}
                     </p>
-                    <p class="mt-2 text-sm leading-7 text-ink-soft">
+                    <p class="mt-1 text-sm leading-6 text-ink-soft">
                       {{ recalculatedStrengths.join(' • ') }}
                     </p>
                   </div>
                 </div>
               </article>
             </div>
+
+            <article class="paper-panel p-5">
+              <p class="eyebrow">{{ t.roleGapInsight }}</p>
+              <h3 class="mt-2 text-xl font-bold text-ink">
+                {{ survey2RoleTitle }}
+              </h3>
+              <p class="mt-1 text-xs leading-6 text-ink-soft">
+                {{ t.gapInsightCopy }}
+              </p>
+
+              <div
+                class="mt-4 grid gap-3"
+                :class="hasRoleAnswers ? '' : 'sm:grid-cols-2'"
+              >
+                <div
+                  class="rounded-xl border-l-4 border-l-blueprint bg-surface-card px-4 py-3"
+                >
+                  <p
+                    class="text-[11px] font-extrabold uppercase tracking-[0.1em] text-blueprint"
+                  >
+                    {{ t.asIs }}
+                  </p>
+                  <p class="mt-1 text-sm font-bold text-ink">
+                    {{ t.currentCapability }}
+                  </p>
+                  <div class="mt-2 flex items-end justify-between gap-3">
+                    <p class="data-value text-2xl font-black text-ink">
+                      {{ overallCapabilityScore }}%
+                    </p>
+                    <p class="text-[11px] font-semibold text-ink-soft">
+                      {{ t.overallReadiness }}
+                    </p>
+                  </div>
+                  <div class="mt-2 h-1.5 rounded-full bg-ink/8">
+                    <div
+                      class="h-1.5 rounded-full bg-blueprint"
+                      :style="{ width: `${overallCapabilityScore}%` }"
+                    />
+                  </div>
+                  <p class="mt-2 text-xs leading-5 text-ink-soft">
+                    {{ t.topGaps }}: {{ recalculatedGrowthAreas.join(' • ') }}
+                  </p>
+                </div>
+
+                <div
+                  class="rounded-xl border-l-4 border-l-accent bg-surface-card px-4 py-3"
+                >
+                  <p
+                    class="text-[11px] font-extrabold uppercase tracking-[0.1em] text-accent"
+                  >
+                    {{ t.toBe }}
+                  </p>
+                  <p class="mt-1 text-sm font-bold text-ink">
+                    {{ survey2RoleTitle }}
+                  </p>
+                  <div class="mt-2 flex items-end justify-between gap-3">
+                    <p class="data-value text-2xl font-black text-accent">
+                      {{ TARGET_READINESS_SCORE }}%
+                    </p>
+                    <p class="text-[11px] font-semibold text-ink-soft">
+                      {{ t.targetReadiness }}
+                    </p>
+                  </div>
+                  <div class="mt-1 h-1.5 rounded-full bg-ink/8">
+                    <div
+                      class="h-1.5 rounded-full bg-accent"
+                      :style="{ width: `${TARGET_READINESS_SCORE}%` }"
+                    />
+                  </div>
+                  <div
+                    class="mt-2 flex items-center justify-between rounded-lg border border-border-subtle bg-surface-elevated/50 px-3 py-2"
+                  >
+                    <p class="text-[11px] font-bold text-ink-soft">
+                      {{ t.gapToTarget }}
+                    </p>
+                    <p
+                      class="text-sm font-black"
+                      :class="isAtTarget ? 'text-green-600' : 'text-ink'"
+                    >
+                      {{
+                        isAtTarget
+                          ? t.gapClosed
+                          : `${capabilityGap} ${t.pointsNeeded}`
+                      }}
+                    </p>
+                  </div>
+                  <p class="mt-2 text-xs leading-5 text-ink-soft">
+                    {{ displayTopics.length }} {{ t.gapTopicsCount }}
+                  </p>
+                  <div
+                    v-if="displayTopics.length"
+                    class="mt-1 flex flex-wrap gap-1.5"
+                  >
+                    <span
+                      v-for="topic in displayTopics.slice(0, 3)"
+                      :key="topic.id"
+                      class="rounded-full border border-border-subtle bg-surface-elevated/60 px-2 py-0.5 text-[11px] font-semibold text-ink-soft"
+                    >
+                      {{ topic.title }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </article>
           </div>
 
-          <div class="grid gap-4">
-            <div class="paper-panel p-5 md:p-6">
-              <p class="eyebrow">{{ t.capabilityMap }}</p>
-              <h3 class="mt-3 font-display text-3xl text-ink">
-                {{ t.profileCenterpiece }}
-              </h3>
-              <p class="mt-2 max-w-md text-sm leading-7 text-ink-soft">
-                {{ t.mapCopy }}
-              </p>
-              <div class="mt-6">
-                <SkillSpiderChart :dimensions="blendedDimensions" />
+          <!-- Right column: spider chart -->
+          <div
+            class="paper-panel p-5 xl:sticky xl:top-8 xl:self-start"
+          >
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <p class="eyebrow">{{ t.capabilityMap }}</p>
+                <h3 class="mt-2 text-xl font-bold text-ink">
+                  {{ t.profileCenterpiece }}
+                </h3>
               </div>
+              <div
+                class="shrink-0 rounded-full border border-border-subtle bg-surface-card px-3 py-1.5 text-center"
+              >
+                <p class="data-value text-lg font-black text-accent">
+                  {{ overallCapabilityScore }}%
+                </p>
+                <p
+                  class="text-[10px] font-bold uppercase tracking-[0.06em] text-ink-soft"
+                >
+                  {{ t.overallReadiness }}
+                </p>
+              </div>
+            </div>
+            <p class="mt-2 text-xs leading-6 text-ink-soft">
+              {{ t.mapCopy }}
+            </p>
+            <div class="mt-4">
+              <SkillSpiderChart :dimensions="blendedDimensions" />
             </div>
           </div>
         </div>
@@ -1611,7 +1830,7 @@ useSeoMeta({
                 </div>
                 <div class="text-right">
                   <p class="data-value text-4xl font-black text-ink">
-                    {{ personalityFitScore }}%
+                    {{ personalityFitScoreDisplay }}
                   </p>
                   <p
                     class="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft"
@@ -1638,7 +1857,7 @@ useSeoMeta({
                       {{ pillar.label }}
                     </p>
                     <p class="data-value text-sm font-bold text-accent">
-                      {{ formatPillarPercent(pillar) }}
+                      {{ formatPillarScore(pillar) }}
                     </p>
                   </div>
                   <div class="mt-2 h-2 rounded-full bg-ink/8">
@@ -1675,12 +1894,12 @@ useSeoMeta({
 
         <div class="mt-10 grid gap-5">
           <div
-            v-for="(topic, index) in topRoadmapTopics"
+            v-for="(topic, index) in displayTopics"
             :key="topic.id"
             class="relative"
           >
             <div
-              v-if="index !== topRoadmapTopics.length - 1"
+              v-if="index !== displayTopics.length - 1"
               class="absolute left-5 top-14 hidden h-[calc(100%+1.25rem)] w-px bg-[linear-gradient(180deg,rgba(234,112,31,0.28),rgba(33,122,111,0.14))] md:block"
             />
             <div
@@ -1689,7 +1908,7 @@ useSeoMeta({
               {{ index + 1 }}
             </div>
 
-            <article class="paper-panel ml-5 overflow-hidden p-0 md:ml-14">
+            <article class="paper-panel ml-5 md:ml-14">
               <div
                 class="grid gap-5 p-6 md:grid-cols-[minmax(0,1fr)_auto] md:p-8"
               >
@@ -1705,8 +1924,8 @@ useSeoMeta({
                   <h3 class="mt-3 text-2xl font-bold text-ink">
                     {{ topic.title }}
                   </h3>
-                  <p class="mt-3 max-w-2xl text-sm leading-7 text-ink-soft">
-                    {{ topic.description || t.noTopicDescription }}
+                  <p v-if="topic.description" class="mt-3 max-w-2xl text-sm leading-7 text-ink-soft">
+                    {{ topic.description }}
                   </p>
                 </div>
 
@@ -1722,6 +1941,32 @@ useSeoMeta({
                   </span>
                 </div>
               </div>
+
+              <div
+                v-if="topicResources.get(topic.id)?.length"
+                class="border-t border-border-subtle px-6 py-4 md:px-8"
+              >
+                <p
+                  class="text-[11px] font-bold uppercase tracking-[0.08em] text-ink-soft"
+                >
+                  {{ t.resources }}
+                </p>
+                <div class="mt-2 flex flex-wrap gap-2">
+                  <a
+                    v-for="link in topicResources.get(topic.id)"
+                    :key="link.url"
+                    :href="link.url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center gap-1.5 rounded-lg border border-border-subtle bg-surface-card px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-accent/30 hover:text-accent"
+                  >
+                    <span class="shrink-0 rounded bg-surface-muted px-1 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-ink-soft">{{ getResourceTypeLabel(link.type) }}</span>
+                    <span>{{ link.title }}</span>
+                  </a>
+                </div>
+              </div>
+
+
             </article>
           </div>
         </div>

@@ -39,6 +39,13 @@ export interface TopicPrerequisite {
   topic_id: number
   required_mastery_threshold: number
   dependency_weight: number
+  title?: string
+}
+
+export interface ResourceLink {
+  type: 'book' | 'video' | 'article' | 'course' | 'official' | 'website' | 'roadmap' | 'feed'
+  title: string
+  url: string
 }
 
 export interface RoadmapTopic {
@@ -50,6 +57,12 @@ export interface RoadmapTopic {
   display_order?: number
   parent_id: number | null
   prerequisites: TopicPrerequisite[]
+  topic_group?: string
+  prerequisite_titles?: string[]
+  subtopic_titles?: string[]
+  follow_on_titles?: string[]
+  is_gap?: boolean
+  resource_links?: ResourceLink[]
 }
 
 export interface QuestionOption {
