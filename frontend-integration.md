@@ -15,7 +15,6 @@ The backend remains the source of truth for:
 - question selection
 - role-discovery progression
 - role ambiguity and resolution state
-- skill-assessment progression
 - final recommendation output
 
 ## Main Contract Changes
@@ -98,7 +97,7 @@ Response fields:
 
 ### Final results payload
 
-`GET /api/assessment-sessions/{id}/results/` still returns mastery and recommendation data, and now also includes:
+`GET /api/assessment-sessions/{id}/results/` still returns recommendation data, and now also includes:
 
 - `pillar_profile`
 - `ranked_roles`
@@ -126,7 +125,7 @@ Role discovery is now based on a larger, pillar-driven question bank and may res
 
 Relevant session fields:
 
-- `phase`: `role_discovery`, `role_ambiguity`, `skill_assessment`, or `recommendation_ready`
+- `phase`: `role_discovery`, `role_ambiguity`, or `recommendation_ready`
 - `role_resolution_status`: `unknown`, `in_progress`, `resolved`, or `ambiguous`
 - `role_alignment_status`: `unknown`, `aligned`, `mismatch`, or `ambiguous`
 

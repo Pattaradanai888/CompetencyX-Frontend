@@ -8,7 +8,6 @@ import type {
   RoleAlignmentStatus,
   RoleResolutionStatus,
   SessionMilestones,
-  TopicMastery,
 } from '~~/shared/types/assessment'
 
 export function isSessionComplete(
@@ -142,9 +141,7 @@ export function getRoleResolutionLabel(
 }
 
 export function getTotalAnswered(milestones: SessionMilestones): number {
-  return (
-    milestones.answered_role_questions + milestones.answered_skill_questions
-  )
+  return milestones.answered_role_questions
 }
 
 function formatPercent(value?: number | null): string {
@@ -177,20 +174,12 @@ export function hasTopicRecommendation(
   )
 }
 
-export const formatMasteryPercent = formatPercent
-
 export function sortTopicsByDisplayOrder<
   T extends { display_order?: number | null },
 >(items: T[]): T[] {
   return [...items].sort(
     (left, right) =>
       (Number(left.display_order) || 0) - (Number(right.display_order) || 0),
-  )
-}
-
-export function sortMasteryDescending(items: TopicMastery[]): TopicMastery[] {
-  return [...items].sort(
-    (left, right) => (right.mastery_score ?? 0) - (left.mastery_score ?? 0),
   )
 }
 

@@ -1,19 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatConfidencePercent,
-  formatMasteryPercent,
   getAlignmentLabel,
   getQuestionTypeLabel,
   getRecommendationHeadline,
   hasTopicRecommendation,
   isSessionComplete,
-  sortMasteryDescending,
 } from '../../app/utils/assessment'
 import type {
   AssessmentResult,
   AssessmentSession,
   Recommendation,
-  TopicMastery,
 } from '../../shared/types/assessment'
 
 const baseSession: AssessmentSession = {
@@ -29,7 +26,8 @@ const baseSession: AssessmentSession = {
   completed_at: null,
   milestones: {
     answered_role_questions: 1,
-    answered_skill_questions: 0,
+    answered_core_role_questions: 1,
+    answered_tie_break_questions: 0,
   },
   role_alignment_status: 'unknown',
   role_resolution_status: 'in_progress',
@@ -76,7 +74,6 @@ describe('assessment utils', () => {
       pillar_profile: [],
       ranked_roles: [],
       preferred_role_gap_topics: [],
-      mastery_scores: [],
       preferred_path_recommendation: null,
       best_fit_path_recommendation: null,
     }
@@ -89,10 +86,9 @@ describe('assessment utils', () => {
     expect(getQuestionTypeLabel('ranked_choice')).toBe('Priority pick')
     expect(getAlignmentLabel('mismatch')).toBe('Stretch path')
     expect(formatConfidencePercent(0.784)).toBe('78%')
-    expect(formatMasteryPercent(0.321)).toBe('32%')
   })
 
-  it('handles nullable recommendation topics and sorts mastery descending', () => {
+  it('handles nullable recommendation topics', () => {
     const emptyRecommendation: Recommendation | null = {
       id: 2,
       role_slug: 'backend-engineer',
@@ -107,28 +103,5 @@ describe('assessment utils', () => {
       'No next topic recommended yet',
     )
     expect(hasTopicRecommendation(emptyRecommendation)).toBe(false)
-
-    const mastery: TopicMastery[] = [
-      {
-        topic_id: 1,
-        topic_slug: 'api-design',
-        topic_title: 'API Design',
-        mastery_score: 0.41,
-        confidence_score: 0.75,
-        updated_at: '2026-04-17T04:00:00Z',
-      },
-      {
-        topic_id: 2,
-        topic_slug: 'sql',
-        topic_title: 'SQL',
-        mastery_score: 0.87,
-        confidence_score: 0.65,
-        updated_at: '2026-04-17T04:00:00Z',
-      },
-    ]
-
-    expect(
-      sortMasteryDescending(mastery).map((item) => item.topic_slug),
-    ).toEqual(['sql', 'api-design'])
   })
 })

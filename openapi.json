@@ -3,7 +3,7 @@
   "info": {
     "title": "CompetencyX API",
     "version": "0.1.0",
-    "description": "Adaptive career-roadmap backend API for assessment sessions, role inference, mastery estimation, and next-topic recommendations."
+    "description": "Adaptive career-roadmap backend API for assessment sessions, role inference, and next-topic recommendations."
   },
   "paths": {
     "/api/assessment-sessions/": {
@@ -39,6 +39,7 @@
                       "id": "2b39d41d-8de9-4b9b-b2ef-2a278b3f3770",
                       "status": "in_progress",
                       "phase": "role_discovery",
+                      "language": "en",
                       "best_fit_confidence": 0.0,
                       "preferred_role": {
                         "id": 1,
@@ -56,7 +57,8 @@
                       "completed_at": null,
                       "milestones": {
                         "answered_role_questions": 0,
-                        "answered_skill_questions": 0
+                        "answered_core_role_questions": 0,
+                        "answered_tie_break_questions": 0
                       },
                       "role_alignment_status": "unknown",
                       "role_resolution_status": "in_progress",
@@ -154,6 +156,7 @@
                       "id": "2b39d41d-8de9-4b9b-b2ef-2a278b3f3770",
                       "status": "in_progress",
                       "phase": "role_discovery",
+                      "language": "en",
                       "best_fit_confidence": 0.0,
                       "preferred_role": {
                         "id": 1,
@@ -171,7 +174,8 @@
                       "completed_at": null,
                       "milestones": {
                         "answered_role_questions": 0,
-                        "answered_skill_questions": 0
+                        "answered_core_role_questions": 0,
+                        "answered_tie_break_questions": 0
                       },
                       "role_alignment_status": "unknown",
                       "role_resolution_status": "in_progress",
@@ -279,6 +283,7 @@
                       "id": "2b39d41d-8de9-4b9b-b2ef-2a278b3f3770",
                       "status": "in_progress",
                       "phase": "role_discovery",
+                      "language": "en",
                       "best_fit_confidence": 0.0,
                       "preferred_role": {
                         "id": 1,
@@ -296,7 +301,8 @@
                       "completed_at": null,
                       "milestones": {
                         "answered_role_questions": 0,
-                        "answered_skill_questions": 0
+                        "answered_core_role_questions": 0,
+                        "answered_tie_break_questions": 0
                       },
                       "role_alignment_status": "unknown",
                       "role_resolution_status": "in_progress",
@@ -597,7 +603,8 @@
                       "completed_at": "2026-04-17T04:05:00Z",
                       "milestones": {
                         "answered_role_questions": 2,
-                        "answered_skill_questions": 2
+                        "answered_core_role_questions": 2,
+                        "answered_tie_break_questions": 0
                       },
                       "role_alignment_status": "aligned",
                       "role_resolution_status": "resolved",
@@ -642,16 +649,6 @@
                           ]
                         }
                       ],
-                      "mastery_scores": [
-                        {
-                          "topic_id": 11,
-                          "topic_slug": "http",
-                          "topic_title": "HTTP Fundamentals",
-                          "mastery_score": 1.0,
-                          "confidence_score": 0.5,
-                          "updated_at": "2026-04-17T04:05:00Z"
-                        }
-                      ],
                       "preferred_path_recommendation": {
                         "id": 301,
                         "role_slug": "backend-engineer",
@@ -671,7 +668,7 @@
                 }
               }
             },
-            "description": "Final recommendations, mastery scores, and gap topics."
+            "description": "Final recommendations and gap topics."
           },
           "404": {
             "description": "Assessment session was not found."
@@ -1291,13 +1288,6 @@
             },
             "readOnly": true
           },
-          "mastery_scores": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TopicMastery"
-            },
-            "readOnly": true
-          },
           "preferred_path_recommendation": {
             "allOf": [
               {
@@ -1323,7 +1313,6 @@
           "best_fit_role",
           "guidance_summary",
           "id",
-          "mastery_scores",
           "milestones",
           "pillar_profile",
           "preferred_path_recommendation",
@@ -1349,6 +1338,9 @@
           },
           "phase": {
             "$ref": "#/components/schemas/PhaseEnum"
+          },
+          "language": {
+            "$ref": "#/components/schemas/LanguageEnum"
           },
           "best_fit_confidence": {
             "type": "number",
@@ -1430,6 +1422,11 @@
         "type": "string",
         "description": "* `beginner` - Beginner\n* `intermediate` - Intermediate\n* `advanced` - Advanced"
       },
+      "LanguageEnum": {
+        "enum": ["en", "th"],
+        "type": "string",
+        "description": "* `en` - English\n* `th` - Thai"
+      },
       "PathKindEnum": {
         "enum": ["preferred", "best_fit"],
         "type": "string",
@@ -1439,12 +1436,11 @@
         "enum": [
           "role_discovery",
           "role_ambiguity",
-          "skill_assessment",
           "recommendation_ready",
           "completed"
         ],
         "type": "string",
-        "description": "* `role_discovery` - Role Discovery\n* `role_ambiguity` - Role Ambiguity\n* `skill_assessment` - Skill Assessment\n* `recommendation_ready` - Recommendation Ready\n* `completed` - Completed"
+        "description": "* `role_discovery` - Role Discovery\n* `role_ambiguity` - Role Ambiguity\n* `recommendation_ready` - Recommendation Ready\n* `completed` - Completed"
       },
       "PillarInsight": {
         "type": "object",
@@ -1697,6 +1693,14 @@
             "type": "string",
             "pattern": "^[-a-zA-Z0-9_]+$"
           },
+          "language": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LanguageEnum"
+              }
+            ],
+            "default": "en"
+          },
           "profile": {
             "type": "object",
             "additionalProperties": {}
@@ -1842,37 +1846,6 @@
             "nullable": true
           }
         }
-      },
-      "TopicMastery": {
-        "type": "object",
-        "properties": {
-          "topic_id": {
-            "type": "integer",
-            "readOnly": true
-          },
-          "topic_slug": {
-            "type": "string",
-            "readOnly": true
-          },
-          "topic_title": {
-            "type": "string",
-            "readOnly": true
-          },
-          "mastery_score": {
-            "type": "number",
-            "format": "double"
-          },
-          "confidence_score": {
-            "type": "number",
-            "format": "double"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "readOnly": true
-          }
-        },
-        "required": ["topic_id", "topic_slug", "topic_title", "updated_at"]
       },
       "TopicPrerequisite": {
         "type": "object",

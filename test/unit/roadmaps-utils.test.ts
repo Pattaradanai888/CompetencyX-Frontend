@@ -16,7 +16,11 @@ const baseResult: AssessmentResult = {
   started_at: '2026-05-01T00:00:00Z',
   updated_at: '2026-05-01T00:20:00Z',
   completed_at: '2026-05-01T00:20:00Z',
-  milestones: { answered_role_questions: 6, answered_skill_questions: 18 },
+  milestones: {
+    answered_role_questions: 6,
+    answered_core_role_questions: 6,
+    answered_tie_break_questions: 0,
+  },
   role_alignment_status: 'aligned',
   role_resolution_status: 'resolved',
   guidance_summary: 'Summary',
@@ -80,7 +84,6 @@ const baseResult: AssessmentResult = {
   ],
   ranked_roles: [],
   preferred_role_gap_topics: [],
-  mastery_scores: [],
   preferred_path_recommendation: null,
   best_fit_path_recommendation: null,
 }

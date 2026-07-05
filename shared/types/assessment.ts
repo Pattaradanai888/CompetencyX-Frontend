@@ -1,7 +1,6 @@
 export type AssessmentPhase =
   | 'role_discovery'
   | 'role_ambiguity'
-  | 'skill_assessment'
   | 'recommendation_ready'
   | 'completed'
 
@@ -43,7 +42,15 @@ export interface TopicPrerequisite {
 }
 
 export interface ResourceLink {
-  type: 'book' | 'video' | 'article' | 'course' | 'official' | 'website' | 'roadmap' | 'feed'
+  type:
+    | 'book'
+    | 'video'
+    | 'article'
+    | 'course'
+    | 'official'
+    | 'website'
+    | 'roadmap'
+    | 'feed'
   title: string
   url: string
 }
@@ -95,7 +102,8 @@ export interface Question {
 
 export interface SessionMilestones {
   answered_role_questions: number
-  answered_skill_questions: number
+  answered_core_role_questions: number
+  answered_tie_break_questions: number
 }
 
 export interface AssessmentSession {
@@ -146,15 +154,6 @@ export interface Recommendation {
   created_at: string
 }
 
-export interface TopicMastery {
-  topic_id: number
-  topic_slug: string
-  topic_title: string
-  mastery_score?: number | null
-  confidence_score?: number | null
-  updated_at: string
-}
-
 export interface AssessmentResult extends Omit<
   AssessmentSession,
   'current_question'
@@ -162,7 +161,6 @@ export interface AssessmentResult extends Omit<
   pillar_profile: PillarInsight[]
   ranked_roles: RankedRoleInsight[]
   preferred_role_gap_topics: RoadmapTopic[]
-  mastery_scores: TopicMastery[]
   preferred_path_recommendation: Recommendation | null
   best_fit_path_recommendation: Recommendation | null
 }

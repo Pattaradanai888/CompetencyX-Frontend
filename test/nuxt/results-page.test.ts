@@ -52,7 +52,11 @@ describe('results page', () => {
       started_at: '2026-04-17T04:00:00Z',
       updated_at: '2026-04-17T04:02:00Z',
       completed_at: '2026-04-17T04:02:00Z',
-      milestones: { answered_role_questions: 2, answered_skill_questions: 4 },
+      milestones: {
+        answered_role_questions: 2,
+        answered_core_role_questions: 2,
+        answered_tie_break_questions: 0,
+      },
       role_alignment_status: 'aligned',
       role_resolution_status: 'resolved',
       guidance_summary: 'Done.',
@@ -78,7 +82,11 @@ describe('results page', () => {
       started_at: '2026-04-17T04:00:00Z',
       updated_at: '2026-04-17T04:02:00Z',
       completed_at: '2026-04-17T04:02:00Z',
-      milestones: { answered_role_questions: 2, answered_skill_questions: 4 },
+      milestones: {
+        answered_role_questions: 2,
+        answered_core_role_questions: 2,
+        answered_tie_break_questions: 0,
+      },
       role_alignment_status: 'aligned',
       role_resolution_status: 'resolved',
       guidance_summary: 'Done.',
@@ -118,7 +126,6 @@ describe('results page', () => {
         },
       ],
       preferred_role_gap_topics: [],
-      mastery_scores: [],
       preferred_path_recommendation: {
         id: 1,
         role_slug: 'backend-engineer',
@@ -177,7 +184,11 @@ describe('results page', () => {
         started_at: '2026-04-17T04:00:00Z',
         updated_at: '2026-04-17T04:02:00Z',
         completed_at: '2026-04-17T04:02:00Z',
-        milestones: { answered_role_questions: 2, answered_skill_questions: 4 },
+        milestones: {
+          answered_role_questions: 2,
+          answered_core_role_questions: 2,
+          answered_tie_break_questions: 0,
+        },
         role_alignment_status: 'aligned',
         role_resolution_status: 'resolved',
         guidance_summary: 'Done.',
@@ -186,7 +197,7 @@ describe('results page', () => {
       .mockResolvedValueOnce({
         id: 'session-2',
         status: 'in_progress',
-        phase: 'skill_assessment',
+        phase: 'role_discovery',
         best_fit_confidence: 0.81,
         preferred_role: {
           id: 2,
@@ -198,7 +209,11 @@ describe('results page', () => {
         started_at: '2026-04-17T04:03:00Z',
         updated_at: '2026-04-17T04:03:00Z',
         completed_at: null,
-        milestones: { answered_role_questions: 0, answered_skill_questions: 0 },
+        milestones: {
+          answered_role_questions: 0,
+          answered_core_role_questions: 0,
+          answered_tie_break_questions: 0,
+        },
         role_alignment_status: 'aligned',
         role_resolution_status: 'resolved',
         guidance_summary: 'Done.',
