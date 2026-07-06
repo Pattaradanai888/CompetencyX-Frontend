@@ -4,11 +4,7 @@ import { useAssessmentResults } from '~/composables/useAssessmentResults'
 import { useLocale } from '~/composables/useLocale'
 import { sortTopicsByDisplayOrder } from '~/utils/assessment'
 import { buildRoadmapsEvaluation } from '~/utils/roadmaps'
-import {
-  getRoadmapTopics,
-  fetchTopicResources,
-  getRoadmapSlug,
-} from '~/utils/roadmapTopics'
+import { getRoadmapTopics, fetchTopicResources, getRoadmapSlug } from '~/utils/roadmapTopics'
 import type { RadarDimension } from '~/utils/roadmaps'
 import SkillSpiderChart from '~/components/results/SkillSpiderChart.vue'
 import { getErrorMessage } from '~/utils/api'
@@ -22,17 +18,19 @@ import type {
   RoadmapsCatalogDimension,
   RoadmapsCatalogQuestion,
   RoadmapsScaleOption,
+  TopicMastery,
 } from '~~/shared/types/assessment'
 
 const route = useRoute('/roadmaps/[sessionId]')
 const sessionId = computed(() => route.params.sessionId as string)
-const { getResults, getHistory } = useAssessmentResults()
 const {
+  getResults,
+  getHistory,
   getRoadmapsCatalog,
   getRoadmapsNextQuestion,
   getRoadmapsState,
   saveRoadmapsState,
-} = useRoadmapsApiClient()
+} = useAssessmentResults()
 const toast = useToast()
 const { getSession } = useAssessmentSession()
 const prefersReduced = useReducedMotion()
@@ -80,9 +78,7 @@ const _roadmapsSnapshot = _roadmapsData.value ?? {
   roadmapsState: null,
 }
 const roadmapsCatalog = _roadmapsSnapshot.roadmapsCatalog
-const result = computed(
-  () => _roadmapsData.value?.result ?? _roadmapsSnapshot.result,
-)
+const result = computed(() => _roadmapsData.value?.result ?? _roadmapsSnapshot.result)
 const session = _roadmapsSnapshot.session
 const history = _roadmapsSnapshot.history
 const roadmapsState = _roadmapsSnapshot.roadmapsState
@@ -292,22 +288,22 @@ const t = computed(() => {
     refreshPrompt:
       'Refreshing the session should surface the next prompt without losing your progress.',
     resolvingQuestion: 'We are resolving the next calibration question.',
-    gapToTarget: 'Gap to target',
-    targetReadiness: 'Target readiness',
-    pointsNeeded: 'points needed',
-    gapClosed: 'At target level',
-    priority: 'Priority',
-    roadmap: 'Roadmap',
-    resources: 'Resources',
-    labelBook: 'Book',
-    labelVideo: 'Video',
-    labelArticle: 'Article',
-    labelCourse: 'Course',
-    labelOfficial: 'Official',
-    labelWebsite: 'Website',
-    labelRoadmap: 'Roadmap',
-    labelFeed: 'Feed',
-  }
+      gapToTarget: 'Gap to target',
+      targetReadiness: 'Target readiness',
+      pointsNeeded: 'points needed',
+      gapClosed: 'At target level',
+      priority: 'Priority',
+      roadmap: 'Roadmap',
+      resources: 'Resources',
+      labelBook: 'Book',
+      labelVideo: 'Video',
+      labelArticle: 'Article',
+      labelCourse: 'Course',
+      labelOfficial: 'Official',
+      labelWebsite: 'Website',
+      labelRoadmap: 'Roadmap',
+      labelFeed: 'Feed',
+    }
 })
 
 const hasRoleAnswers = computed(() => {
@@ -315,12 +311,10 @@ const hasRoleAnswers = computed(() => {
 })
 
 const preferredRoleName = computed(
-  () =>
-    result.value?.preferred_role?.name ?? session?.preferred_role?.name ?? null,
+  () => result.value?.preferred_role?.name ?? session?.preferred_role?.name ?? null,
 )
 const bestFitRoleName = computed(
-  () =>
-    result.value?.best_fit_role?.name ?? session?.best_fit_role?.name ?? null,
+  () => result.value?.best_fit_role?.name ?? session?.best_fit_role?.name ?? null,
 )
 const survey2RoleTitle = computed(
   () =>
@@ -360,7 +354,7 @@ const baseDimensions = computed<RadarDimension[]>(() => {
   )
 })
 
-const isRoadmapsComplete = ref(roadmapsState?.completed)
+const isRoadmapsComplete = ref(roadmapsState.completed)
 
 type RoadmapQuestion = {
   id: string
@@ -368,13 +362,13 @@ type RoadmapQuestion = {
   dimensionKey: string
 }
 
-const roadmapQuestions: RoadmapQuestion[] = (
-  roadmapsCatalog?.questions ?? []
-).map((question: RoadmapsCatalogQuestion) => ({
-  id: question.id,
-  prompt: question.prompt,
-  dimensionKey: question.dimension_key,
-}))
+const roadmapQuestions: RoadmapQuestion[] = (roadmapsCatalog?.questions ?? []).map(
+  (question: RoadmapsCatalogQuestion) => ({
+    id: question.id,
+    prompt: question.prompt,
+    dimensionKey: question.dimension_key,
+  }),
+)
 
 const answerScale = roadmapsCatalog?.scale ?? []
 const answerScaleValues = answerScale.map(
@@ -387,9 +381,7 @@ const answerScaleMax = answerScaleValues.length
   ? Math.max(...answerScaleValues)
   : 5
 
-const roadmapAnswers = ref<Record<string, number>>({
-  ...(roadmapsState?.answers ?? {}),
-})
+const roadmapAnswers = ref<Record<string, number>>({ ...roadmapsState.answers })
 const currentQuestionIndex = ref(0)
 const isSavingRoadmaps = ref(false)
 const isAutoAdvancing = ref(false)
@@ -411,24 +403,148 @@ const activeQuestionAnswer = computed(() => {
   return roadmapAnswers.value[activeQuestion.value.id] ?? null
 })
 
+function clamp(value: number): number {
+  return Math.max(0, Math.min(1, value))
+}
+
+function normalizeRoadmapsAnswer(raw: number): number {
+  if (answerScaleMax === answerScaleMin) {
+    return 1
+  }
+
+  const ratio = (raw - answerScaleMin) / (answerScaleMax - answerScaleMin)
+  const scoreOutOfTen = 1 + clamp(ratio) * 9
+  return scoreOutOfTen / 10
+}
+
+function getQuestionInfluence(question: RoadmapQuestion): number | null {
+  const raw = roadmapAnswers.value[question.id]
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) {
+    return null
+  }
+
+  return normalizeRoadmapsAnswer(raw)
+}
+
 const catalogByKey = computed(
   () =>
     new Map<string, RoadmapsCatalogDimension>(
-      (roadmapsCatalog?.dimensions ?? []).map(
-        (item: RoadmapsCatalogDimension) => [item.key, item],
-      ),
+      (roadmapsCatalog?.dimensions ?? []).map((item: RoadmapsCatalogDimension) => [
+        item.key,
+        item,
+      ]),
     ),
 )
 
-const { blendedDimensions, pickNextQuestionWithRl } = useRoadmapQuestions(
-  computed(() => sessionId.value),
-  computed(() => roadmapQuestions),
-  roadmapAnswers,
-  computed(() => answerScaleMin),
-  computed(() => answerScaleMax),
-  baseDimensions,
-  catalogByKey,
-)
+const blendedDimensions = computed<RadarDimension[]>(() => {
+  const baseByKey = new Map(
+    baseDimensions.value.map((item) => [item.key, item]),
+  )
+
+  return baseDimensions.value.map((dimension) => {
+    const matchingQuestions = roadmapQuestions.filter(
+      (question) => question.dimensionKey === dimension.key,
+    )
+    const influences = matchingQuestions
+      .map((question) => getQuestionInfluence(question))
+      .filter((score): score is number => score !== null)
+    const questionScore = influences.length
+      ? influences.reduce((sum: number, value: number) => sum + value, 0) /
+        influences.length
+      : dimension.value
+
+    const capabilityValue = clamp(questionScore)
+    const base = baseByKey.get(dimension.key) ?? dimension
+    const catalogDimension = catalogByKey.value.get(dimension.key)
+
+    return {
+      ...base,
+      label: catalogDimension?.label ?? base.label,
+      track: catalogDimension?.track ?? base.track,
+      value: capabilityValue,
+    }
+  })
+})
+
+const hasRoadmapChartData = computed(() => blendedDimensions.value.length > 0)
+
+function answeredQuestionsCountForDimension(dimensionKey: string): number {
+  return roadmapQuestions.filter((question) => {
+    if (question.dimensionKey !== dimensionKey) {
+      return false
+    }
+    return Number.isFinite(roadmapAnswers.value[question.id])
+  }).length
+}
+
+function getDimensionMastery(dimensionKey: string): number {
+  const matchingAnswers = roadmapQuestions
+    .filter((question) => question.dimensionKey === dimensionKey)
+    .map((question) => roadmapAnswers.value[question.id])
+    .filter((value): value is number => Number.isFinite(value))
+
+  if (!matchingAnswers.length) {
+    return 0.5
+  }
+
+  const normalized = matchingAnswers.map((value) =>
+    normalizeRoadmapsAnswer(value),
+  )
+  const average =
+    normalized.reduce((sum: number, value: number) => sum + value, 0) /
+    normalized.length
+  return clamp(average)
+}
+
+function scoreAdaptiveCandidate(question: RoadmapQuestion): number {
+  const mastery = getDimensionMastery(question.dimensionKey)
+  const uncertainty = 1 - Math.abs(mastery - 0.5) * 2
+  const developmentNeed = 1 - mastery
+  const coverageBonus =
+    answeredQuestionsCountForDimension(question.dimensionKey) === 0 ? 0.25 : 0
+  return developmentNeed * 0.55 + uncertainty * 0.3 + coverageBonus
+}
+
+function getUnansweredQuestions(): RoadmapQuestion[] {
+  return roadmapQuestions.filter(
+    (question) => !Number.isFinite(roadmapAnswers.value[question.id]),
+  )
+}
+
+async function pickNextQuestionWithRl(): Promise<RoadmapQuestion | null> {
+  const unanswered = getUnansweredQuestions()
+  if (!unanswered.length) {
+    return null
+  }
+
+  try {
+    const response = await getRoadmapsNextQuestion(
+      sessionId.value,
+      roadmapAnswers.value,
+    )
+    const nextQuestionId = response.next_question?.id
+    if (!nextQuestionId) {
+      return null
+    }
+    return (
+      roadmapQuestions.find((question) => question.id === nextQuestionId) ??
+      null
+    )
+  } catch {
+    return unanswered.reduce(
+      (best: RoadmapQuestion | null, current: RoadmapQuestion) => {
+        if (!best) {
+          return current
+        }
+
+        return scoreAdaptiveCandidate(current) > scoreAdaptiveCandidate(best)
+          ? current
+          : best
+      },
+      null as RoadmapQuestion | null,
+    )
+  }
+}
 
 function setCurrentQuestionById(questionId: string | null) {
   if (!questionId) {
@@ -477,6 +593,8 @@ async function loadTopicResources(topicId: number, topicTitle: string) {
   loadingResources.value = next
 }
 
+
+
 watch(
   currentRoleSlug,
   async (slug) => {
@@ -486,6 +604,10 @@ watch(
   },
   { immediate: true },
 )
+
+
+
+
 
 const recalculatedStrengths = computed(() =>
   sortedDimensionsDesc.value.slice(0, 3).map((item) => item.label),
@@ -520,6 +642,18 @@ const answeredPromptCount = computed(() => {
   return roadmapQuestions.filter((question) =>
     Number.isFinite(roadmapAnswers.value[question.id]),
   ).length
+})
+
+const activeQuestionNumber = computed(() => {
+  if (!activeQuestion.value) {
+    return Math.min(answeredPromptCount.value + 1, roadmapQuestions.length || 1)
+  }
+
+  const currentIndex = roadmapQuestions.findIndex(
+    (question) => question.id === activeQuestion.value?.id,
+  )
+
+  return currentIndex === -1 ? 1 : currentIndex + 1
 })
 
 const selectedScaleOption = computed(() => {
@@ -590,13 +724,11 @@ const capabilityGap = computed(() =>
   Math.max(0, TARGET_READINESS_SCORE - overallCapabilityScore.value),
 )
 
-const isAtTarget = computed(
-  () => overallCapabilityScore.value >= TARGET_READINESS_SCORE,
-)
+const isAtTarget = computed(() => overallCapabilityScore.value >= TARGET_READINESS_SCORE)
 
 const topRoadmapTopics = computed<RoadmapTopic[]>(() => {
   const gapTopics = sortTopicsByDisplayOrder(
-    (result.value?.preferred_role_gap_topics ?? []) as RoadmapTopic[],
+    result.value?.preferred_role_gap_topics ?? [],
   ).slice(0, 6)
 
   if (gapTopics.length && !roadmapShTopics.value.length) {
@@ -614,6 +746,26 @@ const topRoadmapTopics = computed<RoadmapTopic[]>(() => {
         gapTitles.has(rt.slug.replace(/-/g, ' ')),
     }))
   }
+
+  const masteryTopics = (result.value?.mastery_scores ?? [])
+    .filter((m: TopicMastery) => m.topic_title)
+    .sort(
+      (a: TopicMastery, b: TopicMastery) =>
+        (a.mastery_score ?? 0) - (b.mastery_score ?? 0),
+    )
+    .slice(0, 6)
+    .map((m: TopicMastery, index: number) => ({
+      id: m.topic_id,
+      slug: m.topic_slug,
+      title: m.topic_title,
+      description: undefined,
+      difficulty: 0,
+      display_order: index,
+      parent_id: null,
+      prerequisites: [],
+    }))
+
+  if (masteryTopics.length) return masteryTopics
 
   const recs = [
     result.value?.preferred_path_recommendation,
@@ -672,7 +824,10 @@ const roadmapShTopicsByTitle = computed(() => {
   return { exact, fuzzy }
 })
 
-function findEnriched(title: string, slug: string): RoadmapTopic | undefined {
+function findEnriched(
+  title: string,
+  slug: string,
+): RoadmapTopic | undefined {
   const { exact, fuzzy } = roadmapShTopicsByTitle.value
   const match = exact.get(title)
   if (match) return match
@@ -759,14 +914,10 @@ const personalityFitNarrative = computed(() => {
       : 'Not enough personality pillar data yet.'
 
   const avgScore = personalityPillars.value.length
-    ? (
-        (personalityPillars.value.reduce(
-          (sum: number, p: PillarInsight) => sum + p.normalized_score,
-          0,
-        ) /
-          personalityPillars.value.length) *
-        10
-      ).toFixed(1)
+    ? (personalityPillars.value.reduce(
+        (sum: number, p: PillarInsight) => sum + p.normalized_score,
+        0,
+      ) / personalityPillars.value.length * 10).toFixed(1)
     : '0.0'
 
   const alignmentContext = isThai.value
@@ -859,7 +1010,7 @@ const growthDimensionCards = computed(() =>
         description: isThai.value
           ? 'ให้ความสำคัญกับด้านนี้เพื่อเพิ่มความพร้อม'
           : (cat?.low_score_action ??
-            'Focus on this area to improve overall readiness.'),
+              'Focus on this area to improve overall readiness.'),
       }
     }),
 )
@@ -935,11 +1086,10 @@ function getRoadmapScaleLabel(option: {
 
 const personalityFitScoreDisplay = computed(() => {
   if (!personalityPillars.value.length) return '0/10'
-  const avg =
-    personalityPillars.value.reduce(
-      (sum: number, p: PillarInsight) => sum + p.normalized_score,
-      0,
-    ) / personalityPillars.value.length
+  const avg = personalityPillars.value.reduce(
+    (sum: number, p: PillarInsight) => sum + p.normalized_score,
+    0,
+  ) / personalityPillars.value.length
   return `${(avg * 10).toFixed(1)}/10`
 })
 
@@ -1031,7 +1181,7 @@ async function goToNextQuestion() {
 }
 
 onMounted(async () => {
-  if (!roadmapsState?.completed) {
+  if (!roadmapsState.completed) {
     const nextQuestion = await pickNextQuestionWithRl()
     setCurrentQuestionById(nextQuestion?.id ?? null)
   }
@@ -1537,7 +1687,9 @@ useSeoMeta({
           </div>
 
           <!-- Right column: spider chart -->
-          <div class="paper-panel p-5 xl:sticky xl:top-8 xl:self-start">
+          <div
+            class="paper-panel p-5 xl:sticky xl:top-8 xl:self-start"
+          >
             <div class="flex items-center justify-between gap-4">
               <div>
                 <p class="eyebrow">{{ t.capabilityMap }}</p>
@@ -1572,10 +1724,10 @@ useSeoMeta({
         <div class="mx-auto max-w-6xl">
           <div class="max-w-3xl">
             <p class="eyebrow">{{ t.section }} 2</p>
-            <h2 class="mt-4 font-display text-4xl text-ink md:text-5xl">
-              {{
-                hasRoleAnswers ? t.knowledgePersonalityFit : t.section2AltTitle
-              }}
+            <h2
+              class="mt-4 font-display text-4xl text-ink md:text-5xl"
+            >
+              {{ hasRoleAnswers ? t.knowledgePersonalityFit : t.section2AltTitle }}
             </h2>
             <p
               class="mt-4 max-w-2xl text-sm leading-8 text-ink-soft md:text-base"
@@ -1772,10 +1924,7 @@ useSeoMeta({
                   <h3 class="mt-3 text-2xl font-bold text-ink">
                     {{ topic.title }}
                   </h3>
-                  <p
-                    v-if="topic.description"
-                    class="mt-3 max-w-2xl text-sm leading-7 text-ink-soft"
-                  >
+                  <p v-if="topic.description" class="mt-3 max-w-2xl text-sm leading-7 text-ink-soft">
                     {{ topic.description }}
                   </p>
                 </div>
@@ -1811,14 +1960,13 @@ useSeoMeta({
                     rel="noopener noreferrer"
                     class="inline-flex items-center gap-1.5 rounded-lg border border-border-subtle bg-surface-card px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-accent/30 hover:text-accent"
                   >
-                    <span
-                      class="shrink-0 rounded bg-surface-muted px-1 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-ink-soft"
-                      >{{ getResourceTypeLabel(link.type) }}</span
-                    >
+                    <span class="shrink-0 rounded bg-surface-muted px-1 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-ink-soft">{{ getResourceTypeLabel(link.type) }}</span>
                     <span>{{ link.title }}</span>
                   </a>
                 </div>
               </div>
+
+
             </article>
           </div>
         </div>

@@ -3,8 +3,7 @@ import type {
   AssessmentSession,
   SessionCreatePayload,
 } from '~~/shared/types/assessment'
-
-const STORAGE_KEY = 'competencyx:last-session-id'
+import { LAST_SESSION_ID_KEY } from '~/utils/constants'
 
 export function useAssessmentSession() {
   const { apiFetch } = useApiClient()
@@ -19,7 +18,7 @@ export function useAssessmentSession() {
   )
 
   onMounted(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = localStorage.getItem(LAST_SESSION_ID_KEY)
     if (stored) {
       lastSessionId.value = stored
     }
@@ -29,7 +28,7 @@ export function useAssessmentSession() {
     session.value = nextSession
     lastSessionId.value = nextSession.id
     if (import.meta.client) {
-      localStorage.setItem(STORAGE_KEY, nextSession.id)
+      localStorage.setItem(LAST_SESSION_ID_KEY, nextSession.id)
     }
     return nextSession
   }
@@ -80,7 +79,7 @@ export function useAssessmentSession() {
     isSubmitting.value = false
     lastSessionId.value = null
     if (import.meta.client) {
-      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(LAST_SESSION_ID_KEY)
     }
   }
 

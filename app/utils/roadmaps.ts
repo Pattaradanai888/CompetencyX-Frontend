@@ -3,21 +3,11 @@ import type {
   AssessmentHistory,
   AssessmentResult,
   PillarInsight,
+  RadarDimension,
+  RoadmapsEvaluation,
 } from '~~/shared/types/assessment'
 
-export interface RadarDimension {
-  key: string
-  label: string
-  value: number
-  track: 'psp' | 'sdlc'
-}
-
-export interface RoadmapsEvaluation {
-  dimensions: RadarDimension[]
-  strengths: string[]
-  growthAreas: string[]
-  personalitySignals: string[]
-}
+export type { RadarDimension, RoadmapsEvaluation }
 
 export function clamp(value: number): number {
   return Math.max(0, Math.min(1, value))

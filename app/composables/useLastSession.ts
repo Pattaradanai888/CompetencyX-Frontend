@@ -1,0 +1,71 @@
+import { getSurvey2State } from '~/utils/profile'
+import { useAssessmentSession } from '~/composables/useAssessmentSession'
+import { useLocale } from '~/composables/useLocale'
+import type { AssessmentSession } from '~~/shared/types/assessment'
+
+/**
+ * Provides smart session-resumption helpers used across the landing page,
+ * start page, and preferred-role gate.
+ *
+ * - `lastSessionSnapshot` is populated on mount from the stored session ID.
+ * - `isSurvey2Complete` checks whether the user has completed the roadmap
+ *   survey (survey2) embedded in `session.profile`.
+ * - `lastSessionRoute` picks the correct resume URL based on session state.
+ * - `resumeLabel` returns a localised label for the resume button.
+ */
+export function useLastSession(
+  resumeBtnKey: { th: string; en: string } = {
+    th: 'กลับไปทำเซสชันล่าสุด',
+    en: 'Resume previous session',
+  },
+) {
+  const { getSession, lastSessionId } = useAssessmentSession()
+  const { isThai } = useLocale()
+  const lastSessionSnapshot = ref<AssessmentSession | null>(null)
+
+  const isSurvey2Complete = computed(() => {
+    const s2 = getSurvey2State(lastSessionSnapshot.value?.profile)
+    return s2?.completed === true
+  })
+
+  const lastSessionRoute = computed(() => {
+    if (!lastSessionId.value) return null
+    const snap = lastSessionSnapshot.value
+    if (!snap) return `/assessment/${lastSessionId.value}`
+
+    if (isSurvey2Complete.value || snap.preferred_role)
+      return `/roadmaps/${lastSessionId.value}`
+
+    if (snap.status === 'completed') return `/results/${lastSessionId.value}`
+
+    return `/assessment/${lastSessionId.value}`
+  })
+
+  const resumeLabel = computed(() => {
+    if (!lastSessionSnapshot.value)
+      return isThai.value ? resumeBtnKey.th : resumeBtnKey.en
+    if (isSurvey2Complete.value) {
+      return isThai.value ? 'ดูผลลัพธ์เซสชันล่าสุด' : 'View last session result'
+    }
+    if (lastSessionSnapshot.value.status === 'completed') {
+      return isThai.value ? 'ดูผลการประเมินล่าสุด' : 'View last evaluation'
+    }
+    return isThai.value ? resumeBtnKey.th : resumeBtnKey.en
+  })
+
+  onMounted(async () => {
+    if (!lastSessionId.value) return
+    try {
+      lastSessionSnapshot.value = await getSession(lastSessionId.value)
+    } catch {
+      lastSessionSnapshot.value = null
+    }
+  })
+
+  return {
+    lastSessionSnapshot,
+    isSurvey2Complete,
+    lastSessionRoute,
+    resumeLabel,
+  }
+}

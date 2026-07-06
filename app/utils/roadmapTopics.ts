@@ -51,7 +51,9 @@ interface RoadmapShData {
 
 const cache = new Map<string, RoadmapShData>()
 
-async function fetchRoadmapData(roadmapSlug: string): Promise<RoadmapShData | null> {
+async function fetchRoadmapData(
+  roadmapSlug: string,
+): Promise<RoadmapShData | null> {
   if (cache.has(roadmapSlug)) {
     return cache.get(roadmapSlug)!
   }
@@ -90,9 +92,7 @@ function buildLabelMap(data: RoadmapShData): Map<string, string> {
 
 function buildSectionMap(data: RoadmapShData): Map<string, string> {
   const contentTypes = new Set(['topic', 'subtopic'])
-  const sorted = [...data.nodes].sort(
-    (a, b) => a.position.y - b.position.y,
-  )
+  const sorted = [...data.nodes].sort((a, b) => a.position.y - b.position.y)
   const sectionMap = new Map<string, string>()
   let currentSection = ''
   for (const node of sorted) {
@@ -218,7 +218,10 @@ function topologicalSort(data: RoadmapShData): string[] {
 function buildLabelToNodeId(data: RoadmapShData): Map<string, string> {
   const map = new Map<string, string>()
   for (const node of data.nodes) {
-    if (node.data?.label && (node.type === 'topic' || node.type === 'subtopic')) {
+    if (
+      node.data?.label &&
+      (node.type === 'topic' || node.type === 'subtopic')
+    ) {
       map.set(node.data.label, node.id)
     }
   }
@@ -276,7 +279,10 @@ export async function getRoadmapTopics(
 
     result.push({
       id: -(index + 30),
-      slug: label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+      slug: label
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, ''),
       title: label,
       description: undefined,
       difficulty: 0,
@@ -402,23 +408,36 @@ export async function fetchTopicResources(
   // Method 2: fall back to static bundled resources JSON
   const json = await loadResourcesJson()
   if (json) {
-    console.log(`[resources] JSON loaded, keys: ${Object.keys(json).join(', ')}`)
+    if (import.meta.dev)
+      console.log(
+        `[resources] JSON loaded, keys: ${Object.keys(json).join(', ')}`,
+      )
     const slugResources = json[roadmapSlug]
     if (slugResources) {
-      console.log(`[resources] slug "${roadmapSlug}" found in JSON, topic keys: ${Object.keys(slugResources).slice(0, 5).join(', ')}...`)
+      if (import.meta.dev)
+        console.log(
+          `[resources] slug "${roadmapSlug}" found in JSON, topic keys: ${Object.keys(slugResources).slice(0, 5).join(', ')}...`,
+        )
       const links = slugResources[topicLabel]
       if (links?.length) {
-        console.log(`[resources] found ${links.length} links for "${topicLabel}"`)
+        if (import.meta.dev)
+          console.log(
+            `[resources] found ${links.length} links for "${topicLabel}"`,
+          )
         contentCache.set(cacheKey, links)
         return links
       } else {
-        console.log(`[resources] topic "${topicLabel}" not found in slug "${roadmapSlug}"`)
+        if (import.meta.dev)
+          console.log(
+            `[resources] topic "${topicLabel}" not found in slug "${roadmapSlug}"`,
+          )
       }
     } else {
-      console.log(`[resources] slug "${roadmapSlug}" NOT found in JSON`)
+      if (import.meta.dev)
+        console.log(`[resources] slug "${roadmapSlug}" NOT found in JSON`)
     }
   } else {
-    console.log(`[resources] JSON failed to load`)
+    if (import.meta.dev) console.log(`[resources] JSON failed to load`)
   }
 
   return []
@@ -430,9 +449,11 @@ function parseResourceLinks(markdown: string): ResourceLink[] {
   let match: RegExpExecArray | null
   while ((match = linkRegex.exec(markdown)) !== null) {
     const type = match[1] as ResourceLink['type']
-    const title = match[2]
-    const url = match[3]
-    links.push({ type, title, url })
+    const title = match[2] || ''
+    const url = match[3] || ''
+    if (title && url) {
+      links.push({ type, title, url })
+    }
   }
   return links
 }

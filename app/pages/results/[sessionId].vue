@@ -3,7 +3,9 @@ import { motion } from 'motion-v'
 import { sortRankedRolesDescending } from '~/utils/assessment'
 import { useAssessmentResults } from '~/composables/useAssessmentResults'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
+import { useSessionPolling } from '~/composables/useSessionPolling'
 import { useLocale } from '~/composables/useLocale'
+import { useSessionCreate } from '~/composables/useSessionCreate'
 import { getErrorMessage } from '~/utils/api'
 import type {
   ApiError,
@@ -14,7 +16,9 @@ import type {
 const route = useRoute('/results/[sessionId]')
 const sessionId = computed(() => route.params.sessionId as string)
 const { getResults } = useAssessmentResults()
-const { createSession, getSession } = useAssessmentSession()
+const { getSession } = useAssessmentSession()
+const { createAndNavigate } = useSessionCreate()
+const { waitForSkillStage } = useSessionPolling()
 const toast = useToast()
 
 const { data: _fetchData, error: fetchError } = await useAsyncData(
@@ -39,69 +43,7 @@ const isThai = computed(() => {
   return sessionSnapshot?.language === 'th'
 })
 
-const t = computed(() => {
-  if (isThai.value) {
-    return {
-      loadError: 'ไม่สามารถโหลดผลลัพธ์ได้',
-      startPhase2Error: 'ไม่สามารถเริ่มเฟส 2 ได้',
-      backLink: 'กลับไปหน้าหลัก',
-      phaseComplete: 'จบเฟส 1 แล้ว',
-      titleSuffix: 'คือทิศทางบทบาทที่เหมาะกับคุณที่สุด',
-      primaryRole: 'บทบาทหลัก',
-      closeFit: 'ตัวเลือกใกล้เคียง',
-      defaultSelection: 'ตัวเลือกเริ่มต้น',
-      selected: 'เลือกแล้ว',
-      phase2WillStartWith: 'เฟส 2 จะเริ่มด้วย',
-      selectPrimaryRole: 'เลือกบทบาทหลัก',
-      useThisRole: 'ใช้บทบาทนี้แทน',
-      assignment2: 'แบบประเมินที่ 2',
-      continueWith: 'ทำต่อด้วย',
-      defaultPath:
-        'บทบาทที่ระบบแนะนำถูกเตรียมไว้เป็นเส้นทางเริ่มต้นสำหรับแบบประเมินถัดไปแล้ว',
-      alternativePath:
-        'คุณเลือกบทบาทซอฟต์แวร์ทางเลือกสำหรับการประเมินทักษะแล้ว',
-      selectedRole: 'บทบาทที่เลือก',
-      preparing: 'กำลังเตรียมแบบประเมินที่ 2...',
-      continue: 'ไปต่อแบบประเมินที่ 2',
-      fallbackRole: 'บทบาทซอฟต์แวร์ที่แนะนำ',
-      fallbackDescription:
-        'คำตอบของคุณชี้ว่าบทบาทนี้เป็นทิศทางถัดไปที่ชัดเจนที่สุด',
-      strongestSignals: 'สัญญาณที่เด่นที่สุด',
-      closeFitDescription:
-        'เป็นบทบาทที่ใกล้เคียงจากรูปแบบการทำงานและความชอบของคุณ',
-    }
-  }
-
-  return {
-    loadError: 'Could not load results',
-    startPhase2Error: 'Could not start Phase 2',
-    backLink: 'Back to landing page',
-    phaseComplete: 'Phase 1 complete',
-    titleSuffix: 'looks like your strongest role direction.',
-    primaryRole: 'Primary role',
-    closeFit: 'Close fit',
-    defaultSelection: 'Default selection',
-    selected: 'Selected',
-    phase2WillStartWith: 'Phase 2 will start with',
-    selectPrimaryRole: 'Select primary role',
-    useThisRole: 'Use this role instead',
-    assignment2: 'Assignment 2',
-    continueWith: 'Continue with',
-    defaultPath:
-      'Your recommended role is already prepared as the default path for the next assignment.',
-    alternativePath:
-      'You have selected an alternative software role for your skill assessment.',
-    selectedRole: 'Selected role',
-    preparing: 'Preparing Assignment 2...',
-    continue: 'Continue to Assignment 2',
-    fallbackRole: 'Recommended software role',
-    fallbackDescription:
-      'Your answers point toward this path as the clearest next direction.',
-    strongestSignals: 'Strongest signals',
-    closeFitDescription:
-      'A close fit based on your work-style and preference pattern.',
-  }
-})
+const t = usePageI18n('results', isThai)
 
 if (fetchError.value) {
   toast.add({
@@ -186,25 +128,11 @@ async function handleContinue() {
   }
 
   isContinuing.value = true
-
   try {
-    const session = await createSession({
+    await createAndNavigate({
       preferred_role_slug: role.slug,
       language: sessionSnapshot?.language,
     })
-
-    const maxAttempts = 4
-    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-      const hydratedSession = await getSession(session.id)
-      if (hydratedSession.current_question?.stage === 'skill') {
-        break
-      }
-      if (attempt < maxAttempts - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 250))
-      }
-    }
-
-    await navigateTo(`/roadmaps/${session.id}`)
   } catch (error) {
     toast.add({
       title: t.value.startPhase2Error,
@@ -236,192 +164,197 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main v-if="results" id="main-content" class="page-wrap">
-    <div class="mb-4">
-      <NuxtLink to="/" class="editorial-link text-sm">
-        {{ t.backLink }}
-      </NuxtLink>
-    </div>
-
-    <motion.section
-      class="result-spotlight mx-auto max-w-5xl p-6 text-center md:p-8 lg:p-10"
-      :initial="{ opacity: 0, y: 20 }"
-      :animate="{ opacity: 1, y: 0 }"
-      :transition="{ duration: 0.4 }"
-      aria-labelledby="results-title"
-    >
-      <div class="mx-auto max-w-3xl">
-        <div
-          class="inline-flex items-center gap-2 rounded-full border border-accent/15 bg-accent/10 px-4 py-2 text-sm font-bold text-accent"
-        >
-          <span aria-hidden="true">✓</span>
-          {{ t.phaseComplete }}
-        </div>
-
-        <h1
-          id="results-title"
-          class="mx-auto mt-8 max-w-4xl font-display text-4xl font-semibold leading-tight text-ink md:text-6xl"
-        >
-          {{ primaryRole.name }} {{ t.titleSuffix }}
-        </h1>
-        <p class="mx-auto mt-5 max-w-2xl text-base leading-8 text-ink-soft">
-          {{ getRoleDescription(primaryRankedRole || primaryRole) }}
-        </p>
+  <NuxtErrorBoundary>
+    <main v-if="results" id="main-content" class="page-wrap pb-16">
+      <div class="mb-4">
+        <NuxtLink to="/" class="editorial-link text-sm">
+          {{ t.backLink }}
+        </NuxtLink>
       </div>
 
-      <section class="mt-10 grid gap-4 text-left md:grid-cols-3">
-        <!-- Primary role card -->
-        <article
-          :class="[
-            'result-role-card p-5 md:p-6 transition-all duration-200 relative border cursor-pointer flex flex-col justify-between',
-            selectedRole?.slug === primaryRole.slug
-              ? 'border-accent ring-2 ring-accent/30 bg-accent/[0.02]'
-              : 'border-border-subtle hover:border-ink-soft/40',
-            isContinuing ? 'pointer-events-none opacity-80' : '',
-          ]"
-          @click="selectedRole = primaryRole"
-        >
-          <div>
-            <div
-              v-if="selectedRole?.slug === primaryRole.slug"
-              class="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-white text-xs font-bold shadow-sm"
-              aria-hidden="true"
-            >
-              ✓
-            </div>
-            <p class="eyebrow">{{ t.primaryRole }}</p>
-            <h2 class="mt-3 text-2xl font-black text-ink">
-              {{ primaryRole.name }}
-            </h2>
-            <p class="mt-3 text-sm leading-7 text-ink-soft">
-              {{ getRoleDescription(primaryRankedRole || primaryRole) }}
-            </p>
-          </div>
-          <div class="mt-6">
-            <div
-              v-if="selectedRole?.slug === primaryRole.slug"
-              class="rounded-xl border border-accent/20 bg-accent/8 px-4 py-3"
-            >
-              <p
-                class="text-xs font-extrabold uppercase tracking-[0.08em] text-accent"
-              >
-                {{ t.defaultSelection }}
-              </p>
-              <p class="mt-2 text-sm leading-6 text-ink-soft">
-                {{ t.phase2WillStartWith }}
-                <span class="font-semibold text-ink">{{
-                  primaryRole.name
-                }}</span
-                >.
-              </p>
-            </div>
-            <button
-              v-else
-              type="button"
-              class="cx-button-secondary w-full"
-              :disabled="isContinuing"
-            >
-              {{ t.selectPrimaryRole }}
-            </button>
-          </div>
-        </article>
-
-        <!-- Alternative role cards -->
-        <article
-          v-for="(role, index) in alternativeRoles"
-          :key="role.slug"
-          :class="[
-            'result-role-card p-5 md:p-6 transition-all duration-200 relative border cursor-pointer flex flex-col justify-between',
-            selectedRole?.slug === role.slug
-              ? 'border-accent ring-2 ring-accent/30 bg-accent/[0.02]'
-              : 'border-border-subtle hover:border-ink-soft/40',
-            isContinuing ? 'pointer-events-none opacity-80' : '',
-          ]"
-          @click="selectedRole = role"
-        >
-          <div>
-            <div
-              v-if="selectedRole?.slug === role.slug"
-              class="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-white text-xs font-bold shadow-sm"
-              aria-hidden="true"
-            >
-              ✓
-            </div>
-            <p class="eyebrow">{{ t.closeFit }} {{ index + 1 }}</p>
-            <h2 class="mt-3 text-2xl font-black text-ink">{{ role.name }}</h2>
-            <p class="mt-3 text-sm leading-7 text-ink-soft">
-              {{ getRoleDescription(role) }}
-            </p>
-          </div>
-          <div class="mt-6">
-            <div
-              v-if="selectedRole?.slug === role.slug"
-              class="rounded-xl border border-accent/20 bg-accent/8 px-4 py-3"
-            >
-              <p
-                class="text-xs font-extrabold uppercase tracking-[0.08em] text-accent"
-              >
-                {{ t.selected }}
-              </p>
-              <p class="mt-2 text-sm leading-6 text-ink-soft">
-                {{ t.phase2WillStartWith }}
-                <span class="font-semibold text-ink">{{ role.name }}</span
-                >.
-              </p>
-            </div>
-            <button
-              v-else
-              type="button"
-              class="cx-button-secondary w-full"
-              :disabled="isContinuing"
-            >
-              {{ t.useThisRole }}
-            </button>
-          </div>
-        </article>
-      </section>
-
-      <section
-        class="mt-8 rounded-xl border border-border-subtle bg-surface-elevated/90 p-5 text-left shadow-[0_18px_44px_rgba(74,54,35,0.08)] md:p-6"
+      <motion.section
+        class="result-spotlight mx-auto max-w-5xl p-6 text-center md:p-8 lg:p-10"
+        :initial="{ opacity: 0, y: 20 }"
+        :animate="{ opacity: 1, y: 0 }"
+        :transition="{ duration: 0.4 }"
+        aria-labelledby="results-title"
       >
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <div class="max-w-2xl">
-            <p class="eyebrow">{{ t.assignment2 }}</p>
-            <h2 class="mt-3 text-2xl font-bold text-ink">
-              {{ t.continueWith }} {{ selectedRoleName }}
-            </h2>
-            <p class="mt-2 text-sm leading-7 text-ink-soft">
-              {{
-                selectedRole?.slug === primaryRole?.slug
-                  ? t.defaultPath
-                  : t.alternativePath
-              }}
-            </p>
-          </div>
+        <div class="mx-auto max-w-3xl">
           <div
-            class="rounded-full border border-border-subtle bg-paper-strong px-4 py-2"
+            class="inline-flex items-center gap-2 rounded-full border border-accent/15 bg-accent/10 px-4 py-2 text-sm font-bold text-accent"
           >
-            <p
-              class="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-soft"
-            >
-              {{ t.selectedRole }}
-            </p>
-            <p class="mt-1 text-sm font-bold text-ink">
-              {{ selectedRoleName }}
-            </p>
+            <span aria-hidden="true">✓</span>
+            {{ t.phaseComplete }}
           </div>
-        </div>
-      </section>
 
-      <button
-        ref="continueButton"
-        type="button"
-        class="cx-button-primary mt-10 inline-flex items-center gap-2 justify-center disabled:cursor-not-allowed disabled:opacity-60"
-        :disabled="isContinuing"
-        @click="handleContinue"
-      >
-        {{ isContinuing ? t.preparing : t.continue }}
-      </button>
-    </motion.section>
-  </main>
+          <h1
+            id="results-title"
+            class="mx-auto mt-8 max-w-4xl font-display text-4xl font-semibold leading-tight text-ink md:text-6xl"
+          >
+            {{ primaryRole.name }} {{ t.titleSuffix }}
+          </h1>
+          <p class="mx-auto mt-5 max-w-2xl text-base leading-8 text-ink-soft">
+            {{ getRoleDescription(primaryRankedRole || primaryRole) }}
+          </p>
+        </div>
+
+        <section class="mt-10 grid gap-4 text-left md:grid-cols-3">
+          <!-- Primary role card -->
+          <article
+            :class="[
+              'result-role-card p-5 md:p-6 transition-all duration-200 relative border cursor-pointer flex flex-col justify-between',
+              selectedRole?.slug === primaryRole.slug
+                ? 'border-accent ring-2 ring-accent/30 bg-accent/[0.02]'
+                : 'border-border-subtle hover:border-ink-soft/40',
+              isContinuing ? 'pointer-events-none opacity-80' : '',
+            ]"
+            @click="selectedRole = primaryRole"
+          >
+            <div>
+              <div
+                v-if="selectedRole?.slug === primaryRole.slug"
+                class="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-white text-xs font-bold shadow-sm"
+                aria-hidden="true"
+              >
+                ✓
+              </div>
+              <p class="eyebrow">{{ t.primaryRole }}</p>
+              <h2 class="mt-3 text-2xl font-black text-ink">
+                {{ primaryRole.name }}
+              </h2>
+              <p class="mt-3 text-sm leading-7 text-ink-soft">
+                {{ getRoleDescription(primaryRankedRole || primaryRole) }}
+              </p>
+            </div>
+            <div class="mt-6">
+              <div
+                v-if="selectedRole?.slug === primaryRole.slug"
+                class="rounded-xl border border-accent/20 bg-accent/8 px-4 py-3"
+              >
+                <p
+                  class="text-xs font-extrabold uppercase tracking-[0.08em] text-accent"
+                >
+                  {{ t.defaultSelection }}
+                </p>
+                <p class="mt-2 text-sm leading-6 text-ink-soft">
+                  {{ t.phase2WillStartWith }}
+                  <span class="font-semibold text-ink">{{
+                    primaryRole.name
+                  }}</span
+                  >.
+                </p>
+              </div>
+              <button
+                v-else
+                type="button"
+                class="cx-button-secondary w-full"
+                :disabled="isContinuing"
+              >
+                {{ t.selectPrimaryRole }}
+              </button>
+            </div>
+          </article>
+
+          <!-- Alternative role cards -->
+          <article
+            v-for="(role, index) in alternativeRoles"
+            :key="role.slug"
+            :class="[
+              'result-role-card p-5 md:p-6 transition-all duration-200 relative border cursor-pointer flex flex-col justify-between',
+              selectedRole?.slug === role.slug
+                ? 'border-accent ring-2 ring-accent/30 bg-accent/[0.02]'
+                : 'border-border-subtle hover:border-ink-soft/40',
+              isContinuing ? 'pointer-events-none opacity-80' : '',
+            ]"
+            @click="selectedRole = role"
+          >
+            <div>
+              <div
+                v-if="selectedRole?.slug === role.slug"
+                class="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-white text-xs font-bold shadow-sm"
+                aria-hidden="true"
+              >
+                ✓
+              </div>
+              <p class="eyebrow">{{ t.closeFit }} {{ index + 1 }}</p>
+              <h2 class="mt-3 text-2xl font-black text-ink">{{ role.name }}</h2>
+              <p class="mt-3 text-sm leading-7 text-ink-soft">
+                {{ getRoleDescription(role) }}
+              </p>
+            </div>
+            <div class="mt-6">
+              <div
+                v-if="selectedRole?.slug === role.slug"
+                class="rounded-xl border border-accent/20 bg-accent/8 px-4 py-3"
+              >
+                <p
+                  class="text-xs font-extrabold uppercase tracking-[0.08em] text-accent"
+                >
+                  {{ t.selected }}
+                </p>
+                <p class="mt-2 text-sm leading-6 text-ink-soft">
+                  {{ t.phase2WillStartWith }}
+                  <span class="font-semibold text-ink">{{ role.name }}</span
+                  >.
+                </p>
+              </div>
+              <button
+                v-else
+                type="button"
+                class="cx-button-secondary w-full"
+                :disabled="isContinuing"
+              >
+                {{ t.useThisRole }}
+              </button>
+            </div>
+          </article>
+        </section>
+
+        <section
+          class="mt-8 rounded-xl border border-border-subtle bg-surface-elevated/90 p-5 text-left shadow-[0_18px_44px_rgba(74,54,35,0.08)] md:p-6"
+        >
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="max-w-2xl">
+              <p class="eyebrow">{{ t.assignment2 }}</p>
+              <h2 class="mt-3 text-2xl font-bold text-ink">
+                {{ t.continueWith }} {{ selectedRoleName }}
+              </h2>
+              <p class="mt-2 text-sm leading-7 text-ink-soft">
+                {{
+                  selectedRole?.slug === primaryRole?.slug
+                    ? t.defaultPath
+                    : t.alternativePath
+                }}
+              </p>
+            </div>
+            <div
+              class="rounded-full border border-border-subtle bg-paper-strong px-4 py-2"
+            >
+              <p
+                class="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-soft"
+              >
+                {{ t.selectedRole }}
+              </p>
+              <p class="mt-1 text-sm font-bold text-ink">
+                {{ selectedRoleName }}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <button
+          ref="continueButton"
+          type="button"
+          class="cx-button-primary mt-10 inline-flex items-center gap-2 justify-center disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="isContinuing"
+          @click="handleContinue"
+        >
+          {{ isContinuing ? t.preparing : t.continue }}
+        </button>
+      </motion.section>
+    </main>
+    <template #error="{ error, clearError }">
+      <ErrorBoundaryFallback :error="error" @clear-error="clearError" />
+    </template>
+  </NuxtErrorBoundary>
 </template>

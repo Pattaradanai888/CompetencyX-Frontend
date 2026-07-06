@@ -163,6 +163,14 @@ export interface AssessmentResult extends Omit<
   preferred_role_gap_topics: RoadmapTopic[]
   preferred_path_recommendation: Recommendation | null
   best_fit_path_recommendation: Recommendation | null
+  mastery_scores?: TopicMastery[]
+}
+
+export interface TopicMastery {
+  topic_id: number
+  topic_slug: string
+  topic_title: string
+  mastery_score: number
 }
 
 export interface AssessmentInsights {
@@ -224,6 +232,7 @@ export interface RoadmapsStepResult extends RoadmapsSessionState {
 export interface RoadmapsScaleOption {
   label: string
   value: number
+  label_th?: string
 }
 
 export interface RoadmapsCatalogDimension {
@@ -254,6 +263,8 @@ export interface RoadmapsNextQuestionResponse {
 
 export interface SessionCreatePayload {
   preferred_role_slug?: string
+  /** The user's current role, used for gap-analysis during session creation. */
+  current_role_slug?: string
   language?: 'en' | 'th'
   profile?: Record<string, unknown>
 }
@@ -281,4 +292,22 @@ export type AnswerSubmitPayload =
 export interface ApiError {
   statusCode: number
   data: Record<string, unknown>
+}
+
+// ---------------------------------------------------------------------------
+// Roadmap evaluation types (shared between roadmaps.ts util and components)
+// ---------------------------------------------------------------------------
+
+export interface RadarDimension {
+  key: string
+  label: string
+  value: number
+  track: 'psp' | 'sdlc'
+}
+
+export interface RoadmapsEvaluation {
+  dimensions: RadarDimension[]
+  strengths: string[]
+  growthAreas: string[]
+  personalitySignals: string[]
 }

@@ -135,94 +135,103 @@ useSeoMeta({
 </script>
 
 <template>
-  <main id="main-content" class="page-wrap">
-    <div class="flex items-center justify-between gap-4">
-      <NuxtLink to="/assessment/preferred-role" class="editorial-link text-sm">
-        {{ isThai ? 'เริ่มใหม่ตั้งแต่ต้น' : 'Restart from onboarding' }}
-      </NuxtLink>
-      <span class="data-value text-sm text-ink-soft"
-        >{{ isThai ? 'เซสชัน' : 'Session' }} {{ route.params.sessionId }}</span
-      >
-    </div>
-
-    <div
-      v-if="session"
-      class="mt-6 grid gap-6 lg:grid-cols-[0.68fr_1.32fr] lg:items-start"
-    >
-      <div class="lg:sticky lg:top-6 animate-fade-in-left">
-        <SessionOverview :session="session" />
+  <NuxtErrorBoundary>
+    <main id="main-content" class="page-wrap">
+      <div class="flex items-center justify-between gap-4">
+        <NuxtLink
+          to="/assessment/preferred-role"
+          class="editorial-link text-sm"
+        >
+          {{ isThai ? 'เริ่มใหม่ตั้งแต่ต้น' : 'Restart from onboarding' }}
+        </NuxtLink>
+        <span class="data-value text-sm text-ink-soft"
+          >{{ isThai ? 'เซสชัน' : 'Session' }}
+          {{ route.params.sessionId }}</span
+        >
       </div>
 
-      <div class="animate-fade-in-right">
-        <QuestionPanel
-          :session="session"
-          :is-submitting="isSubmitting"
-          :response-error="responseErrorMessage"
-          @select="handleSelect"
-        />
-        <div
-          v-if="isAwaitingResolution"
-          class="mt-4 flex flex-wrap justify-end gap-3"
-        >
-          <button
-            type="button"
-            class="inline-flex items-center justify-center rounded-full border border-ink/12 bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/35"
-            @click="handleResetSession"
+      <div
+        v-if="session"
+        class="mt-6 grid gap-6 lg:grid-cols-[0.68fr_1.32fr] lg:items-start"
+      >
+        <div class="lg:sticky lg:top-6 animate-fade-in-left">
+          <SessionOverview :session="session" />
+        </div>
+
+        <div class="animate-fade-in-right">
+          <QuestionPanel
+            :session="session"
+            :is-submitting="isSubmitting"
+            :response-error="responseErrorMessage"
+            @select="handleSelect"
+          />
+          <div
+            v-if="isAwaitingResolution"
+            class="mt-4 flex flex-wrap justify-end gap-3"
           >
-            {{ isThai ? 'รีเซ็ตเซสชัน' : 'Reset session' }}
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center justify-center rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-accent-shadow transition hover:-translate-y-0.5 hover:bg-accent-hover"
-            @click="loadSession"
-          >
-            <span
-              v-if="isSubmitting"
-              class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-accent"
-              aria-hidden="true"
-            />
-            {{ isThai ? 'รีเฟรชสถานะเซสชัน' : 'Refresh session state' }}
-          </button>
+            <button
+              type="button"
+              class="inline-flex items-center justify-center rounded-full border border-ink/12 bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/35"
+              @click="handleResetSession"
+            >
+              {{ isThai ? 'รีเซ็ตเซสชัน' : 'Reset session' }}
+            </button>
+            <button
+              type="button"
+              class="inline-flex items-center justify-center rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-accent-shadow transition hover:-translate-y-0.5 hover:bg-accent-hover"
+              @click="loadSession"
+            >
+              <span
+                v-if="isSubmitting"
+                class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-accent"
+                aria-hidden="true"
+              />
+              {{ isThai ? 'รีเฟรชสถานะเซสชัน' : 'Refresh session state' }}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <section v-else-if="pageError" class="glass-panel mt-6 p-8 text-center">
-      <p class="text-3xl font-bold text-ink">
-        {{ isThai ? 'เซสชันไม่พร้อมใช้งาน' : 'Session unavailable' }}
-      </p>
-      <p class="mt-4 text-sm leading-7 text-ink-soft">
-        {{
-          responseErrorMessage ||
-          (isThai
-            ? 'ไม่สามารถเปิดแบบประเมินนี้ได้ โปรดย้อนกลับไปเริ่มทำเซสชันใหม่'
-            : 'This assessment could not be opened. Return to onboarding to begin a new session.')
-        }}
-      </p>
-      <NuxtLink
-        to="/assessment/preferred-role"
-        class="mt-6 inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-accent-shadow transition hover:-translate-y-0.5 hover:bg-accent-hover"
+      <section v-else-if="pageError" class="glass-panel mt-6 p-8 text-center">
+        <p class="text-3xl font-bold text-ink">
+          {{ isThai ? 'เซสชันไม่พร้อมใช้งาน' : 'Session unavailable' }}
+        </p>
+        <p class="mt-4 text-sm leading-7 text-ink-soft">
+          {{
+            responseErrorMessage ||
+            (isThai
+              ? 'ไม่สามารถเปิดแบบประเมินนี้ได้ โปรดย้อนกลับไปเริ่มทำเซสชันใหม่'
+              : 'This assessment could not be opened. Return to onboarding to begin a new session.')
+          }}
+        </p>
+        <NuxtLink
+          to="/assessment/preferred-role"
+          class="mt-6 inline-flex items-center justify-center rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-accent-shadow transition hover:-translate-y-0.5 hover:bg-accent-hover"
+        >
+          {{ isThai ? 'กลับไปหน้าเริ่มต้น' : 'Return to start' }}
+        </NuxtLink>
+      </section>
+
+      <div
+        v-else
+        class="mt-6 grid gap-6 lg:grid-cols-[0.68fr_1.32fr] lg:items-start"
+        aria-busy="true"
+        :aria-label="isThai ? 'กำลังโหลดข้อมูลเซสชัน...' : 'Loading session'"
       >
-        {{ isThai ? 'กลับไปหน้าเริ่มต้น' : 'Return to start' }}
-      </NuxtLink>
-    </section>
-
-    <div
-      v-else
-      class="mt-6 grid gap-6 lg:grid-cols-[0.68fr_1.32fr] lg:items-start"
-      aria-busy="true"
-      :aria-label="isThai ? 'กำลังโหลดข้อมูลเซสชัน...' : 'Loading session'"
-    >
-      <div class="space-y-4">
-        <div class="skeleton h-8 w-32 rounded-full" />
-        <div class="skeleton h-48 rounded-xl" />
+        <div class="space-y-4">
+          <div class="skeleton h-8 w-32 rounded-full" />
+          <div class="skeleton h-48 rounded-xl" />
+        </div>
+        <div class="space-y-4">
+          <div class="skeleton h-8 w-48 rounded-full" />
+          <div class="skeleton h-48 rounded-xl" />
+          <div class="skeleton h-16 rounded-md" />
+          <div class="skeleton h-16 rounded-md" />
+        </div>
       </div>
-      <div class="space-y-4">
-        <div class="skeleton h-8 w-48 rounded-full" />
-        <div class="skeleton h-48 rounded-xl" />
-        <div class="skeleton h-16 rounded-md" />
-        <div class="skeleton h-16 rounded-md" />
-      </div>
-    </div>
-  </main>
+    </main>
+    <template #error="{ error, clearError }">
+      <ErrorBoundaryFallback :error="error" @clear-error="clearError" />
+    </template>
+  </NuxtErrorBoundary>
 </template>

@@ -1,19 +1,17 @@
 export type Locale = 'en' | 'th'
-
-const SELECTED_LANGUAGE_KEY = 'competencyx:preferred-language'
+import { PREFERRED_LANGUAGE_KEY } from '~/utils/constants'
 
 function readStoredLocale(): Locale | null {
   if (import.meta.client) {
-    const stored = localStorage.getItem(SELECTED_LANGUAGE_KEY)
+    const stored = localStorage.getItem(PREFERRED_LANGUAGE_KEY)
     if (stored === 'th' || stored === 'en') return stored
   }
   return null
 }
 
 export function useLocale() {
-  const stored = readStoredLocale()
-  const currentLanguage = useState<Locale>('locale', () => stored ?? 'en')
-  const localeInitialized = useState<boolean>('locale-initialized', () => stored !== null)
+  const currentLanguage = useState<Locale>('locale', () => 'en')
+  const localeInitialized = useState<boolean>('locale-initialized', () => false)
 
   onMounted(() => {
     const lang = readStoredLocale()
@@ -27,7 +25,7 @@ export function useLocale() {
     currentLanguage.value = lang
     localeInitialized.value = true
     if (import.meta.client) {
-      localStorage.setItem(SELECTED_LANGUAGE_KEY, lang)
+      localStorage.setItem(PREFERRED_LANGUAGE_KEY, lang)
     }
   }
 
