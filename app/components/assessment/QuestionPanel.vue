@@ -23,6 +23,14 @@ const emit = defineEmits<{
 }>()
 
 const currentQuestion = computed(() => props.session.current_question)
+
+const {
+  localizedPrompt,
+  localizedHelpText,
+  localizedOptions,
+  localizedResponseScale,
+} = useQuestionI18n(() => currentQuestion.value)
+
 const selectedScaleValue = ref<LikertScaleValue | null>(null)
 const selectedOptionId = ref<number | null>(null)
 const prefersReduced = useReducedMotion()
@@ -41,14 +49,14 @@ const isLikertQuestion = computed(
 )
 
 const orderedScaleOptions = computed(() => {
-  return [...(currentQuestion.value?.response_scale || [])].sort(
+  return [...(localizedResponseScale.value || [])].sort(
     (left, right) => left.value - right.value,
   )
 })
 
 const isTrueFalseMaybeChoice = computed(() => {
   const labels = (currentQuestion.value?.options || []).map(
-    (option: QuestionOption) => option.label.trim().toLowerCase(),
+    (option: QuestionOption) => option.key.trim().toLowerCase(),
   )
 
   return (
@@ -65,45 +73,6 @@ const activeScaleIndex = computed(() => {
 })
 
 const isThai = computed(() => props.session.language === 'th')
-
-function getLocalizedOptionLabel(option: QuestionOption): string {
-  if (!isThai.value) {
-    return option.label
-  }
-
-  const key = option.key.trim().toLowerCase()
-  const label = option.label.trim().toLowerCase()
-  const normalized = key || label
-
-  if (normalized === 'true' || label === 'true') return 'จริง'
-  if (normalized === 'false' || label === 'false') return 'เท็จ'
-  if (normalized === 'maybe' || label === 'maybe') return 'ไม่แน่ใจ'
-  if (normalized === 'yes' || label === 'yes') return 'ใช่'
-  if (normalized === 'no' || label === 'no') return 'ไม่ใช่'
-
-  return option.label
-}
-
-function getLocalizedScaleLabel(option: ResponseScaleOption): string {
-  if (!isThai.value) {
-    return option.label
-  }
-
-  switch (option.value) {
-    case -2:
-      return 'ไม่เห็นด้วยอย่างยิ่ง'
-    case -1:
-      return 'ไม่เห็นด้วย'
-    case 0:
-      return 'เป็นกลาง'
-    case 1:
-      return 'เห็นด้วย'
-    case 2:
-      return 'เห็นด้วยอย่างยิ่ง'
-    default:
-      return option.label
-  }
-}
 
 const questionModeCopy = computed(() => {
   if (isThai.value) {
@@ -181,17 +150,17 @@ function handleOptionSelect(option: QuestionOption) {
       </p>
       <h1 class="font-display text-3xl leading-tight text-ink md:text-5xl">
         {{
-          session.current_question?.prompt ||
+          localizedPrompt ||
           (isThai
             ? 'ระบบกำลังวิเคราะห์ความถนัดตำแหน่งงานของคุณ'
             : 'We are resolving your role signal.')
         }}
       </h1>
       <p
-        v-if="session.current_question?.help_text"
+        v-if="localizedHelpText"
         class="mt-4 max-w-2xl wrap-break-word text-sm leading-7 text-ink-soft"
       >
-        {{ session.current_question.help_text }}
+        {{ localizedHelpText }}
       </p>
       <p
         v-else-if="!session.current_question"
@@ -267,7 +236,7 @@ function handleOptionSelect(option: QuestionOption) {
               <span class="likert-spectrum__orb-pulse" />
             </span>
             <span class="likert-spectrum__option-label">
-              {{ getLocalizedScaleLabel(option) }}
+              {{ option.label }}
             </span>
           </label>
         </div>
@@ -280,12 +249,12 @@ function handleOptionSelect(option: QuestionOption) {
         "
       >
         <motion.button
-          v-for="(option, index) in session.current_question?.options || []"
+          v-for="(option, index) in localizedOptions"
           :key="option.id"
           type="button"
           class="answer-option answer-option--choice rounded-md p-4 md:p-5"
           :disabled="isSubmitting"
-          :aria-label="getLocalizedOptionLabel(option)"
+          :aria-label="option.label"
           :class="[
             selectedOptionId === option.id ? 'is-selected' : '',
             isTrueFalseMaybeChoice ? 'text-center' : 'text-left',
@@ -297,7 +266,7 @@ function handleOptionSelect(option: QuestionOption) {
           :transition="
             prefersReduced
               ? { duration: 0 }
-              : { delay: index * 0.05, duration: 0.24 }
+              : { delay: Number(index) * 0.05, duration: 0.24 }
           "
           :while-hover="prefersReduced ? {} : { x: 5 }"
           :while-press="prefersReduced ? {} : { scale: 0.985 }"
@@ -310,10 +279,10 @@ function handleOptionSelect(option: QuestionOption) {
             <div
               class="answer-option__number flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-xs font-semibold"
             >
-              {{ index + 1 }}
+              {{ Number(index) + 1 }}
             </div>
             <p class="text-base font-bold leading-tight text-ink">
-              {{ getLocalizedOptionLabel(option) }}
+              {{ option.label }}
             </p>
             <p v-if="selectedOptionId === option.id" class="sr-only">
               {{
@@ -328,13 +297,13 @@ function handleOptionSelect(option: QuestionOption) {
             <div
               class="answer-option__number flex h-11 w-11 shrink-0 items-center justify-center rounded-sm text-sm font-semibold"
             >
-              {{ index + 1 }}
+              {{ Number(index) + 1 }}
             </div>
             <div class="min-w-0 flex-1">
               <p
                 class="wrap-break-word text-base font-semibold leading-7 text-ink md:text-[1.05rem]"
               >
-                {{ getLocalizedOptionLabel(option) }}
+                {{ option.label }}
               </p>
               <p class="mt-1 text-sm leading-6 text-ink-soft">
                 {{

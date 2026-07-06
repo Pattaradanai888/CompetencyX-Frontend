@@ -247,6 +247,11 @@ export interface RoadmapsCatalogQuestion {
   prompt: string
   dimension_key: string
   display_order?: number
+  translations?: {
+    th?: {
+      prompt?: string
+    }
+  }
 }
 
 export interface RoadmapsCatalog {

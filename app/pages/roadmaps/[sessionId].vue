@@ -12,6 +12,7 @@ import {
 import type { RadarDimension } from '~/utils/roadmaps'
 import SkillSpiderChart from '~/components/results/SkillSpiderChart.vue'
 import { getErrorMessage } from '~/utils/api'
+import { useQuestionI18n } from '~/composables/useQuestionI18n'
 import type {
   ApiError,
   AssessmentSession,
@@ -365,6 +366,7 @@ const isRoadmapsComplete = ref(roadmapsState?.completed)
 type RoadmapQuestion = {
   id: string
   prompt: string
+  translations?: any
   dimensionKey: string
 }
 
@@ -373,6 +375,7 @@ const roadmapQuestions: RoadmapQuestion[] = (
 ).map((question: RoadmapsCatalogQuestion) => ({
   id: question.id,
   prompt: question.prompt,
+  translations: question.translations,
   dimensionKey: question.dimension_key,
 }))
 
@@ -403,6 +406,10 @@ const hasAnsweredAll = computed(() => {
 const activeQuestion = computed(
   () => roadmapQuestions[currentQuestionIndex.value] ?? null,
 )
+
+const activeQuestionRef = computed(() => activeQuestion.value)
+const { localizedPrompt } = useQuestionI18n(() => activeQuestionRef.value)
+
 const activeQuestionAnswer = computed(() => {
   if (!activeQuestion.value) {
     return null
@@ -1232,7 +1239,7 @@ useSeoMeta({
                 {{ phase2PromptContext }}
               </p>
               <h2 class="phase2-question-card__prompt">
-                {{ activeQuestion.prompt }}
+                {{ localizedPrompt || activeQuestion.prompt }}
               </h2>
             </div>
 
@@ -1241,12 +1248,12 @@ useSeoMeta({
               :disabled="isSavingRoadmaps || isAutoAdvancing"
             >
               <legend class="sr-only">
-                Choose a value from strongly disagree to strongly agree
+                {{ isThai ? 'เลือกค่าตั้งแต่ ไม่เห็นด้วยอย่างยิ่ง ถึง เห็นด้วยอย่างยิ่ง' : 'Choose a value from strongly disagree to strongly agree' }}
               </legend>
 
               <div class="phase2-scale__caption">
-                <span>Strongly disagree</span>
-                <span>Strongly agree</span>
+                <span>{{ isThai ? 'ไม่เห็นด้วยอย่างยิ่ง' : 'Strongly disagree' }}</span>
+                <span>{{ isThai ? 'เห็นด้วยอย่างยิ่ง' : 'Strongly agree' }}</span>
               </div>
 
               <div class="phase2-scale__track">

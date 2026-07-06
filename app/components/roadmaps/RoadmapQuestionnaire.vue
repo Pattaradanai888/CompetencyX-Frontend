@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { motion } from 'motion-v'
 import { useLocale } from '~/composables/useLocale'
+import { useQuestionI18n } from '~/composables/useQuestionI18n'
 import type { RoadmapsScaleOption } from '~~/shared/types/assessment'
 
 const props = defineProps<{
@@ -9,7 +10,7 @@ const props = defineProps<{
   roadmapsProgressPercent: number
   phase2PromptContext: string
   preferredRoleName: string | null
-  activeQuestion: { id: string; prompt: string } | null
+  activeQuestion: { id: string; prompt: string; translations?: any } | null
   isSavingRoadmaps: boolean
   isAutoAdvancing: boolean
   answerScale: RoadmapsScaleOption[]
@@ -28,6 +29,9 @@ const prefersReduced = useReducedMotion()
 const isGuidanceExpanded = ref(false)
 const { isThai } = useLocale()
 const t = usePageI18n('questionnaire', isThai)
+
+const activeQuestionRef = computed(() => props.activeQuestion)
+const { localizedPrompt } = useQuestionI18n(() => activeQuestionRef.value)
 
 function getRoadmapScaleLabel(option: RoadmapsScaleOption): string {
   return isThai.value ? (option.label_th ?? option.label) : option.label
@@ -168,7 +172,13 @@ function goToPreviousQuestion() {
               {{ phase2PromptContext }}
             </p>
             <h2 class="phase2-question-card__prompt">
-              {{ activeQuestion.prompt }}
+              {{
+                localizedPrompt ||
+                activeQuestion?.prompt ||
+                (isThai
+                  ? 'กำลังโหลดคำถามต่อไป...'
+                  : 'Loading the next scenario...')
+              }}
             </h2>
           </div>
 

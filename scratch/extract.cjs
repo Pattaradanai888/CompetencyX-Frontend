@@ -1,19 +1,19 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('fs')
+const path = require('path')
 
-const srcFile = 'app/pages/roadmaps/[sessionId].vue';
-const lines = fs.readFileSync(srcFile, 'utf8').split('\n');
+const srcFile = 'app/pages/roadmaps/[sessionId].vue'
+const lines = fs.readFileSync(srcFile, 'utf8').split('\n')
 
-const templateStart = lines.findIndex(l => l.includes('<template>'));
+const templateStart = lines.findIndex((l) => l.includes('<template>'))
 
 // From manual inspection:
 // Questionnaire: lines 1254-1462 (0-indexed: 1253-1461)
 // Dashboard: lines 1464-2062 (0-indexed: 1463-2061)
-const qTemplate = lines.slice(1253, 1462).join('\n');
-const dTemplate = lines.slice(1463, 2062).join('\n');
+const qTemplate = lines.slice(1253, 1462).join('\n')
+const dTemplate = lines.slice(1463, 2062).join('\n')
 
 // The original script setup
-const originalScript = lines.slice(0, templateStart).join('\n');
+const originalScript = lines.slice(0, templateStart).join('\n')
 
 // We will just create three files:
 // 1. app/components/roadmaps/RoadmapQuestionnaire.vue
@@ -25,8 +25,8 @@ ${originalScript.replace('<script setup lang="ts">', '')}
 <template>
 ${qTemplate}
 </template>
-`;
-fs.writeFileSync('app/components/roadmaps/RoadmapQuestionnaire.vue', qContent);
+`
+fs.writeFileSync('app/components/roadmaps/RoadmapQuestionnaire.vue', qContent)
 
 // 2. app/components/roadmaps/RoadmapResultDashboard.vue
 const dContent = `<script setup lang="ts">
@@ -37,8 +37,8 @@ ${originalScript.replace('<script setup lang="ts">', '')}
 <template>
 ${dTemplate}
 </template>
-`;
-fs.writeFileSync('app/components/roadmaps/RoadmapResultDashboard.vue', dContent);
+`
+fs.writeFileSync('app/components/roadmaps/RoadmapResultDashboard.vue', dContent)
 
 // 3. Keep the original roadmaps/[sessionId].vue for now but replace template
 const pTemplate = `<template>
@@ -97,8 +97,11 @@ const pTemplate = `<template>
     <RoadmapResultDashboard v-else />
   </main>
 </template>
-`;
+`
 
 // we leave the script as is in parent for now, but append the new template
-fs.writeFileSync('app/pages/roadmaps/[sessionId].vue', originalScript + '\n' + pTemplate);
-console.log('Extraction complete!');
+fs.writeFileSync(
+  'app/pages/roadmaps/[sessionId].vue',
+  originalScript + '\n' + pTemplate,
+)
+console.log('Extraction complete!')

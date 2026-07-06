@@ -4,7 +4,11 @@ import { useAssessmentResults } from '~/composables/useAssessmentResults'
 import { useLocale } from '~/composables/useLocale'
 import { sortTopicsByDisplayOrder } from '~/utils/assessment'
 import { buildRoadmapsEvaluation } from '~/utils/roadmaps'
-import { getRoadmapTopics, fetchTopicResources, getRoadmapSlug } from '~/utils/roadmapTopics'
+import {
+  getRoadmapTopics,
+  fetchTopicResources,
+  getRoadmapSlug,
+} from '~/utils/roadmapTopics'
 import type { RadarDimension } from '~/utils/roadmaps'
 import SkillSpiderChart from '~/components/results/SkillSpiderChart.vue'
 import { getErrorMessage } from '~/utils/api'
@@ -78,7 +82,9 @@ const _roadmapsSnapshot = _roadmapsData.value ?? {
   roadmapsState: null,
 }
 const roadmapsCatalog = _roadmapsSnapshot.roadmapsCatalog
-const result = computed(() => _roadmapsData.value?.result ?? _roadmapsSnapshot.result)
+const result = computed(
+  () => _roadmapsData.value?.result ?? _roadmapsSnapshot.result,
+)
 const session = _roadmapsSnapshot.session
 const history = _roadmapsSnapshot.history
 const roadmapsState = _roadmapsSnapshot.roadmapsState
@@ -288,22 +294,22 @@ const t = computed(() => {
     refreshPrompt:
       'Refreshing the session should surface the next prompt without losing your progress.',
     resolvingQuestion: 'We are resolving the next calibration question.',
-      gapToTarget: 'Gap to target',
-      targetReadiness: 'Target readiness',
-      pointsNeeded: 'points needed',
-      gapClosed: 'At target level',
-      priority: 'Priority',
-      roadmap: 'Roadmap',
-      resources: 'Resources',
-      labelBook: 'Book',
-      labelVideo: 'Video',
-      labelArticle: 'Article',
-      labelCourse: 'Course',
-      labelOfficial: 'Official',
-      labelWebsite: 'Website',
-      labelRoadmap: 'Roadmap',
-      labelFeed: 'Feed',
-    }
+    gapToTarget: 'Gap to target',
+    targetReadiness: 'Target readiness',
+    pointsNeeded: 'points needed',
+    gapClosed: 'At target level',
+    priority: 'Priority',
+    roadmap: 'Roadmap',
+    resources: 'Resources',
+    labelBook: 'Book',
+    labelVideo: 'Video',
+    labelArticle: 'Article',
+    labelCourse: 'Course',
+    labelOfficial: 'Official',
+    labelWebsite: 'Website',
+    labelRoadmap: 'Roadmap',
+    labelFeed: 'Feed',
+  }
 })
 
 const hasRoleAnswers = computed(() => {
@@ -311,10 +317,12 @@ const hasRoleAnswers = computed(() => {
 })
 
 const preferredRoleName = computed(
-  () => result.value?.preferred_role?.name ?? session?.preferred_role?.name ?? null,
+  () =>
+    result.value?.preferred_role?.name ?? session?.preferred_role?.name ?? null,
 )
 const bestFitRoleName = computed(
-  () => result.value?.best_fit_role?.name ?? session?.best_fit_role?.name ?? null,
+  () =>
+    result.value?.best_fit_role?.name ?? session?.best_fit_role?.name ?? null,
 )
 const survey2RoleTitle = computed(
   () =>
@@ -362,13 +370,13 @@ type RoadmapQuestion = {
   dimensionKey: string
 }
 
-const roadmapQuestions: RoadmapQuestion[] = (roadmapsCatalog?.questions ?? []).map(
-  (question: RoadmapsCatalogQuestion) => ({
-    id: question.id,
-    prompt: question.prompt,
-    dimensionKey: question.dimension_key,
-  }),
-)
+const roadmapQuestions: RoadmapQuestion[] = (
+  roadmapsCatalog?.questions ?? []
+).map((question: RoadmapsCatalogQuestion) => ({
+  id: question.id,
+  prompt: question.prompt,
+  dimensionKey: question.dimension_key,
+}))
 
 const answerScale = roadmapsCatalog?.scale ?? []
 const answerScaleValues = answerScale.map(
@@ -429,10 +437,9 @@ function getQuestionInfluence(question: RoadmapQuestion): number | null {
 const catalogByKey = computed(
   () =>
     new Map<string, RoadmapsCatalogDimension>(
-      (roadmapsCatalog?.dimensions ?? []).map((item: RoadmapsCatalogDimension) => [
-        item.key,
-        item,
-      ]),
+      (roadmapsCatalog?.dimensions ?? []).map(
+        (item: RoadmapsCatalogDimension) => [item.key, item],
+      ),
     ),
 )
 
@@ -593,8 +600,6 @@ async function loadTopicResources(topicId: number, topicTitle: string) {
   loadingResources.value = next
 }
 
-
-
 watch(
   currentRoleSlug,
   async (slug) => {
@@ -604,10 +609,6 @@ watch(
   },
   { immediate: true },
 )
-
-
-
-
 
 const recalculatedStrengths = computed(() =>
   sortedDimensionsDesc.value.slice(0, 3).map((item) => item.label),
@@ -724,7 +725,9 @@ const capabilityGap = computed(() =>
   Math.max(0, TARGET_READINESS_SCORE - overallCapabilityScore.value),
 )
 
-const isAtTarget = computed(() => overallCapabilityScore.value >= TARGET_READINESS_SCORE)
+const isAtTarget = computed(
+  () => overallCapabilityScore.value >= TARGET_READINESS_SCORE,
+)
 
 const topRoadmapTopics = computed<RoadmapTopic[]>(() => {
   const gapTopics = sortTopicsByDisplayOrder(
@@ -824,10 +827,7 @@ const roadmapShTopicsByTitle = computed(() => {
   return { exact, fuzzy }
 })
 
-function findEnriched(
-  title: string,
-  slug: string,
-): RoadmapTopic | undefined {
+function findEnriched(title: string, slug: string): RoadmapTopic | undefined {
   const { exact, fuzzy } = roadmapShTopicsByTitle.value
   const match = exact.get(title)
   if (match) return match
@@ -914,10 +914,14 @@ const personalityFitNarrative = computed(() => {
       : 'Not enough personality pillar data yet.'
 
   const avgScore = personalityPillars.value.length
-    ? (personalityPillars.value.reduce(
-        (sum: number, p: PillarInsight) => sum + p.normalized_score,
-        0,
-      ) / personalityPillars.value.length * 10).toFixed(1)
+    ? (
+        (personalityPillars.value.reduce(
+          (sum: number, p: PillarInsight) => sum + p.normalized_score,
+          0,
+        ) /
+          personalityPillars.value.length) *
+        10
+      ).toFixed(1)
     : '0.0'
 
   const alignmentContext = isThai.value
@@ -1010,7 +1014,7 @@ const growthDimensionCards = computed(() =>
         description: isThai.value
           ? 'ให้ความสำคัญกับด้านนี้เพื่อเพิ่มความพร้อม'
           : (cat?.low_score_action ??
-              'Focus on this area to improve overall readiness.'),
+            'Focus on this area to improve overall readiness.'),
       }
     }),
 )
@@ -1086,10 +1090,11 @@ function getRoadmapScaleLabel(option: {
 
 const personalityFitScoreDisplay = computed(() => {
   if (!personalityPillars.value.length) return '0/10'
-  const avg = personalityPillars.value.reduce(
-    (sum: number, p: PillarInsight) => sum + p.normalized_score,
-    0,
-  ) / personalityPillars.value.length
+  const avg =
+    personalityPillars.value.reduce(
+      (sum: number, p: PillarInsight) => sum + p.normalized_score,
+      0,
+    ) / personalityPillars.value.length
   return `${(avg * 10).toFixed(1)}/10`
 })
 
@@ -1687,9 +1692,7 @@ useSeoMeta({
           </div>
 
           <!-- Right column: spider chart -->
-          <div
-            class="paper-panel p-5 xl:sticky xl:top-8 xl:self-start"
-          >
+          <div class="paper-panel p-5 xl:sticky xl:top-8 xl:self-start">
             <div class="flex items-center justify-between gap-4">
               <div>
                 <p class="eyebrow">{{ t.capabilityMap }}</p>
@@ -1724,10 +1727,10 @@ useSeoMeta({
         <div class="mx-auto max-w-6xl">
           <div class="max-w-3xl">
             <p class="eyebrow">{{ t.section }} 2</p>
-            <h2
-              class="mt-4 font-display text-4xl text-ink md:text-5xl"
-            >
-              {{ hasRoleAnswers ? t.knowledgePersonalityFit : t.section2AltTitle }}
+            <h2 class="mt-4 font-display text-4xl text-ink md:text-5xl">
+              {{
+                hasRoleAnswers ? t.knowledgePersonalityFit : t.section2AltTitle
+              }}
             </h2>
             <p
               class="mt-4 max-w-2xl text-sm leading-8 text-ink-soft md:text-base"
@@ -1924,7 +1927,10 @@ useSeoMeta({
                   <h3 class="mt-3 text-2xl font-bold text-ink">
                     {{ topic.title }}
                   </h3>
-                  <p v-if="topic.description" class="mt-3 max-w-2xl text-sm leading-7 text-ink-soft">
+                  <p
+                    v-if="topic.description"
+                    class="mt-3 max-w-2xl text-sm leading-7 text-ink-soft"
+                  >
                     {{ topic.description }}
                   </p>
                 </div>
@@ -1960,13 +1966,14 @@ useSeoMeta({
                     rel="noopener noreferrer"
                     class="inline-flex items-center gap-1.5 rounded-lg border border-border-subtle bg-surface-card px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-accent/30 hover:text-accent"
                   >
-                    <span class="shrink-0 rounded bg-surface-muted px-1 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-ink-soft">{{ getResourceTypeLabel(link.type) }}</span>
+                    <span
+                      class="shrink-0 rounded bg-surface-muted px-1 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-ink-soft"
+                      >{{ getResourceTypeLabel(link.type) }}</span
+                    >
                     <span>{{ link.title }}</span>
                   </a>
                 </div>
               </div>
-
-
             </article>
           </div>
         </div>

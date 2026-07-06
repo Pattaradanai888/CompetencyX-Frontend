@@ -7,6 +7,7 @@ import { useRoadmapsApiClient } from '~/composables/useRoadmapsApiClient'
 export type RoadmapQuestion = {
   id: string
   prompt: string
+  translations?: any
   dimensionKey: string
 }
 
