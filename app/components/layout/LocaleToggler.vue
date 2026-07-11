@@ -6,7 +6,7 @@ const { currentLanguage, selectLanguage } = useLocale()
 
 <template>
   <div
-    class="fixed right-4 top-3 z-50 flex items-center gap-1 rounded-full border border-border-subtle bg-surface-elevated/80 p-0.5 shadow-sm backdrop-blur-sm"
+    class="flex items-center gap-1 rounded-full border border-border-subtle bg-surface-elevated/80 p-0.5 shadow-sm backdrop-blur-sm"
   >
     <button
       type="button"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LocaleToggler from '~/components/layout/LocaleToggler.vue'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
 import { useLastSession } from '~/composables/useLastSession'
 import { useLocale } from '~/composables/useLocale'
@@ -78,6 +79,7 @@ watch(
       </div>
 
       <div class="app-header__actions">
+        <LocaleToggler />
         <NuxtLink
           v-if="!isSlim && lastSessionId"
           :to="lastSessionRoute ?? `/assessment/${lastSessionId}`"

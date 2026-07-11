@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import AppHeader from '~/components/layout/AppHeader.vue'
-import LocaleToggler from '~/components/layout/LocaleToggler.vue'
 
 const route = useRoute()
 
@@ -35,7 +34,6 @@ useHead({
         <div class="ambient-grid" />
         <NuxtPage />
       </div>
-      <LocaleToggler />
     </UApp>
   </div>
 </template>
