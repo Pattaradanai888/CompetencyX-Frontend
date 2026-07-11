@@ -1,7 +1,6 @@
 # CompetencyX Frontend Integration Notes
 
 ## Overview
-
 This document summarizes the current assessment API contract after the role-discovery refactor.
 
 - Backend base URL for local development: `http://localhost:8000`
@@ -14,13 +13,12 @@ The backend remains the source of truth for:
 
 - question selection
 - role-discovery progression
-- role ambiguity and resolution state
+- role resolution state
+- Survey 2 (PSP/SDLC self-rating) state
 - final recommendation output
 
 ## Main Contract Changes
-
 ### Lean session payloads
-
 `POST /api/assessment-sessions/`, `GET /api/assessment-sessions/{id}/`, and `POST /api/assessment-sessions/{id}/answers/` now return a lean session-state payload.
 
 Fields included:
@@ -28,6 +26,7 @@ Fields included:
 - `id`
 - `status`
 - `phase`
+- `language`
 - `best_fit_confidence`
 - `preferred_role`
 - `best_fit_role`
@@ -49,7 +48,6 @@ Fields removed from the in-progress session payload:
 - detailed pillar analysis
 
 ### Public question shape
-
 `current_question` still contains:
 
 - `id`
@@ -62,11 +60,38 @@ Fields removed from the in-progress session payload:
 - `topic`
 - `difficulty`
 - `options`
+- `response_scale`
 
 `discrimination_score` is no longer exposed in the public question payload.
 
-### New insights endpoint
+### Question language
+Create-session accepts an optional `language` field:
 
+```json
+{
+  "preferred_role_slug": "backend-developer",
+  "language": "th"
+}
+```
+
+Supported values are `en` and `th`. If omitted, the backend stores `language: "en"` on the session.
+
+For `role_discovery` questions, `current_question.prompt`, `current_question.help_text`, and `response_scale[].label` are returned in the session language when a translation exists. Missing Thai translations fall back to English. Roadmap content, recommendations, and history text remain English in this pass.
+
+Role-discovery questions use `question_type: "likert_5"` and return no `options`. Render the five radio choices from `response_scale` and submit the selected numeric `value`.
+
+Role answer request:
+
+```json
+{
+  "question_id": 101,
+  "scale_value": 2,
+  "response_time_ms": 4200,
+  "confidence_indicator": "high"
+}
+```
+
+### New insights endpoint
 `GET /api/assessment-sessions/{id}/insights/` was added for explainability-oriented UI or analytics views.
 
 Response fields:
@@ -96,8 +121,7 @@ Response fields:
 - `top_supporting_pillars`
 
 ### Final results payload
-
-`GET /api/assessment-sessions/{id}/results/` still returns recommendation data, and now also includes:
+`GET /api/assessment-sessions/{id}/results/` still returns mastery and recommendation data, and now also includes:
 
 - `pillar_profile`
 - `ranked_roles`
@@ -109,34 +133,55 @@ This means detailed role-fit analysis is available from:
 - `/api/assessment-sessions/{id}/results/`
 
 ## Current Assessment Endpoints
+| Method | Path | Notes |
+| --- | --- | --- |
+| `POST` | `/api/assessment-sessions/` | Creates a session and returns lean session state |
+| `GET` | `/api/assessment-sessions/{id}/` | Returns lean session state for recovery or refresh |
+| `POST` | `/api/assessment-sessions/{id}/answers/` | Submits the current answer and returns the updated lean session state |
+| `GET` | `/api/assessment-sessions/{id}/insights/` | Returns pillar profile and ranked-role analysis |
+| `GET` | `/api/assessment-sessions/{id}/results/` | Returns final recommendations, mastery, and analysis after completion |
+| `GET` | `/api/assessment-sessions/{id}/history/` | Returns answer and recommendation history after completion |
+| `GET` | `/api/assessment-sessions/{id}/survey2/` | Returns saved Survey 2 state (`completed`, `answers`, `completed_at`) |
+| `POST` | `/api/assessment-sessions/{id}/survey2/` | Replaces the whole Survey 2 answer set and completion state |
+| `GET` | `/api/assessment-sessions/{id}/survey2/catalog/` | Returns the PSP/SDLC question catalog with role-aware guidance |
+| `POST` | `/api/assessment-sessions/{id}/survey2/next-question/` | Returns the adaptively selected next Survey 2 question |
 
-| Method | Path                                      | Notes                                                                 |
-| ------ | ----------------------------------------- | --------------------------------------------------------------------- |
-| `POST` | `/api/assessment-sessions/`               | Creates a session and returns lean session state                      |
-| `GET`  | `/api/assessment-sessions/{id}/`          | Returns lean session state for recovery or refresh                    |
-| `POST` | `/api/assessment-sessions/{id}/answers/`  | Submits the current answer and returns the updated lean session state |
-| `GET`  | `/api/assessment-sessions/{id}/insights/` | Returns pillar profile and ranked-role analysis                       |
-| `GET`  | `/api/assessment-sessions/{id}/results/`  | Returns final recommendations, mastery, and analysis after completion |
-| `GET`  | `/api/assessment-sessions/{id}/history/`  | Returns answer and recommendation history after completion            |
+Survey 2 state is stored in dedicated tables; the session `profile` field is free-form client data only and no longer carries a `survey2` key.
 
 ## Role Discovery Notes
+Role discovery uses a static 46-question core SWEBOK 2024 knowledge-area profile. The backend measures work preferences across the SWEBOK knowledge areas first, then maps the completed profile to a best-fit role. If the completed profile is still low-margin, the backend may ask additional role tie-break questions before completing the session.
 
-Role discovery is now based on a larger, pillar-driven question bank and may resolve early if confidence becomes strong enough.
+Each role-discovery prompt is a single statement answered with:
+
+- `2`: Strongly agree
+- `1`: Agree
+- `0`: Neutral
+- `-1`: Disagree
+- `-2`: Strongly disagree
 
 Relevant session fields:
 
-- `phase`: `role_discovery`, `role_ambiguity`, or `recommendation_ready`
-- `role_resolution_status`: `unknown`, `in_progress`, `resolved`, or `ambiguous`
-- `role_alignment_status`: `unknown`, `aligned`, `mismatch`, or `ambiguous`
+- `phase`: `role_discovery` or `recommendation_ready`
+- `role_resolution_status`: `in_progress`, `unknown`, `resolved`, or `low_confidence`
+- `role_alignment_status`: `unknown`, `aligned`, or `mismatch`
 
 Important implications:
 
-- `best_fit_role` can change during role discovery
-- `current_question` can become `null` in `role_ambiguity`
-- a session with a `preferred_role` can still proceed into skill assessment even if role resolution is not fully resolved
+- `best_fit_role` remains `null` while the 46 core role questions are still in progress
+- `best_fit_confidence` remains `0.0` while the 46 core role questions are still in progress
+- `role_alignment_status` remains `unknown` while the 46 core role questions are still in progress
+- the insights endpoint returns an empty `ranked_roles` list until the 46 core role questions are complete
+- after the 46th core role answer, the backend either resolves to one best-fit role or asks targeted tie-break questions
+- once role discovery completes the session enters `recommendation_ready`; Survey 2 is available at any time via its own endpoints
+
+### SWEBOK role metadata
+Catalog role objects now include:
+
+- `top_ka_codes`: the role's top SWEBOK KA codes, for example `["KA4", "KA2", "KA6"]`
+- `core_tasks`: role task summaries with supporting `ka_codes`
+- `swebok_source_version`: currently `SWEBOK V4.0`
 
 ## OpenAPI Spec
-
 The checked-in OpenAPI snapshot should be used as the frontend reference artifact for:
 
 - generated types
