@@ -222,7 +222,9 @@ const t = usePageI18n('roadmaps', () => props.isThai)
                   :class="isAtTarget ? 'text-green-600' : 'text-ink'"
                 >
                   {{
-                    isAtTarget ? t.gapClosed : `${capabilityGap} ${t.pointsNeeded}`
+                    isAtTarget
+                      ? t.gapClosed
+                      : `${capabilityGap} ${t.pointsNeeded}`
                   }}
                 </p>
               </div>

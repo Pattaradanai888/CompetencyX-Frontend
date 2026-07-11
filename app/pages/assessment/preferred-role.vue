@@ -60,7 +60,6 @@ useSeoMeta({
 <template>
   <NuxtErrorBoundary>
     <main id="main-content" class="page-wrap">
-
       <section
         class="onboarding-choice-shell mx-auto mt-8 max-w-5xl"
         aria-labelledby="preferred-role-title"

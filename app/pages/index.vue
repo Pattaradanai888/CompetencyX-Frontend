@@ -245,7 +245,7 @@ useSeoMeta({
           </p>
           <div class="mt-5 grid gap-3 sm:grid-cols-2">
             <div
-              v-for="(role, index) in t.roleFamilies"
+              v-for="role in t.roleFamilies"
               :key="role.name"
               class="rounded-md border border-border-subtle bg-surface-card p-4"
             >

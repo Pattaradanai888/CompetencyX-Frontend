@@ -17,9 +17,9 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'clear-filters'): void
-  (e: 'select-role', slug: string): void
-  (e: 'start'): void
+  'clear-filters': []
+  'select-role': [slug: string]
+  start: []
 }>()
 
 const searchQuery = defineModel<string>('searchQuery', { default: '' })

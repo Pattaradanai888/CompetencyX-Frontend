@@ -1,13 +1,16 @@
 import { computed } from 'vue'
 import type { Ref } from 'vue'
 import type { RadarDimension } from '~/utils/roadmaps'
-import type { RoadmapsCatalogDimension } from '~~/shared/types/assessment'
+import type {
+  RoadmapsCatalogDimension,
+  RoadmapsCatalogQuestion,
+} from '~~/shared/types/assessment'
 import { useRoadmapsApiClient } from '~/composables/useRoadmapsApiClient'
 
 export type RoadmapQuestion = {
   id: string
   prompt: string
-  translations?: any
+  translations?: RoadmapsCatalogQuestion['translations']
   dimensionKey: string
 }
 

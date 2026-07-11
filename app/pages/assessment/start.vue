@@ -189,7 +189,6 @@ useSeoMeta({
 
 <template>
   <main id="main-content" class="page-wrap">
-
     <!-- Onboarding Header -->
     <header class="mt-6 border-b border-border-subtle pb-6">
       <p class="eyebrow">Onboarding</p>
@@ -204,7 +203,7 @@ useSeoMeta({
     <div class="role-selection-layout">
       <!-- Left Panel: Search & Cards grid -->
       <AssessmentRoleExplorerPanel
-        v-model:searchQuery="searchQuery"
+        v-model:search-query="searchQuery"
         :roles-pending="rolesPending"
         :filtered-roles="filteredRoles"
         :preferred-role-slug="preferredRoleSlug"

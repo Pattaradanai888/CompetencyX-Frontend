@@ -30,7 +30,10 @@ const t = usePageI18n('roadmaps', () => props.isThai)
         </p>
       </div>
 
-      <div class="mt-10 grid gap-6" :class="{ 'xl:grid-cols-2': hasRoleAnswers }">
+      <div
+        class="mt-10 grid gap-6"
+        :class="{ 'xl:grid-cols-2': hasRoleAnswers }"
+      >
         <article class="paper-panel p-6 md:p-8">
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div>

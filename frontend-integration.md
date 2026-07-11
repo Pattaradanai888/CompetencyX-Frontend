@@ -1,6 +1,7 @@
 # CompetencyX Frontend Integration Notes
 
 ## Overview
+
 This document summarizes the current assessment API contract after the role-discovery refactor.
 
 - Backend base URL for local development: `http://localhost:8000`
@@ -18,7 +19,9 @@ The backend remains the source of truth for:
 - final recommendation output
 
 ## Main Contract Changes
+
 ### Lean session payloads
+
 `POST /api/assessment-sessions/`, `GET /api/assessment-sessions/{id}/`, and `POST /api/assessment-sessions/{id}/answers/` now return a lean session-state payload.
 
 Fields included:
@@ -48,6 +51,7 @@ Fields removed from the in-progress session payload:
 - detailed pillar analysis
 
 ### Public question shape
+
 `current_question` still contains:
 
 - `id`
@@ -65,6 +69,7 @@ Fields removed from the in-progress session payload:
 `discrimination_score` is no longer exposed in the public question payload.
 
 ### Question language
+
 Create-session accepts an optional `language` field:
 
 ```json
@@ -92,6 +97,7 @@ Role answer request:
 ```
 
 ### New insights endpoint
+
 `GET /api/assessment-sessions/{id}/insights/` was added for explainability-oriented UI or analytics views.
 
 Response fields:
@@ -121,6 +127,7 @@ Response fields:
 - `top_supporting_pillars`
 
 ### Final results payload
+
 `GET /api/assessment-sessions/{id}/results/` still returns mastery and recommendation data, and now also includes:
 
 - `pillar_profile`
@@ -133,22 +140,24 @@ This means detailed role-fit analysis is available from:
 - `/api/assessment-sessions/{id}/results/`
 
 ## Current Assessment Endpoints
-| Method | Path | Notes |
-| --- | --- | --- |
-| `POST` | `/api/assessment-sessions/` | Creates a session and returns lean session state |
-| `GET` | `/api/assessment-sessions/{id}/` | Returns lean session state for recovery or refresh |
-| `POST` | `/api/assessment-sessions/{id}/answers/` | Submits the current answer and returns the updated lean session state |
-| `GET` | `/api/assessment-sessions/{id}/insights/` | Returns pillar profile and ranked-role analysis |
-| `GET` | `/api/assessment-sessions/{id}/results/` | Returns final recommendations, mastery, and analysis after completion |
-| `GET` | `/api/assessment-sessions/{id}/history/` | Returns answer and recommendation history after completion |
-| `GET` | `/api/assessment-sessions/{id}/survey2/` | Returns saved Survey 2 state (`completed`, `answers`, `completed_at`) |
-| `POST` | `/api/assessment-sessions/{id}/survey2/` | Replaces the whole Survey 2 answer set and completion state |
-| `GET` | `/api/assessment-sessions/{id}/survey2/catalog/` | Returns the PSP/SDLC question catalog with role-aware guidance |
-| `POST` | `/api/assessment-sessions/{id}/survey2/next-question/` | Returns the adaptively selected next Survey 2 question |
+
+| Method | Path                                                   | Notes                                                                 |
+| ------ | ------------------------------------------------------ | --------------------------------------------------------------------- |
+| `POST` | `/api/assessment-sessions/`                            | Creates a session and returns lean session state                      |
+| `GET`  | `/api/assessment-sessions/{id}/`                       | Returns lean session state for recovery or refresh                    |
+| `POST` | `/api/assessment-sessions/{id}/answers/`               | Submits the current answer and returns the updated lean session state |
+| `GET`  | `/api/assessment-sessions/{id}/insights/`              | Returns pillar profile and ranked-role analysis                       |
+| `GET`  | `/api/assessment-sessions/{id}/results/`               | Returns final recommendations, mastery, and analysis after completion |
+| `GET`  | `/api/assessment-sessions/{id}/history/`               | Returns answer and recommendation history after completion            |
+| `GET`  | `/api/assessment-sessions/{id}/survey2/`               | Returns saved Survey 2 state (`completed`, `answers`, `completed_at`) |
+| `POST` | `/api/assessment-sessions/{id}/survey2/`               | Replaces the whole Survey 2 answer set and completion state           |
+| `GET`  | `/api/assessment-sessions/{id}/survey2/catalog/`       | Returns the PSP/SDLC question catalog with role-aware guidance        |
+| `POST` | `/api/assessment-sessions/{id}/survey2/next-question/` | Returns the adaptively selected next Survey 2 question                |
 
 Survey 2 state is stored in dedicated tables; the session `profile` field is free-form client data only and no longer carries a `survey2` key.
 
 ## Role Discovery Notes
+
 Role discovery uses a static 46-question core SWEBOK 2024 knowledge-area profile. The backend measures work preferences across the SWEBOK knowledge areas first, then maps the completed profile to a best-fit role. If the completed profile is still low-margin, the backend may ask additional role tie-break questions before completing the session.
 
 Each role-discovery prompt is a single statement answered with:
@@ -175,6 +184,7 @@ Important implications:
 - once role discovery completes the session enters `recommendation_ready`; Survey 2 is available at any time via its own endpoints
 
 ### SWEBOK role metadata
+
 Catalog role objects now include:
 
 - `top_ka_codes`: the role's top SWEBOK KA codes, for example `["KA4", "KA2", "KA6"]`
@@ -182,6 +192,7 @@ Catalog role objects now include:
 - `swebok_source_version`: currently `SWEBOK V4.0`
 
 ## OpenAPI Spec
+
 The checked-in OpenAPI snapshot should be used as the frontend reference artifact for:
 
 - generated types

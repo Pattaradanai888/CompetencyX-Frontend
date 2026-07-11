@@ -66,11 +66,7 @@ function getResourceTypeLabel(type: ResourceLink['type']): string {
     </div>
 
     <div class="mt-10 grid gap-5">
-      <div
-        v-for="(topic, index) in topics"
-        :key="topic.id"
-        class="relative"
-      >
+      <div v-for="(topic, index) in topics" :key="topic.id" class="relative">
         <div
           v-if="index !== topics.length - 1"
           class="absolute left-5 top-14 hidden h-[calc(100%+1.25rem)] w-px bg-[linear-gradient(180deg,rgba(234,112,31,0.28),rgba(33,122,111,0.14))] md:block"

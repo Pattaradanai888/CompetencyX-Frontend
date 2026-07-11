@@ -14,8 +14,7 @@ export function isSessionComplete(
   session: AssessmentSession | AssessmentResult,
 ): boolean {
   return (
-    session.status === 'completed' ||
-    session.phase === 'recommendation_ready'
+    session.status === 'completed' || session.phase === 'recommendation_ready'
   )
 }
 

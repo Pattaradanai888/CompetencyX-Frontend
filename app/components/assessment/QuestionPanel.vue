@@ -136,8 +136,8 @@ function handleOptionSelect(option: QuestionOption) {
     </div>
 
     <motion.div
-      class="mt-5 rounded-lg border border-border-subtle bg-surface-muted p-5 md:p-6"
       :key="session.current_question?.id ?? 'resolving'"
+      class="mt-5 rounded-lg border border-border-subtle bg-surface-muted p-5 md:p-6"
       :initial="prefersReduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }"
       :animate="{ opacity: 1, y: 0 }"
       :transition="prefersReduced ? { duration: 0 } : { duration: 0.24 }"

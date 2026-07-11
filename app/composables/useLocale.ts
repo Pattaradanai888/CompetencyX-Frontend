@@ -1,5 +1,6 @@
-export type Locale = 'en' | 'th'
 import { PREFERRED_LANGUAGE_KEY } from '~/utils/constants'
+
+export type Locale = 'en' | 'th'
 
 function readStoredLocale(): Locale | null {
   if (import.meta.client) {
