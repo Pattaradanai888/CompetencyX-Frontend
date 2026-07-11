@@ -194,11 +194,9 @@ onMounted(async () => {
           <!-- Primary role card -->
           <article
             :class="[
-              'result-role-card p-5 md:p-6 transition-all duration-200 relative border cursor-pointer flex flex-col justify-between',
-              selectedRole?.slug === primaryRole.slug
-                ? 'border-accent ring-2 ring-accent/30 bg-accent/[0.02]'
-                : 'border-border-subtle hover:border-ink-soft/40',
-              isContinuing ? 'pointer-events-none opacity-80' : '',
+              'result-role-card result-role-card--selectable relative flex flex-col justify-between p-5 md:p-6',
+              selectedRole?.slug === primaryRole.slug ? 'is-selected' : '',
+              isContinuing ? 'is-busy' : '',
             ]"
             @click="selectedRole = primaryRole"
           >
@@ -252,11 +250,9 @@ onMounted(async () => {
             v-for="(role, index) in alternativeRoles"
             :key="role.slug"
             :class="[
-              'result-role-card p-5 md:p-6 transition-all duration-200 relative border cursor-pointer flex flex-col justify-between',
-              selectedRole?.slug === role.slug
-                ? 'border-accent ring-2 ring-accent/30 bg-accent/[0.02]'
-                : 'border-border-subtle hover:border-ink-soft/40',
-              isContinuing ? 'pointer-events-none opacity-80' : '',
+              'result-role-card result-role-card--selectable relative flex flex-col justify-between p-5 md:p-6',
+              selectedRole?.slug === role.slug ? 'is-selected' : '',
+              isContinuing ? 'is-busy' : '',
             ]"
             @click="selectedRole = role"
           >
