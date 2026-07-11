@@ -3,7 +3,7 @@ import { motion } from 'motion-v'
 import { useAssessmentResults } from '~/composables/useAssessmentResults'
 import { useLocale } from '~/composables/useLocale'
 import { sortTopicsByDisplayOrder } from '~/utils/assessment'
-import { buildRoadmapsEvaluation } from '~/utils/roadmaps'
+import { buildRoadmapsEvaluation, getTopicDifficultyLabel } from '~/utils/roadmaps'
 import {
   getRoadmapTopics,
   fetchTopicResources,
@@ -648,20 +648,13 @@ const growthDimensionCards = computed(() =>
     }),
 )
 
-function getTopicDifficultyLabel(topic: RoadmapTopic): string {
-  const raw = topic.difficulty
-
-  if (typeof raw === 'string' && raw.trim()) {
-    return raw
-  }
-
-  if (typeof raw === 'number') {
-    if (raw <= 2) return t.value.foundation
-    if (raw <= 4) return t.value.intermediate
-    return t.value.advanced
-  }
-
-  return t.value.targeted
+function topicDifficultyLabel(topic: RoadmapTopic): string {
+  return getTopicDifficultyLabel(topic.difficulty, {
+    foundation: t.value.foundation,
+    intermediate: t.value.intermediate,
+    advanced: t.value.advanced,
+    targeted: t.value.targeted,
+  })
 }
 
 function getTopicTags(topic: RoadmapTopic): string[] {
@@ -1547,7 +1540,7 @@ useSeoMeta({
                     <span
                       class="rounded-full border border-accent/16 bg-accent/8 px-3 py-1 text-xs font-bold uppercase tracking-[0.06em] text-accent"
                     >
-                      {{ getTopicDifficultyLabel(topic) }}
+                      {{ topicDifficultyLabel(topic) }}
                     </span>
                   </div>
                   <h3 class="mt-3 text-2xl font-bold text-ink">

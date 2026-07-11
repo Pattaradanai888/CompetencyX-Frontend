@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { buildRoadmapsEvaluation } from '../../app/utils/roadmaps'
+import {
+  buildRoadmapsEvaluation,
+  getTopicDifficultyLabel,
+} from '../../app/utils/roadmaps'
 import type {
   AssessmentHistory,
   AssessmentResult,
@@ -91,7 +94,7 @@ const baseResult: AssessmentResult = {
 
 const history: AssessmentHistory = {
   id: 'session-2',
-  phase: 'completed',
+  phase: 'recommendation_ready',
   status: 'completed',
   recommendations: [],
   answers: [
@@ -162,5 +165,28 @@ describe('roadmaps evaluation builder', () => {
       evaluation.dimensions.every((item) => item.value >= 0 && item.value <= 1),
     ).toBe(true)
     expect(evaluation.personalitySignals.length).toBe(3)
+  })
+})
+
+describe('getTopicDifficultyLabel', () => {
+  const labels = {
+    foundation: 'Foundation',
+    intermediate: 'Intermediate',
+    advanced: 'Advanced',
+    targeted: 'Targeted',
+  }
+
+  it('maps the numeric 1-5 scale to level labels', () => {
+    expect(getTopicDifficultyLabel(1, labels)).toBe('Foundation')
+    expect(getTopicDifficultyLabel(2, labels)).toBe('Foundation')
+    expect(getTopicDifficultyLabel(3, labels)).toBe('Intermediate')
+    expect(getTopicDifficultyLabel(4, labels)).toBe('Intermediate')
+    expect(getTopicDifficultyLabel(5, labels)).toBe('Advanced')
+  })
+
+  it('passes through pre-labelled strings and falls back for missing values', () => {
+    expect(getTopicDifficultyLabel('beginner', labels)).toBe('beginner')
+    expect(getTopicDifficultyLabel(undefined, labels)).toBe('Targeted')
+    expect(getTopicDifficultyLabel('  ', labels)).toBe('Targeted')
   })
 })
