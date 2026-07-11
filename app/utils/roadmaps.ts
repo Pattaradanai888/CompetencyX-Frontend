@@ -216,3 +216,44 @@ export function buildRoadmapsEvaluation(
     personalitySignals,
   }
 }
+
+export interface DimensionCard extends RadarDimension {
+  percent: number
+  description: string
+}
+
+export interface TrackHighlight {
+  key: 'psp' | 'sdlc'
+  label: string
+  description: string
+  average: number
+  strongest: string
+}
+
+export function formatPillarScore(pillar: PillarInsight): string {
+  return `${(pillar.normalized_score * 10).toFixed(1)}/10`
+}
+
+export function getRoadmapScaleLabel(
+  option: { label: string; value: number },
+  isThai: boolean,
+): string {
+  if (!isThai) {
+    return option.label
+  }
+
+  switch (option.value) {
+    case 1:
+      return 'ไม่เห็นด้วยอย่างยิ่ง'
+    case 2:
+      return 'ไม่เห็นด้วย'
+    case 3:
+      return 'เป็นกลาง'
+    case 4:
+      return 'เห็นด้วย'
+    case 5:
+      return 'เห็นด้วยอย่างยิ่ง'
+    default:
+      return option.label
+  }
+}
