@@ -219,7 +219,7 @@ onMounted(async () => {
                 ✓
               </div>
               <p class="eyebrow">{{ t.primaryRole }}</p>
-              <h2 class="mt-3 text-2xl font-black text-ink">
+              <h2 class="mt-3 text-2xl font-bold text-ink">
                 {{ primaryRole.name }}
               </h2>
               <p class="mt-3 text-sm leading-7 text-ink-soft">
@@ -232,7 +232,7 @@ onMounted(async () => {
                 class="rounded-xl border border-accent/20 bg-accent/8 px-4 py-3"
               >
                 <p
-                  class="text-xs font-extrabold uppercase tracking-[0.08em] text-accent"
+                  class="text-xs font-bold uppercase tracking-[0.08em] text-accent"
                 >
                   {{ t.defaultSelection }}
                 </p>
@@ -277,7 +277,7 @@ onMounted(async () => {
                 ✓
               </div>
               <p class="eyebrow">{{ t.closeFit }} {{ index + 1 }}</p>
-              <h2 class="mt-3 text-2xl font-black text-ink">{{ role.name }}</h2>
+              <h2 class="mt-3 text-2xl font-bold text-ink">{{ role.name }}</h2>
               <p class="mt-3 text-sm leading-7 text-ink-soft">
                 {{ getRoleDescription(role) }}
               </p>
@@ -288,7 +288,7 @@ onMounted(async () => {
                 class="rounded-xl border border-accent/20 bg-accent/8 px-4 py-3"
               >
                 <p
-                  class="text-xs font-extrabold uppercase tracking-[0.08em] text-accent"
+                  class="text-xs font-bold uppercase tracking-[0.08em] text-accent"
                 >
                   {{ t.selected }}
                 </p>
@@ -331,7 +331,7 @@ onMounted(async () => {
               class="rounded-full border border-border-subtle bg-paper-strong px-4 py-2"
             >
               <p
-                class="text-xs font-extrabold uppercase tracking-[0.08em] text-ink-soft"
+                class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
               >
                 {{ t.selectedRole }}
               </p>

@@ -10,7 +10,7 @@ const { currentLanguage, selectLanguage } = useLocale()
   >
     <button
       type="button"
-      class="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-black uppercase tracking-[0.05em] transition-all duration-300"
+      class="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-[0.05em] transition-all duration-300"
       :class="
         currentLanguage === 'en'
           ? 'bg-accent text-white shadow-[0_4px_12px_rgba(15,118,110,0.25)]'
@@ -23,7 +23,7 @@ const { currentLanguage, selectLanguage } = useLocale()
     </button>
     <button
       type="button"
-      class="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-black uppercase tracking-[0.05em] transition-all duration-300"
+      class="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-[0.05em] transition-all duration-300"
       :class="
         currentLanguage === 'th'
           ? 'bg-accent text-white shadow-[0_4px_12px_rgba(15,118,110,0.25)]'

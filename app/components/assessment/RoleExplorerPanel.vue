@@ -149,7 +149,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
 
             <div class="role-details-section">
               <h4
-                class="text-[0.65rem] font-extrabold uppercase tracking-wider text-ink"
+                class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
               >
                 {{ t.responsibilities }}
               </h4>
@@ -166,7 +166,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
 
             <div class="role-details-section">
               <h4
-                class="text-[0.65rem] font-extrabold uppercase tracking-wider text-ink"
+                class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
               >
                 {{ t.skills }}
               </h4>
@@ -183,7 +183,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
 
             <div class="role-details-section">
               <h4
-                class="text-[0.65rem] font-extrabold uppercase tracking-wider text-ink"
+                class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
               >
                 {{ t.roadmapPreview }}
               </h4>
@@ -222,7 +222,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
                 "
               >
                 <h5
-                  class="text-[0.6rem] font-extrabold uppercase tracking-wider text-ink-soft"
+                  class="text-[0.6rem] font-bold uppercase tracking-wider text-ink-soft"
                 >
                   {{ t.workStyle }}
                 </h5>
@@ -244,7 +244,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
                 "
               >
                 <h5
-                  class="text-[0.6rem] font-extrabold uppercase tracking-wider text-ink-soft"
+                  class="text-[0.6rem] font-bold uppercase tracking-wider text-ink-soft"
                 >
                   {{ t.interests }}
                 </h5>
@@ -266,7 +266,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
                 "
               >
                 <h5
-                  class="text-[0.6rem] font-extrabold uppercase tracking-wider text-ink-soft"
+                  class="text-[0.6rem] font-bold uppercase tracking-wider text-ink-soft"
                 >
                   {{ t.careerAreas }}
                 </h5>
@@ -288,7 +288,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
                 "
               >
                 <h5
-                  class="text-[0.6rem] font-extrabold uppercase tracking-wider text-ink-soft"
+                  class="text-[0.6rem] font-bold uppercase tracking-wider text-ink-soft"
                 >
                   {{ t.environment }}
                 </h5>

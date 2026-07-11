@@ -113,7 +113,7 @@ const emit = defineEmits<{
             class="role-details-section mb-0"
           >
             <h4
-              class="text-[0.65rem] font-extrabold uppercase tracking-wider text-ink"
+              class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
             >
               {{ t.workStyle }}
             </h4>
@@ -133,7 +133,7 @@ const emit = defineEmits<{
             class="role-details-section mb-0"
           >
             <h4
-              class="text-[0.65rem] font-extrabold uppercase tracking-wider text-ink"
+              class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
             >
               {{ t.interests }}
             </h4>
@@ -153,7 +153,7 @@ const emit = defineEmits<{
             class="role-details-section mb-0"
           >
             <h4
-              class="text-[0.65rem] font-extrabold uppercase tracking-wider text-ink"
+              class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
             >
               {{ t.careerAreas }}
             </h4>
@@ -173,7 +173,7 @@ const emit = defineEmits<{
             class="role-details-section mb-0"
           >
             <h4
-              class="text-[0.65rem] font-extrabold uppercase tracking-wider text-ink"
+              class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
             >
               {{ t.environment }}
             </h4>

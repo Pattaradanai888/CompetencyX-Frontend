@@ -143,10 +143,10 @@ useSeoMeta({
                 :key="step.title"
                 class="rounded-lg border border-border-subtle bg-surface-card p-4"
               >
-                <p class="data-value text-sm font-black text-accent">
+                <p class="data-value text-sm font-bold text-accent">
                   0{{ index + 1 }}
                 </p>
-                <p class="mt-3 text-sm font-extrabold leading-6 text-ink">
+                <p class="mt-3 text-sm font-bold leading-6 text-ink">
                   {{ step.title }}
                 </p>
                 <p class="mt-2 line-clamp-3 text-xs leading-5 text-ink-soft">
@@ -175,7 +175,7 @@ useSeoMeta({
         <div>
           <p class="eyebrow">{{ t.howItWorks }}</p>
           <h2
-            class="mt-3 max-w-xl text-4xl font-black leading-tight text-ink md:text-5xl"
+            class="mt-3 max-w-xl text-4xl font-bold leading-tight text-ink md:text-5xl"
           >
             {{ t.twoAssessments }}
           </h2>
@@ -201,7 +201,7 @@ useSeoMeta({
             "
           >
             <p class="eyebrow">{{ step.eyebrow }}</p>
-            <h3 class="mt-3 text-xl font-extrabold text-ink">
+            <h3 class="mt-3 text-xl font-bold text-ink">
               {{ step.title }}
             </h3>
             <p class="mt-3 text-sm leading-7 text-ink-soft">{{ step.copy }}</p>
@@ -215,7 +215,7 @@ useSeoMeta({
         <div>
           <p class="eyebrow">{{ t.whyStudents }}</p>
           <h2
-            class="mt-3 text-4xl font-black leading-tight text-ink md:text-5xl"
+            class="mt-3 text-4xl font-bold leading-tight text-ink md:text-5xl"
           >
             {{ t.lessGuessing }}
           </h2>
@@ -226,7 +226,7 @@ useSeoMeta({
               class="metric-card flex items-start gap-3 p-4"
             >
               <span
-                class="mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-accent text-xs font-black text-white"
+                class="mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-accent text-xs font-bold text-white"
                 aria-hidden="true"
               >
                 ?
@@ -253,7 +253,7 @@ useSeoMeta({
                 <span class="text-base" aria-hidden="true">{{
                   role.icon
                 }}</span>
-                <p class="font-extrabold text-ink">{{ role.name }}</p>
+                <p class="font-bold text-ink">{{ role.name }}</p>
               </div>
               <p class="mt-2 text-sm leading-6 text-ink-soft">
                 {{ role.description }}
@@ -272,7 +272,7 @@ useSeoMeta({
         <div>
           <p class="eyebrow">{{ t.processTitle }}</p>
           <h2
-            class="mt-3 text-4xl font-black leading-tight text-ink md:text-5xl"
+            class="mt-3 text-4xl font-bold leading-tight text-ink md:text-5xl"
           >
             {{ t.processSub }}
           </h2>
@@ -299,14 +299,14 @@ useSeoMeta({
             >→</span
           >
           <div class="flex items-center justify-between gap-3">
-            <p class="data-value text-sm font-black text-accent">
+            <p class="data-value text-sm font-bold text-accent">
               0{{ index + 1 }}
             </p>
-            <span class="text-lg font-black text-accent" aria-hidden="true">
+            <span class="text-lg font-bold text-accent" aria-hidden="true">
               {{ item.icon }}
             </span>
           </div>
-          <p class="mt-4 text-base font-extrabold leading-6 text-ink">
+          <p class="mt-4 text-base font-bold leading-6 text-ink">
             {{ item.title }}
           </p>
           <p class="mt-2 text-sm leading-6 text-ink-soft">
@@ -321,7 +321,7 @@ useSeoMeta({
         <div>
           <p class="eyebrow">{{ t.rolePreviewTitle }}</p>
           <h2
-            class="mt-3 text-4xl font-black leading-tight text-ink md:text-5xl"
+            class="mt-3 text-4xl font-bold leading-tight text-ink md:text-5xl"
           >
             {{ t.rolePreviewSub }}
           </h2>
@@ -354,7 +354,7 @@ useSeoMeta({
         <div>
           <p class="eyebrow">{{ t.faqTitle }}</p>
           <h2
-            class="mt-3 text-4xl font-black leading-tight text-ink md:text-5xl"
+            class="mt-3 text-4xl font-bold leading-tight text-ink md:text-5xl"
           >
             {{ t.faqSub }}
           </h2>
@@ -369,7 +369,7 @@ useSeoMeta({
             class="metric-card group p-5"
           >
             <summary
-              class="flex cursor-pointer list-none items-center justify-between gap-3 text-base font-extrabold text-ink"
+              class="flex cursor-pointer list-none items-center justify-between gap-3 text-base font-bold text-ink"
             >
               <span class="flex items-center gap-2">
                 <span aria-hidden="true">{{ item.icon }}</span>

@@ -1361,7 +1361,7 @@ useSeoMeta({
                       {{ t.personalityFit }}
                     </p>
                     <div class="mt-1 flex items-end justify-between gap-3">
-                      <p class="data-value text-2xl font-black text-ink">
+                      <p class="data-value text-2xl font-bold text-ink">
                         {{ personalityFitScoreDisplay }}
                       </p>
                       <p class="text-[11px] font-semibold text-ink-soft">
@@ -1404,7 +1404,7 @@ useSeoMeta({
                     >
                       {{ t.overallReadiness }}
                     </p>
-                    <p class="mt-1 data-value text-3xl font-black text-ink">
+                    <p class="mt-1 data-value text-3xl font-bold text-ink">
                       {{ overallCapabilityScore }}%
                     </p>
                     <div class="mt-2 h-1.5 rounded-full bg-ink/8">
@@ -1420,7 +1420,7 @@ useSeoMeta({
                     >
                       {{ t.readinessStatus }}
                     </p>
-                    <p class="mt-1 text-xl font-black text-ink">
+                    <p class="mt-1 text-xl font-bold text-ink">
                       {{ readinessStatus }}
                     </p>
                   </div>
@@ -1455,7 +1455,7 @@ useSeoMeta({
                   class="rounded-xl border-l-4 border-l-blueprint bg-surface-card px-4 py-3"
                 >
                   <p
-                    class="text-[11px] font-extrabold uppercase tracking-[0.1em] text-blueprint"
+                    class="text-[11px] font-bold uppercase tracking-[0.1em] text-blueprint"
                   >
                     {{ t.asIs }}
                   </p>
@@ -1463,7 +1463,7 @@ useSeoMeta({
                     {{ t.currentCapability }}
                   </p>
                   <div class="mt-2 flex items-end justify-between gap-3">
-                    <p class="data-value text-2xl font-black text-ink">
+                    <p class="data-value text-2xl font-bold text-ink">
                       {{ overallCapabilityScore }}%
                     </p>
                     <p class="text-[11px] font-semibold text-ink-soft">
@@ -1485,7 +1485,7 @@ useSeoMeta({
                   class="rounded-xl border-l-4 border-l-accent bg-surface-card px-4 py-3"
                 >
                   <p
-                    class="text-[11px] font-extrabold uppercase tracking-[0.1em] text-accent"
+                    class="text-[11px] font-bold uppercase tracking-[0.1em] text-accent"
                   >
                     {{ t.toBe }}
                   </p>
@@ -1493,7 +1493,7 @@ useSeoMeta({
                     {{ survey2RoleTitle }}
                   </p>
                   <div class="mt-2 flex items-end justify-between gap-3">
-                    <p class="data-value text-2xl font-black text-accent">
+                    <p class="data-value text-2xl font-bold text-accent">
                       {{ TARGET_READINESS_SCORE }}%
                     </p>
                     <p class="text-[11px] font-semibold text-ink-soft">
@@ -1513,7 +1513,7 @@ useSeoMeta({
                       {{ t.gapToTarget }}
                     </p>
                     <p
-                      class="text-sm font-black"
+                      class="text-sm font-bold"
                       :class="isAtTarget ? 'text-green-600' : 'text-ink'"
                     >
                       {{
@@ -1555,7 +1555,7 @@ useSeoMeta({
               <div
                 class="shrink-0 rounded-full border border-border-subtle bg-surface-card px-3 py-1.5 text-center"
               >
-                <p class="data-value text-lg font-black text-accent">
+                <p class="data-value text-lg font-bold text-accent">
                   {{ overallCapabilityScore }}%
                 </p>
                 <p
@@ -1604,7 +1604,7 @@ useSeoMeta({
                   </h3>
                 </div>
                 <div class="text-right">
-                  <p class="data-value text-4xl font-black text-ink">
+                  <p class="data-value text-4xl font-bold text-ink">
                     {{ overallCapabilityScore }}%
                   </p>
                   <p
@@ -1634,7 +1634,7 @@ useSeoMeta({
                         {{ track.description }}
                       </p>
                     </div>
-                    <p class="data-value text-2xl font-black text-accent">
+                    <p class="data-value text-2xl font-bold text-accent">
                       {{ track.average }}%
                     </p>
                   </div>
@@ -1684,7 +1684,7 @@ useSeoMeta({
                   </h3>
                 </div>
                 <div class="text-right">
-                  <p class="data-value text-4xl font-black text-ink">
+                  <p class="data-value text-4xl font-bold text-ink">
                     {{ personalityFitScoreDisplay }}
                   </p>
                   <p
@@ -1758,7 +1758,7 @@ useSeoMeta({
               class="absolute left-5 top-14 hidden h-[calc(100%+1.25rem)] w-px bg-[linear-gradient(180deg,rgba(234,112,31,0.28),rgba(33,122,111,0.14))] md:block"
             />
             <div
-              class="absolute left-0 top-6 z-10 grid h-10 w-10 place-items-center rounded-full border border-accent/20 bg-white text-sm font-black text-accent shadow-[0_10px_24px_rgba(234,112,31,0.16)]"
+              class="absolute left-0 top-6 z-10 grid h-10 w-10 place-items-center rounded-full border border-accent/20 bg-white text-sm font-bold text-accent shadow-[0_10px_24px_rgba(234,112,31,0.16)]"
             >
               {{ index + 1 }}
             </div>
