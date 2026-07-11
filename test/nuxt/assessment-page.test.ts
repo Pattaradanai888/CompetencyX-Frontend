@@ -32,6 +32,7 @@ const baseSession: AssessmentSession = {
   phase: 'role_discovery',
   best_fit_confidence: 0.15,
   preferred_role: null,
+  current_role: null,
   best_fit_role: null,
   profile: null,
   started_at: '2026-04-17T04:00:00Z',

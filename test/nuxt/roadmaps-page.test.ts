@@ -31,7 +31,15 @@ vi.mock('~/composables/useAssessmentResults', () => ({
   useAssessmentResults: () => ({
     getResults: getResultsMock,
     getHistory: getHistoryMock,
+  }),
+}))
+
+vi.mock('~/composables/useRoadmapsApiClient', () => ({
+  useRoadmapsApiClient: () => ({
     getRoadmapsCatalog: getRoadmapsCatalogMock,
+    getRoadmapsNextQuestion: vi.fn().mockResolvedValue({
+      next_question: null,
+    }),
     getRoadmapsState: getRoadmapsStateMock,
     saveRoadmapsState: vi.fn(),
   }),
@@ -149,7 +157,7 @@ describe('roadmaps page', () => {
 
     getHistoryMock.mockResolvedValue({
       id: 'session-1',
-      phase: 'completed',
+      phase: 'recommendation_ready',
       status: 'completed',
       answers: [],
       recommendations: [],

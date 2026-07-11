@@ -1,8 +1,4 @@
-export type AssessmentPhase =
-  | 'role_discovery'
-  | 'role_ambiguity'
-  | 'recommendation_ready'
-  | 'completed'
+export type AssessmentPhase = 'role_discovery' | 'recommendation_ready'
 
 export type AssessmentStatus = 'in_progress' | 'completed'
 export type QuestionStage = 'role' | 'skill'
@@ -13,18 +9,14 @@ export type QuestionType =
   | 'ranked_choice'
   | 'likert_5'
 export type PathKind = 'preferred' | 'best_fit'
-export type PolicyType = 'rule_based' | 'bandit' | 'q_learning'
+export type PolicyType = 'rule_based' | 'q_learning'
 export type ConfidenceIndicator = 'low' | 'medium' | 'high'
-export type RoleAlignmentStatus =
-  | 'unknown'
-  | 'aligned'
-  | 'mismatch'
-  | 'ambiguous'
+export type RoleAlignmentStatus = 'unknown' | 'aligned' | 'mismatch'
 export type RoleResolutionStatus =
   | 'unknown'
   | 'in_progress'
   | 'resolved'
-  | 'ambiguous'
+  | 'low_confidence'
 export type LikertScaleValue = -2 | -1 | 0 | 1 | 2
 
 export interface Role {
@@ -32,6 +24,9 @@ export interface Role {
   slug: string
   name: string
   description?: string
+  top_ka_codes?: string[]
+  core_tasks?: string[]
+  swebok_source_version?: string
 }
 
 export interface TopicPrerequisite {
@@ -93,6 +88,7 @@ export interface Question {
   question_type: QuestionType
   prompt: string
   help_text?: string
+  translations?: Record<string, { prompt?: string; help_text?: string }>
   role: string | null
   topic: string | null
   difficulty?: number
@@ -112,6 +108,7 @@ export interface AssessmentSession {
   phase: AssessmentPhase
   best_fit_confidence?: number
   preferred_role: Role | null
+  current_role: Role | null
   best_fit_role: Role | null
   profile?: Record<string, unknown> | null
   language?: 'en' | 'th'
@@ -163,14 +160,6 @@ export interface AssessmentResult extends Omit<
   preferred_role_gap_topics: RoadmapTopic[]
   preferred_path_recommendation: Recommendation | null
   best_fit_path_recommendation: Recommendation | null
-  mastery_scores?: TopicMastery[]
-}
-
-export interface TopicMastery {
-  topic_id: number
-  topic_slug: string
-  topic_title: string
-  mastery_score: number
 }
 
 export interface AssessmentInsights {
@@ -211,22 +200,6 @@ export interface RoadmapsSessionState {
   completed: boolean
   answers: Record<string, number>
   completed_at: string | null
-  current_question_id?: string | null
-  next_question_id?: string | null
-  policy_type?: PolicyType | null
-  policy_version?: string | null
-  state_key?: string | null
-  last_reward?: number | null
-}
-
-export interface RoadmapsStepPayload {
-  question_id: string
-  answer_value: number
-  response_time_ms?: number
-}
-
-export interface RoadmapsStepResult extends RoadmapsSessionState {
-  selected_question_id?: string | null
 }
 
 export interface RoadmapsScaleOption {

@@ -19,6 +19,7 @@ const baseSession: AssessmentSession = {
   phase: 'role_discovery',
   best_fit_confidence: 0.42,
   preferred_role: null,
+  current_role: null,
   best_fit_role: null,
   profile: null,
   started_at: '2026-04-17T04:00:00Z',
@@ -52,7 +53,7 @@ describe('assessment utils', () => {
     expect(
       isSessionComplete({
         ...baseSession,
-        phase: 'role_ambiguity',
+        phase: 'role_discovery',
         current_question: null,
       }),
     ).toBe(false)

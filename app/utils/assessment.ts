@@ -15,8 +15,7 @@ export function isSessionComplete(
 ): boolean {
   return (
     session.status === 'completed' ||
-    session.phase === 'recommendation_ready' ||
-    session.phase === 'completed'
+    session.phase === 'recommendation_ready'
   )
 }
 
@@ -84,9 +83,6 @@ export function getAlignmentLabel(
     if (status === 'aligned') {
       return 'ตรงตามเป้าหมาย'
     }
-    if (status === 'ambiguous') {
-      return 'เป้าหมายยังไม่ชัดเจน'
-    }
     if (status === 'mismatch') {
       return 'เป้าหมายที่ต้องปรับตัว'
     }
@@ -95,10 +91,6 @@ export function getAlignmentLabel(
 
   if (status === 'aligned') {
     return 'Trajectory aligned'
-  }
-
-  if (status === 'ambiguous') {
-    return 'Role still ambiguous'
   }
 
   if (status === 'mismatch') {
@@ -116,8 +108,8 @@ export function getRoleResolutionLabel(
     if (status === 'resolved') {
       return 'วิเคราะห์แล้ว'
     }
-    if (status === 'ambiguous') {
-      return 'ก้ำกึ่ง'
+    if (status === 'low_confidence') {
+      return 'ความมั่นใจยังต่ำ'
     }
     if (status === 'in_progress') {
       return 'กำลังดำเนินการ'
@@ -129,8 +121,8 @@ export function getRoleResolutionLabel(
     return 'Resolved'
   }
 
-  if (status === 'ambiguous') {
-    return 'Ambiguous'
+  if (status === 'low_confidence') {
+    return 'Low confidence'
   }
 
   if (status === 'in_progress') {

@@ -1,5 +1,5 @@
-import { getSurvey2State } from '~/utils/profile'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
+import { useRoadmapsApiClient } from '~/composables/useRoadmapsApiClient'
 import { useLocale } from '~/composables/useLocale'
 import type { AssessmentSession } from '~~/shared/types/assessment'
 
@@ -9,7 +9,7 @@ import type { AssessmentSession } from '~~/shared/types/assessment'
  *
  * - `lastSessionSnapshot` is populated on mount from the stored session ID.
  * - `isSurvey2Complete` checks whether the user has completed the roadmap
- *   survey (survey2) embedded in `session.profile`.
+ *   survey (survey2), fetched from the survey2 endpoint.
  * - `lastSessionRoute` picks the correct resume URL based on session state.
  * - `resumeLabel` returns a localised label for the resume button.
  */
@@ -20,13 +20,12 @@ export function useLastSession(
   },
 ) {
   const { getSession, lastSessionId } = useAssessmentSession()
+  const { getRoadmapsState } = useRoadmapsApiClient()
   const { isThai } = useLocale()
   const lastSessionSnapshot = ref<AssessmentSession | null>(null)
+  const survey2Completed = ref(false)
 
-  const isSurvey2Complete = computed(() => {
-    const s2 = getSurvey2State(lastSessionSnapshot.value?.profile)
-    return s2?.completed === true
-  })
+  const isSurvey2Complete = computed(() => survey2Completed.value)
 
   const lastSessionRoute = computed(() => {
     if (!lastSessionId.value) return null
@@ -59,6 +58,13 @@ export function useLastSession(
       lastSessionSnapshot.value = await getSession(lastSessionId.value)
     } catch {
       lastSessionSnapshot.value = null
+      return
+    }
+    try {
+      const s2 = await getRoadmapsState(lastSessionId.value)
+      survey2Completed.value = s2.completed === true
+    } catch {
+      survey2Completed.value = false
     }
   })
 

@@ -8,9 +8,10 @@ import type {
 const baseResult: AssessmentResult = {
   id: 'session-2',
   status: 'completed',
-  phase: 'completed',
+  phase: 'recommendation_ready',
   best_fit_confidence: 0.88,
   preferred_role: { id: 1, slug: 'backend-engineer', name: 'Backend Engineer' },
+  current_role: null,
   best_fit_role: { id: 2, slug: 'system-architect', name: 'System Architect' },
   profile: null,
   started_at: '2026-05-01T00:00:00Z',
