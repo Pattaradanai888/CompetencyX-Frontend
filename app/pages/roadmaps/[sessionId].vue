@@ -28,12 +28,8 @@ import type {
 const route = useRoute('/roadmaps/[sessionId]')
 const sessionId = computed(() => route.params.sessionId as string)
 const { getResults, getHistory } = useAssessmentResults()
-const {
-  getRoadmapsCatalog,
-  getRoadmapsNextQuestion,
-  getRoadmapsState,
-  saveRoadmapsState,
-} = useRoadmapsApiClient()
+const { getRoadmapsCatalog, getRoadmapsState, saveRoadmapsState } =
+  useRoadmapsApiClient()
 const toast = useToast()
 const { getSession } = useAssessmentSession()
 const prefersReduced = useReducedMotion()
@@ -93,223 +89,7 @@ const isThai = computed(() => {
   return session?.language === 'th'
 })
 
-const t = computed(() => {
-  if (isThai.value) {
-    return {
-      backToHome: 'กลับไปหน้าแรก',
-      backToSurvey1: 'กลับไปผลลัพธ์ Survey 1',
-      session: 'เซสชัน',
-      finalDashboard: 'แดชบอร์ดผลลัพธ์สุดท้าย',
-      phase2Assessment: 'แบบประเมินเฟส 2',
-      readinessRoadmap: 'แผนพัฒนาความพร้อม',
-      calibrateSkills: 'ประเมินทักษะที่อยู่เบื้องหลังบทบาทที่แนะนำ',
-      completeIntro:
-        'โปรไฟล์นี้รวมผลค้นหาบทบาทกับแบบประเมินทักษะเฟส 2 เพื่อสรุประดับปัจจุบัน จุดแข็ง ช่องว่างสำคัญ และก้าวถัดไป',
-      incompleteIntro:
-        'ตอบคำถามทักษะสั้น ๆ ที่สัมพันธ์กับบทบาท ระบบจะแสดงกราฟ แผนพัฒนา และคำแนะนำฉบับเต็มหลังทำขั้นตอนนี้เสร็จ',
-      assessmentComplete: 'ทำแบบประเมินเสร็จแล้ว',
-      readinessOrganized: 'ถูกจัดเป็นแผนพัฒนาที่ชัดเจน',
-      viewIntro:
-        'หน้านี้แยกสรุปโปรไฟล์ สัญญาณความเหมาะสม ลำดับการเรียนรู้ และข้อมูลวิเคราะห์เพื่อให้อ่านขั้นตอนถัดไปได้ง่าย',
-      personalityResult: 'ผลบุคลิกภาพ',
-      personalityFit: 'ความเหมาะสมด้านบุคลิกภาพ',
-      basedOnProfile: 'อิงจากโปรไฟล์หลัก',
-      heroMetrics: 'ตัวชี้วัดหลัก',
-      overallReadiness: 'ความพร้อมโดยรวม',
-      readinessStatus: 'สถานะความพร้อม',
-      strongestNow: 'จุดแข็งตอนนี้',
-      roleGapInsight: 'ข้อมูลช่องว่างบทบาท',
-      currentCapability: 'ความสามารถปัจจุบันของคุณ',
-      asIs: 'ปัจจุบัน',
-      toBe: 'เป้าหมาย',
-      gapInsightCopy:
-        'เปรียบเทียบระดับความสามารถปัจจุบันของคุณกับสิ่งที่บทบาทเป้าหมายต้องการ',
-      topGaps: 'ช่องว่างที่ควรพัฒนา',
-      gapTopicsCount: 'หัวข้อลำดับถัดไป',
-      capabilityMap: 'แผนภาพความสามารถ',
-      profileCenterpiece: 'ภาพรวมโปรไฟล์',
-      mapCopy:
-        'แผนภาพนี้ช่วยให้เห็นรูปแบบการทำงานปัจจุบัน ขณะที่ส่วนอื่นของหน้าช่วยตีความและวางก้าวถัดไป',
-      section: 'ส่วนที่',
-      knowledgePersonalityFit: 'ความรู้ + ความเหมาะสมด้านบุคลิกภาพ',
-      section2Copy:
-        'แยกสัญญาณความสามารถออกจากสัญญาณบุคลิกภาพ เพื่อให้อ่านภาพรวมความเหมาะสมได้ชัดเจน',
-      section2AltTitle: 'ระดับความสามารถปัจจุบัน',
-      section2AltCopy:
-        'คะแนนความสามารถของคุณในแต่ละมิติ แบ่งตามทักษะ PSP และ SDLC',
-      knowledgeFit: 'ความเหมาะสมด้านความรู้',
-      capabilityAlignment: 'ความสอดคล้องของความสามารถ',
-      currentReadiness: 'ความพร้อมปัจจุบัน',
-      knowledgeFitCopy:
-        'ความเหมาะสมด้านความรู้ผสมสัญญาณจาก Survey 1 กับหลักฐานการทำงานจาก Survey 2 ในมิติ PSP และ SDLC',
-      strongest: 'เด่นสุด',
-      behavioralAlignment: 'ความสอดคล้องเชิงพฤติกรรม',
-      profileCoherence: 'ความสอดคล้องของโปรไฟล์',
-      behaviorCopy:
-        'การ์ดนี้สรุปเรดาร์บุคลิกภาพและคำแนะนำบทบาทให้เป็นสัญญาณสั้น ๆ แทนข้อความยาว',
-      recommendedSequence: 'ลำดับการเรียนรู้ที่แนะนำ',
-      sequenceCopy:
-        'แผนพัฒนาที่เปลี่ยนโปรไฟล์ความเหมาะสมของคุณให้เป็นขั้นตอนปฏิบัติสำหรับสร้างหลักฐานตามบทบาท',
-      step: 'ขั้นตอน',
-      roleGap: 'ช่องว่างบทบาท',
-      additionalInsights: 'ข้อมูลวิเคราะห์เพิ่มเติม',
-      insightsCopy:
-        'รายละเอียดสนับสนุนถูกจัดเป็นการ์ดเล็ก ๆ เพื่อให้หน้ายังอ่านง่ายและไม่แน่นเกินไป',
-      strengthDistribution: 'การกระจายจุดแข็ง',
-      strongestDimensions: 'มิติที่แข็งแรงที่สุด',
-      strongestDimensionsCopy:
-        'พื้นที่ความสามารถที่ได้คะแนนสูงและกำลังช่วยสนับสนุนความเหมาะสมของคุณ',
-      developmentPriorities: 'ลำดับความสำคัญในการพัฒนา',
-      improveNext: 'ควรพัฒนาถัดไป',
-      improveNextCopy: 'พื้นที่คะแนนต่ำที่ช่วยเพิ่มความพร้อมได้เร็วที่สุด',
-      roleReady: 'พร้อมสำหรับบทบาท',
-      projectReady: 'พร้อมเริ่มโปรเจกต์',
-      foundationBuilding: 'กำลังสร้างพื้นฐาน',
-      readyToReview: 'พร้อมทบทวน',
-      buildingConfidence: 'กำลังสร้างความมั่นใจ',
-      stillCalibrating: 'กำลังปรับเทียบ',
-      answered: 'ตอบแล้ว',
-      saving: 'กำลังบันทึก',
-      inProgress: 'กำลังทำ',
-      savingSignal: 'กำลังบันทึกสัญญาณคำตอบและเตรียมขั้นตอนถัดไป',
-      movingNext: 'กำลังไปยังข้อความถัดไป',
-      selectOne: 'เลือกหนึ่งคำตอบเพื่อไปต่ออัตโนมัติ',
-      preparingPrompt: 'กำลังเตรียมคำถามถัดไป',
-      promptContext: 'วางข้อความนี้บนระดับความคิดเห็นแล้วไปต่อ',
-      foundation: 'พื้นฐาน',
-      intermediate: 'ระดับกลาง',
-      advanced: 'ขั้นสูง',
-      targeted: 'เฉพาะจุด',
-      previous: 'ย้อนกลับ',
-      refreshPrompt: 'รีเฟรชเซสชันเพื่อแสดงคำถามถัดไปโดยไม่สูญเสียความคืบหน้า',
-      resolvingQuestion: 'ระบบกำลังจัดเตรียมคำถามปรับเทียบถัดไป',
-
-      gapToTarget: 'ช่องว่างสู่เป้าหมาย',
-      targetReadiness: 'เป้าหมายความพร้อม',
-      pointsNeeded: 'คะแนนที่ต้องพัฒนา',
-      gapClosed: 'ถึงเป้าหมายแล้ว',
-
-      priority: 'ลำดับความสำคัญ',
-      roadmap: 'แผนพัฒนา',
-      resources: 'แหล่งเรียนรู้',
-      labelBook: 'หนังสือ',
-      labelVideo: 'วิดีโอ',
-      labelArticle: 'บทความ',
-      labelCourse: 'คอร์ส',
-      labelOfficial: 'ทางการ',
-      labelWebsite: 'เว็บไซต์',
-      labelRoadmap: 'แผนพัฒนา',
-      labelFeed: 'ฟีด',
-    }
-  }
-
-  return {
-    backToHome: 'Back to Home',
-    backToSurvey1: 'Back to Survey 1 results',
-    session: 'Session',
-    finalDashboard: 'Final result dashboard',
-    phase2Assessment: 'Phase 2 assessment',
-    readinessRoadmap: 'readiness roadmap',
-    calibrateSkills: 'Calibrate the skills behind your recommended role',
-    completeIntro:
-      'This profile blends your role discovery result with the Phase 2 skill assessment to map your current level, strongest signals, priority gaps, and next portfolio moves.',
-    incompleteIntro:
-      'Answer a short set of role-aware skill prompts. The full chart, roadmap, and recommendations stay hidden until this step is complete.',
-    assessmentComplete: 'Assessment complete',
-    readinessOrganized: 'readiness, organized into a clear growth plan.',
-    viewIntro:
-      'This view separates your profile summary, fit signals, learning sequence, and supporting analytics so the next actions are easy to scan.',
-    personalityResult: 'Personality result',
-    personalityFit: 'Personality fit',
-    basedOnProfile: 'Based on pillar profile',
-    heroMetrics: 'Hero metrics',
-    overallReadiness: 'Overall readiness',
-    readinessStatus: 'Readiness status',
-    strongestNow: 'Strongest now',
-    roleGapInsight: 'Role gap insight',
-    currentCapability: 'Your current capability',
-    asIs: 'As-Is',
-    toBe: 'To-Be',
-    gapInsightCopy:
-      'Compare your current capability level against what the target role requires.',
-    topGaps: 'Top gap areas',
-    gapTopicsCount: 'topics to focus on next',
-    capabilityMap: 'Capability map',
-    profileCenterpiece: 'Profile centerpiece',
-    mapCopy:
-      'The map keeps your current execution shape visible while the rest of the page focuses on interpretation and next steps.',
-    section: 'Section',
-    knowledgePersonalityFit: 'Knowledge + personality fit',
-    section2Copy:
-      'Separate the execution signal from the personality signal so the fit story is readable at a glance.',
-    section2AltTitle: 'Current capability breakdown',
-    section2AltCopy:
-      'Your capability scores across each dimension, grouped by PSP and SDLC tracks.',
-    knowledgeFit: 'Knowledge fit',
-    capabilityAlignment: 'Capability alignment',
-    currentReadiness: 'current readiness',
-    knowledgeFitCopy:
-      'Your knowledge fit blends Survey 1 signals with Survey 2 execution evidence across PSP and SDLC dimensions.',
-    strongest: 'Strongest',
-    behavioralAlignment: 'Behavioral alignment',
-    profileCoherence: 'profile coherence',
-    behaviorCopy:
-      'This card translates your personality radar and role guidance into concise signals instead of long narrative blocks.',
-    recommendedSequence: 'Recommended learning sequence',
-    sequenceCopy:
-      'A focused roadmap that turns your fit profile into a practical step-by-step path for building stronger role evidence.',
-    step: 'Step',
-    roleGap: 'Role gap',
-    additionalInsights: 'Additional insights and analytics',
-    insightsCopy:
-      'Supporting detail is grouped into smaller cards so the page stays analytical without becoming dense.',
-    strengthDistribution: 'Strength distribution',
-    strongestDimensions: 'Strongest dimensions',
-    strongestDimensionsCopy:
-      'The highest-scoring capability areas currently carrying your fit.',
-    developmentPriorities: 'Development priorities',
-    improveNext: 'Improve next',
-    improveNextCopy:
-      'The lowest-scoring areas that will move readiness fastest.',
-    roleReady: 'Role ready',
-    projectReady: 'Project ready',
-    foundationBuilding: 'Foundation building',
-    readyToReview: 'Ready to review',
-    buildingConfidence: 'Building confidence',
-    stillCalibrating: 'Still calibrating',
-    answered: 'answered',
-    saving: 'Saving',
-    inProgress: 'In progress',
-    savingSignal: 'Saving your assessment signal and preparing the next step.',
-    movingNext: 'Moving to the next statement.',
-    selectOne: 'Select one response to continue automatically.',
-    preparingPrompt: 'Preparing prompt',
-    promptContext: 'Place the statement on the agreement scale and continue.',
-    foundation: 'Foundation',
-    intermediate: 'Intermediate',
-    advanced: 'Advanced',
-    targeted: 'Targeted',
-    previous: 'Previous',
-    refreshPrompt:
-      'Refreshing the session should surface the next prompt without losing your progress.',
-    resolvingQuestion: 'We are resolving the next calibration question.',
-    gapToTarget: 'Gap to target',
-    targetReadiness: 'Target readiness',
-    pointsNeeded: 'points needed',
-    gapClosed: 'At target level',
-    priority: 'Priority',
-    roadmap: 'Roadmap',
-    resources: 'Resources',
-    labelBook: 'Book',
-    labelVideo: 'Video',
-    labelArticle: 'Article',
-    labelCourse: 'Course',
-    labelOfficial: 'Official',
-    labelWebsite: 'Website',
-    labelRoadmap: 'Roadmap',
-    labelFeed: 'Feed',
-  }
-})
+const t = usePageI18n('roadmaps', isThai)
 
 const hasRoleAnswers = computed(() => {
   return (session?.milestones?.answered_role_questions ?? 0) > 0
@@ -366,7 +146,7 @@ const isRoadmapsComplete = ref(roadmapsState?.completed)
 type RoadmapQuestion = {
   id: string
   prompt: string
-  translations?: any
+  translations?: RoadmapsCatalogQuestion['translations']
   dimensionKey: string
 }
 
@@ -469,13 +249,10 @@ async function loadTopicResources(topicId: number, topicTitle: string) {
   if (topicResources.has(topicId) || loadingResources.value.has(topicId)) return
   const slug = getRoadmapSlug(currentRoleSlug.value ?? '')
   if (!slug) {
-    console.log(`[resources] no slug for ${topicTitle}`)
     return
   }
   loadingResources.value = new Set([...loadingResources.value, topicId])
-  console.log(`[resources] loading ${slug}:${topicTitle}`)
   const links = await fetchTopicResources(slug, topicTitle)
-  console.log(`[resources] ${slug}:${topicTitle} → ${links.length} links`)
   if (links.length) {
     topicResources.set(topicId, links)
   }
@@ -786,7 +563,7 @@ const personalityFitNarrative = computed(() => {
         ? `คะแนนระดับนี้บ่งชี้ว่าคุณมีความสอดคล้องกับทิศทาง ${roleName} พอสมควร ควรใช้คะแนนเสาหลักต่ำเป็นจุดเน้นในการพัฒนา`
         : `This alignment level suggests reasonable consistency with the ${roleName} direction. Use lower-scoring pillars as development focus areas.`
       : isThai.value
-        ? `คะแนนระดับนี้บ่งชี้ว่ายังมีโอกาสสำรวจเพิ่มเติมก่อน锁定เส้นทาง ใช้เสาหลักที่ได้คะแนนต่ำเป็น feedback เพื่อปรับทิศทาง`
+        ? `คะแนนระดับนี้บ่งชี้ว่ายังมีโอกาสสำรวจเพิ่มเติมก่อนตัดสินใจเลือกเส้นทาง ใช้เสาหลักที่ได้คะแนนต่ำเป็น feedback เพื่อปรับทิศทาง`
         : `This suggests room to explore before locking a path. Use low-scoring pillars as directional feedback.`
 
   return `${pillarSummary}. ${alignmentContext}. ${guidanceSummary}`
@@ -1222,8 +999,8 @@ useSeoMeta({
 
         <motion.div
           v-if="activeQuestion"
-          class="phase2-question-shell"
           :key="activeQuestion.id"
+          class="phase2-question-shell"
           :initial="
             prefersReduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 18 }
           "

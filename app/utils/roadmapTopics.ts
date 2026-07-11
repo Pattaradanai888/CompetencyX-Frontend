@@ -407,37 +407,10 @@ export async function fetchTopicResources(
 
   // Method 2: fall back to static bundled resources JSON
   const json = await loadResourcesJson()
-  if (json) {
-    if (import.meta.dev)
-      console.log(
-        `[resources] JSON loaded, keys: ${Object.keys(json).join(', ')}`,
-      )
-    const slugResources = json[roadmapSlug]
-    if (slugResources) {
-      if (import.meta.dev)
-        console.log(
-          `[resources] slug "${roadmapSlug}" found in JSON, topic keys: ${Object.keys(slugResources).slice(0, 5).join(', ')}...`,
-        )
-      const links = slugResources[topicLabel]
-      if (links?.length) {
-        if (import.meta.dev)
-          console.log(
-            `[resources] found ${links.length} links for "${topicLabel}"`,
-          )
-        contentCache.set(cacheKey, links)
-        return links
-      } else {
-        if (import.meta.dev)
-          console.log(
-            `[resources] topic "${topicLabel}" not found in slug "${roadmapSlug}"`,
-          )
-      }
-    } else {
-      if (import.meta.dev)
-        console.log(`[resources] slug "${roadmapSlug}" NOT found in JSON`)
-    }
-  } else {
-    if (import.meta.dev) console.log(`[resources] JSON failed to load`)
+  const links = json?.[roadmapSlug]?.[topicLabel]
+  if (links?.length) {
+    contentCache.set(cacheKey, links)
+    return links
   }
 
   return []
