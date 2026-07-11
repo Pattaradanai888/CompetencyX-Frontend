@@ -3,7 +3,6 @@ import { motion } from 'motion-v'
 import { sortRankedRolesDescending } from '~/utils/assessment'
 import { useAssessmentResults } from '~/composables/useAssessmentResults'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
-import { useSessionPolling } from '~/composables/useSessionPolling'
 import { useLocale } from '~/composables/useLocale'
 import { useSessionCreate } from '~/composables/useSessionCreate'
 import { getErrorMessage } from '~/utils/api'
@@ -18,7 +17,6 @@ const sessionId = computed(() => route.params.sessionId as string)
 const { getResults } = useAssessmentResults()
 const { getSession } = useAssessmentSession()
 const { createAndNavigate } = useSessionCreate()
-const { waitForSkillStage } = useSessionPolling()
 const toast = useToast()
 
 const { data: _fetchData, error: fetchError } = await useAsyncData(
@@ -166,12 +164,6 @@ onMounted(async () => {
 <template>
   <NuxtErrorBoundary>
     <main v-if="results" id="main-content" class="page-wrap pb-16">
-      <div class="mb-4">
-        <NuxtLink to="/" class="editorial-link text-sm">
-          {{ t.backLink }}
-        </NuxtLink>
-      </div>
-
       <motion.section
         class="result-spotlight mx-auto max-w-5xl p-6 text-center md:p-8 lg:p-10"
         :initial="{ opacity: 0, y: 20 }"

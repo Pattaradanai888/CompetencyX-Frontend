@@ -1,6 +1,14 @@
 <script setup lang="ts">
-import { useLocale } from '~/composables/useLocale'
+import AppHeader from '~/components/layout/AppHeader.vue'
 import LocaleToggler from '~/components/layout/LocaleToggler.vue'
+
+const route = useRoute()
+
+const headerVariant = computed(() =>
+  route.path.startsWith('/assessment/') && route.params.sessionId
+    ? 'slim'
+    : 'full',
+)
 
 useHead({
   titleTemplate: '%s | CompetencyX',
@@ -21,6 +29,7 @@ useHead({
       <a href="#main-content" class="skip-link">Skip to main content</a>
       <NuxtRouteAnnouncer />
       <NuxtLoadingIndicator color="var(--color-accent)" />
+      <AppHeader :variant="headerVariant" />
       <div class="app-shell">
         <div class="ambient-plane" />
         <div class="ambient-grid" />

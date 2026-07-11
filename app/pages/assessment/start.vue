@@ -3,8 +3,6 @@ import { getErrorMessage } from '~/utils/api'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
 import { useCatalogApi } from '~/composables/useCatalogApi'
 import { useLocale } from '~/composables/useLocale'
-import { useLastSession } from '~/composables/useLastSession'
-import { useSessionPolling } from '~/composables/useSessionPolling'
 import { useSessionCreate } from '~/composables/useSessionCreate'
 import { getRoleMeta } from '~/data/roleMeta'
 import { PREFERRED_ROLE_KEY } from '~/utils/constants'
@@ -12,11 +10,9 @@ import type { ApiError, RoadmapTopic, Role } from '~~/shared/types/assessment'
 
 const route = useRoute('/assessment/start')
 const { listRoleTopics, listRoles } = useCatalogApi()
-const { isSubmitting, lastSessionId } = useAssessmentSession()
+const { isSubmitting } = useAssessmentSession()
 const { createAndNavigate } = useSessionCreate()
 const { currentLanguage, isThai } = useLocale()
-const { lastSessionRoute, resumeLabel } = useLastSession()
-const { waitForSkillStage } = useSessionPolling()
 
 const preferredRoleSlug = ref<string | null>(null)
 const pageError = ref<ApiError | null>(null)
@@ -193,19 +189,6 @@ useSeoMeta({
 
 <template>
   <main id="main-content" class="page-wrap">
-    <!-- Navigation back & resume -->
-    <div class="flex flex-wrap items-center justify-between gap-4">
-      <NuxtLink to="/" class="editorial-link text-sm">
-        {{ t.backLink }}
-      </NuxtLink>
-      <NuxtLink
-        v-if="lastSessionId"
-        :to="lastSessionRoute ?? `/assessment/${lastSessionId}`"
-        class="inline-flex items-center justify-center rounded-full border border-border-subtle bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:-translate-y-0.5 hover:border-accent/35 hover:text-accent"
-      >
-        {{ resumeLabel }}
-      </NuxtLink>
-    </div>
 
     <!-- Onboarding Header -->
     <header class="mt-6 border-b border-border-subtle pb-6">

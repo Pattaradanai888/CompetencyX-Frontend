@@ -1063,9 +1063,6 @@ useSeoMeta({
     :class="['page-wrap', !isRoadmapsComplete ? 'phase2-assessment-page' : '']"
   >
     <div class="flex flex-wrap items-center justify-between gap-4">
-      <NuxtLink to="/" class="editorial-link text-sm">
-        {{ t.backToHome }}
-      </NuxtLink>
       <NuxtLink
         v-if="hasRoleAnswers"
         :to="`/results/${route.params.sessionId}`"

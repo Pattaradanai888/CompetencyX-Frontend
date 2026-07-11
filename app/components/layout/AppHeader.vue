@@ -1,11 +1,21 @@
 <script setup lang="ts">
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
+import { useLastSession } from '~/composables/useLastSession'
 import { useLocale } from '~/composables/useLocale'
+
+const props = withDefaults(
+  defineProps<{
+    variant?: 'full' | 'slim'
+  }>(),
+  { variant: 'full' },
+)
 
 const route = useRoute()
 const { lastSessionId } = useAssessmentSession()
+const { lastSessionRoute } = useLastSession()
 const { isThai } = useLocale()
 const mobileMenuOpen = ref(false)
+const isSlim = computed(() => props.variant === 'slim')
 
 const navItems = computed(() => [
   { label: isThai.value ? 'ภาพรวม' : 'Overview', to: '/' },
@@ -55,7 +65,7 @@ watch(
         <span class="font-display text-lg font-bold text-ink">CompetencyX</span>
       </NuxtLink>
 
-      <div class="app-header__nav">
+      <div v-if="!isSlim" class="app-header__nav">
         <NuxtLink
           v-for="item in navItems"
           :key="item.to"
@@ -69,16 +79,21 @@ watch(
 
       <div class="app-header__actions">
         <NuxtLink
-          v-if="lastSessionId"
-          :to="`/assessment/${lastSessionId}`"
+          v-if="!isSlim && lastSessionId"
+          :to="lastSessionRoute ?? `/assessment/${lastSessionId}`"
           class="app-header__ghost"
         >
           {{ isThai ? 'ทำต่อ' : 'Resume' }}
         </NuxtLink>
-        <NuxtLink to="/assessment/preferred-role" class="app-header__cta">
+        <NuxtLink
+          v-if="!isSlim"
+          to="/assessment/preferred-role"
+          class="app-header__cta"
+        >
           {{ isThai ? 'เริ่มเลย' : 'Begin' }}
         </NuxtLink>
         <button
+          v-if="!isSlim"
           type="button"
           class="app-header__menu"
           :aria-expanded="mobileMenuOpen"
@@ -121,6 +136,7 @@ watch(
     </nav>
 
     <div
+      v-if="!isSlim"
       id="mobile-main-nav"
       class="app-header__mobile"
       :class="mobileMenuOpen ? 'is-open' : ''"
@@ -136,7 +152,7 @@ watch(
       </NuxtLink>
       <NuxtLink
         v-if="lastSessionId"
-        :to="`/assessment/${lastSessionId}`"
+        :to="lastSessionRoute ?? `/assessment/${lastSessionId}`"
         class="app-header__mobile-link"
       >
         {{ isThai ? 'ทำเซสชันต่อ' : 'Resume session' }}

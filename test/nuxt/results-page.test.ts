@@ -152,7 +152,6 @@ describe('results page', () => {
     expect(wrapper.text()).toContain('Default selection')
     expect(wrapper.text()).toContain('Continue to Assignment 2')
     expect(wrapper.text()).toContain('Use this role instead')
-    expect(wrapper.text()).toContain('Back to landing page')
     expect(wrapper.text()).not.toContain('62%')
     expect(wrapper.text()).not.toContain('24%')
     expect(wrapper.text()).not.toContain('14%')

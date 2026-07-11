@@ -179,7 +179,6 @@ export default {
     ],
   },
   start: {
-    backLink: 'Back to overview',
     resumeBtn: 'Resume previous session',
     title: 'Choose your preferred role',
     subtitle: 'Search and select a target role to begin the skill assessment.',
@@ -216,7 +215,6 @@ export default {
     environment: 'Work environment',
   },
   preferredRole: {
-    backLink: 'Back to overview',
     resumeBtn: 'Resume previous session',
     eyebrow: 'Onboarding',
     title: 'Do you already have a preferred career role in mind?',
@@ -238,7 +236,6 @@ export default {
   results: {
     loadError: 'Could not load results',
     startPhase2Error: 'Could not start Phase 2',
-    backLink: 'Back to landing page',
     phaseComplete: 'Phase 1 complete',
     titleSuffix: 'looks like your strongest role direction.',
     primaryRole: 'Primary role',

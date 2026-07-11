@@ -2,13 +2,11 @@
 import { getErrorMessage } from '~/utils/api'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
 import { useLocale } from '~/composables/useLocale'
-import { useLastSession } from '~/composables/useLastSession'
 import { PREFERRED_ROLE_KEY } from '~/utils/constants'
-import type { ApiError, AssessmentSession } from '~~/shared/types/assessment'
+import type { ApiError } from '~~/shared/types/assessment'
 
-const { createSession, isSubmitting, lastSessionId } = useAssessmentSession()
+const { createSession, isSubmitting } = useAssessmentSession()
 const { currentLanguage, isThai } = useLocale()
-const { lastSessionRoute, resumeLabel } = useLastSession()
 const toast = useToast()
 const pageError = ref<ApiError | null>(null)
 
@@ -62,18 +60,6 @@ useSeoMeta({
 <template>
   <NuxtErrorBoundary>
     <main id="main-content" class="page-wrap">
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <NuxtLink to="/" class="editorial-link text-sm">
-          {{ t.backLink }}
-        </NuxtLink>
-        <NuxtLink
-          v-if="lastSessionId"
-          :to="lastSessionRoute ?? `/assessment/${lastSessionId}`"
-          class="inline-flex items-center justify-center rounded-full border border-border-subtle bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink shadow-sm transition hover:-translate-y-0.5 hover:border-accent/35 hover:text-accent"
-        >
-          {{ resumeLabel }}
-        </NuxtLink>
-      </div>
 
       <section
         class="onboarding-choice-shell mx-auto mt-8 max-w-5xl"

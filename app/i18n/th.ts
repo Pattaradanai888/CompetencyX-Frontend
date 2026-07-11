@@ -178,7 +178,6 @@ export default {
     ],
   },
   start: {
-    backLink: 'ย้อนกลับไปหน้าภาพรวม',
     resumeBtn: 'กลับไปทำเซสชันล่าสุด',
     title: 'เลือกตำแหน่งงานเป้าหมาย',
     subtitle:
@@ -217,7 +216,6 @@ export default {
     environment: 'สภาพแวดล้อมการทำงาน',
   },
   preferredRole: {
-    backLink: 'ย้อนกลับไปหน้าภาพรวม',
     resumeBtn: 'กลับไปทำเซสชันล่าสุด',
     eyebrow: 'เริ่มต้น',
     title: 'คุณมีตำแหน่งอาชีพที่ต้องการอยู่ในใจแล้วหรือยัง?',
@@ -238,7 +236,6 @@ export default {
   results: {
     loadError: 'ไม่สามารถโหลดผลลัพธ์ได้',
     startPhase2Error: 'ไม่สามารถเริ่มเฟส 2 ได้',
-    backLink: 'กลับไปหน้าหลัก',
     phaseComplete: 'จบเฟส 1 แล้ว',
     titleSuffix: 'คือทิศทางบทบาทที่เหมาะกับคุณที่สุด',
     primaryRole: 'บทบาทหลัก',
