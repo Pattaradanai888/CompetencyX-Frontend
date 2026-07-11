@@ -249,13 +249,4 @@ const hasDimensions = computed(() => props.dimensions.length > 0)
   --chart-fill: rgba(29, 107, 87, 0.26);
   --chart-label: var(--color-ink);
 }
-
-@media (prefers-color-scheme: dark) {
-  .skill-spider {
-    --chart-grid: rgba(226, 232, 240, 0.24);
-    --chart-axis: rgba(226, 232, 240, 0.2);
-    --chart-fill: rgba(251, 146, 60, 0.24);
-    --chart-label: rgba(238, 245, 247, 0.96);
-  }
-}
 </style>
