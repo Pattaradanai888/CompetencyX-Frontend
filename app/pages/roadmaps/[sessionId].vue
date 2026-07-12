@@ -9,8 +9,26 @@ import {
   getRoadmapSlug,
 } from '~/utils/roadmapTopics'
 import type { RadarDimension } from '~/utils/roadmaps'
+import { defineAsyncComponent, hydrateOnVisible } from 'vue'
 import RoadmapGuidanceCard from '~/components/roadmaps/RoadmapGuidanceCard.vue'
 import RoadmapQuestionPanel from '~/components/roadmaps/RoadmapQuestionPanel.vue'
+
+const RoadmapCompletedOverview = defineAsyncComponent({
+  loader: () => import('~/components/roadmaps/RoadmapCompletedOverview.vue'),
+  hydrate: hydrateOnVisible(),
+})
+const RoadmapFitProfileSection = defineAsyncComponent({
+  loader: () => import('~/components/roadmaps/RoadmapFitProfileSection.vue'),
+  hydrate: hydrateOnVisible(),
+})
+const RoadmapLearningSequence = defineAsyncComponent({
+  loader: () => import('~/components/roadmaps/RoadmapLearningSequence.vue'),
+  hydrate: hydrateOnVisible(),
+})
+const RoadmapInsightsSection = defineAsyncComponent({
+  loader: () => import('~/components/roadmaps/RoadmapInsightsSection.vue'),
+  hydrate: hydrateOnVisible(),
+})
 import { getErrorMessage } from '~/utils/api'
 import { useQuestionI18n } from '~/composables/useQuestionI18n'
 import type {
@@ -877,8 +895,7 @@ useSeoMeta({
     </section>
 
     <template v-if="isRoadmapsComplete">
-      <LazyRoadmapCompletedOverview
-        hydrate-on-visible
+      <RoadmapCompletedOverview
         :role-title="survey2RoleTitle"
         :personality-signal="displayPersonalitySignals[0]"
         :top-personality-pillars="topPersonalityPillars"
@@ -896,8 +913,7 @@ useSeoMeta({
         :is-thai="isThai"
       />
 
-      <LazyRoadmapFitProfileSection
-        hydrate-on-visible
+      <RoadmapFitProfileSection
         :overall-capability-score="overallCapabilityScore"
         :track-highlights="trackHighlights"
         :strongest-dimension-cards="strongestDimensionCards"
@@ -908,15 +924,13 @@ useSeoMeta({
         :is-thai="isThai"
       />
 
-      <LazyRoadmapLearningSequence
-        hydrate-on-visible
+      <RoadmapLearningSequence
         :topics="displayTopics"
         :topic-resources="topicResources"
         :is-thai="isThai"
       />
 
-      <LazyRoadmapInsightsSection
-        hydrate-on-visible
+      <RoadmapInsightsSection
         :strongest-dimension-cards="strongestDimensionCards"
         :growth-dimension-cards="growthDimensionCards"
         :is-thai="isThai"
