@@ -1,5 +1,6 @@
 import { computed } from 'vue'
 import type { Ref } from 'vue'
+import { clamp } from '~/utils/roadmaps'
 import type { RadarDimension } from '~/utils/roadmaps'
 import type {
   RoadmapsCatalogDimension,
@@ -12,10 +13,6 @@ export type RoadmapQuestion = {
   prompt: string
   translations?: RoadmapsCatalogQuestion['translations']
   dimensionKey: string
-}
-
-export function clamp(value: number): number {
-  return Math.max(0, Math.min(1, value))
 }
 
 export function buildRoadmapQuestions(
