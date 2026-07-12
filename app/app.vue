@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import AppHeader from '~/components/layout/AppHeader.vue'
+import { useLocale } from '~/composables/useLocale'
 
 const route = useRoute()
+const { currentLanguage } = useLocale()
 
 const headerVariant = computed(() =>
   route.path.startsWith('/assessment/') && route.params.sessionId
@@ -10,6 +12,9 @@ const headerVariant = computed(() =>
 )
 
 useHead({
+  htmlAttrs: {
+    lang: currentLanguage,
+  },
   titleTemplate: '%s | CompetencyX',
   meta: [
     { name: 'theme-color', content: '#fbf6eb' },
