@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { motion } from 'motion-v'
 import { useCatalogApi } from '~/composables/useCatalogApi'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
 import { useLocale } from '~/composables/useLocale'
@@ -9,7 +8,6 @@ import type { Role } from '~~/shared/types/assessment'
 const { listRoles } = useCatalogApi()
 const { lastSessionId } = useAssessmentSession()
 const { isThai } = useLocale()
-const prefersReduced = useReducedMotion()
 const { lastSessionRoute, resumeLabel } = useLastSession({
   th: 'ทำเซสชันล่าสุดต่อ',
   en: 'Resume previous session',
@@ -41,11 +39,8 @@ useSeoMeta({
 
 <template>
   <main id="main-content" class="page-wrap">
-    <motion.section
-      class="grid gap-12 py-14 sm:py-16 lg:grid-cols-[1.05fr_0.85fr] lg:items-center lg:py-28 lg:min-h-[calc(88vh-8rem)]"
-      :initial="prefersReduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }"
-      :animate="{ opacity: 1, y: 0 }"
-      :transition="prefersReduced ? { duration: 0 } : { duration: 0.45 }"
+    <section
+      class="animate-fade-in-up grid gap-12 py-14 sm:py-16 lg:grid-cols-[1.05fr_0.85fr] lg:items-center lg:py-28 lg:min-h-[calc(88vh-8rem)]"
     >
       <div>
         <p class="eyebrow">{{ t.heroEyebrow }}</p>
@@ -147,7 +142,7 @@ useSeoMeta({
           </p>
         </div>
       </div>
-    </motion.section>
+    </section>
 
     <section id="how-it-works" class="section-band py-16 md:py-24 lg:py-28">
       <div class="flex flex-wrap items-end justify-between gap-6">

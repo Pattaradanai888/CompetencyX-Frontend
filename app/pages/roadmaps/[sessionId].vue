@@ -11,10 +11,6 @@ import {
 import type { RadarDimension } from '~/utils/roadmaps'
 import RoadmapGuidanceCard from '~/components/roadmaps/RoadmapGuidanceCard.vue'
 import RoadmapQuestionPanel from '~/components/roadmaps/RoadmapQuestionPanel.vue'
-import RoadmapCompletedOverview from '~/components/roadmaps/RoadmapCompletedOverview.vue'
-import RoadmapFitProfileSection from '~/components/roadmaps/RoadmapFitProfileSection.vue'
-import RoadmapLearningSequence from '~/components/roadmaps/RoadmapLearningSequence.vue'
-import RoadmapInsightsSection from '~/components/roadmaps/RoadmapInsightsSection.vue'
 import { getErrorMessage } from '~/utils/api'
 import { useQuestionI18n } from '~/composables/useQuestionI18n'
 import type {
@@ -881,7 +877,8 @@ useSeoMeta({
     </section>
 
     <template v-if="isRoadmapsComplete">
-      <RoadmapCompletedOverview
+      <LazyRoadmapCompletedOverview
+        hydrate-on-visible
         :role-title="survey2RoleTitle"
         :personality-signal="displayPersonalitySignals[0]"
         :top-personality-pillars="topPersonalityPillars"
@@ -899,7 +896,8 @@ useSeoMeta({
         :is-thai="isThai"
       />
 
-      <RoadmapFitProfileSection
+      <LazyRoadmapFitProfileSection
+        hydrate-on-visible
         :overall-capability-score="overallCapabilityScore"
         :track-highlights="trackHighlights"
         :strongest-dimension-cards="strongestDimensionCards"
@@ -910,13 +908,15 @@ useSeoMeta({
         :is-thai="isThai"
       />
 
-      <RoadmapLearningSequence
+      <LazyRoadmapLearningSequence
+        hydrate-on-visible
         :topics="displayTopics"
         :topic-resources="topicResources"
         :is-thai="isThai"
       />
 
-      <RoadmapInsightsSection
+      <LazyRoadmapInsightsSection
+        hydrate-on-visible
         :strongest-dimension-cards="strongestDimensionCards"
         :growth-dimension-cards="growthDimensionCards"
         :is-thai="isThai"
