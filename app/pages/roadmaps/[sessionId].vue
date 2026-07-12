@@ -12,6 +12,19 @@ import type { RadarDimension } from '~/utils/roadmaps'
 import { defineAsyncComponent, hydrateOnVisible } from 'vue'
 import RoadmapGuidanceCard from '~/components/roadmaps/RoadmapGuidanceCard.vue'
 import RoadmapQuestionPanel from '~/components/roadmaps/RoadmapQuestionPanel.vue'
+import { getErrorMessage } from '~/utils/api'
+import { useQuestionI18n } from '~/composables/useQuestionI18n'
+import type {
+  ApiError,
+  AssessmentSession,
+  PillarInsight,
+  Recommendation,
+  ResourceLink,
+  RoadmapTopic,
+  RoadmapsCatalogDimension,
+  RoadmapsCatalogQuestion,
+  RoadmapsScaleOption,
+} from '~~/shared/types/assessment'
 
 const RoadmapCompletedOverview = defineAsyncComponent({
   loader: () => import('~/components/roadmaps/RoadmapCompletedOverview.vue'),
@@ -29,19 +42,6 @@ const RoadmapInsightsSection = defineAsyncComponent({
   loader: () => import('~/components/roadmaps/RoadmapInsightsSection.vue'),
   hydrate: hydrateOnVisible(),
 })
-import { getErrorMessage } from '~/utils/api'
-import { useQuestionI18n } from '~/composables/useQuestionI18n'
-import type {
-  ApiError,
-  AssessmentSession,
-  PillarInsight,
-  Recommendation,
-  ResourceLink,
-  RoadmapTopic,
-  RoadmapsCatalogDimension,
-  RoadmapsCatalogQuestion,
-  RoadmapsScaleOption,
-} from '~~/shared/types/assessment'
 
 const route = useRoute('/roadmaps/[sessionId]')
 const sessionId = computed(() => route.params.sessionId as string)

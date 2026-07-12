@@ -4,6 +4,7 @@ import SessionOverview from '~/components/assessment/SessionOverview.vue'
 import { getErrorMessage } from '~/utils/api'
 import { isSessionComplete } from '~/utils/assessment'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
+import { useLocale } from '~/composables/useLocale'
 import type {
   AnswerSubmitPayload,
   ApiError,
@@ -131,7 +132,11 @@ const isAwaitingResolution = computed(() => {
   )
 })
 
-const isThai = computed(() => session.value?.language === 'th')
+const { isThai: globalIsThai, localeInitialized } = useLocale()
+const isThai = computed(() => {
+  if (localeInitialized.value) return globalIsThai.value
+  return session.value?.language === 'th'
+})
 
 useSeoMeta({
   title: computed(() =>
