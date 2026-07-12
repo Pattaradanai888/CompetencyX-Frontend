@@ -3,6 +3,11 @@ import { useRoadmapsApiClient } from '~/composables/useRoadmapsApiClient'
 import { useLocale } from '~/composables/useLocale'
 import type { AssessmentSession } from '~~/shared/types/assessment'
 
+// Deduplicates concurrent snapshot fetches when several components (e.g.
+// AppHeader and a page) mount this composable on the same page. Cleared once
+// resolved so a later page visit still refreshes the snapshot.
+let inflightSnapshotFetch: Promise<void> | null = null
+
 /**
  * Provides smart session-resumption helpers used across the landing page,
  * start page, and preferred-role gate.
@@ -22,8 +27,14 @@ export function useLastSession(
   const { getSession, lastSessionId } = useAssessmentSession()
   const { getRoadmapsState } = useRoadmapsApiClient()
   const { isThai } = useLocale()
-  const lastSessionSnapshot = ref<AssessmentSession | null>(null)
-  const survey2Completed = ref(false)
+  const lastSessionSnapshot = useState<AssessmentSession | null>(
+    'last-session-snapshot',
+    () => null,
+  )
+  const survey2Completed = useState<boolean>(
+    'last-session-survey2-completed',
+    () => false,
+  )
 
   const isSurvey2Complete = computed(() => survey2Completed.value)
 
@@ -52,20 +63,26 @@ export function useLastSession(
     return isThai.value ? resumeBtnKey.th : resumeBtnKey.en
   })
 
-  onMounted(async () => {
-    if (!lastSessionId.value) return
-    try {
-      lastSessionSnapshot.value = await getSession(lastSessionId.value)
-    } catch {
-      lastSessionSnapshot.value = null
-      return
-    }
-    try {
-      const s2 = await getRoadmapsState(lastSessionId.value)
-      survey2Completed.value = s2.completed === true
-    } catch {
-      survey2Completed.value = false
-    }
+  onMounted(() => {
+    const sessionId = lastSessionId.value
+    if (!sessionId || inflightSnapshotFetch) return
+
+    inflightSnapshotFetch = (async () => {
+      try {
+        lastSessionSnapshot.value = await getSession(sessionId)
+      } catch {
+        lastSessionSnapshot.value = null
+        return
+      }
+      try {
+        const s2 = await getRoadmapsState(sessionId)
+        survey2Completed.value = s2.completed === true
+      } catch {
+        survey2Completed.value = false
+      }
+    })().finally(() => {
+      inflightSnapshotFetch = null
+    })
   })
 
   return {
