@@ -9,6 +9,27 @@ import type { AssessmentSession } from '~~/shared/types/assessment'
 let inflightSnapshotFetch: Promise<void> | null = null
 
 /**
+ * Seed the last-session state from data a page already fetched in its
+ * useAsyncData handler (e.g. the roadmaps page loads both the session and the
+ * survey2 state), so useLastSession consumers such as AppHeader do not
+ * re-request the same endpoints after hydration. Call during setup.
+ */
+export function seedLastSessionState(
+  session: AssessmentSession | null,
+  survey2Completed?: boolean,
+) {
+  if (!session) return
+  useState<AssessmentSession | null>('last-session-snapshot', () => null).value =
+    session
+  if (survey2Completed !== undefined) {
+    useState<boolean>('last-session-survey2-completed', () => false).value =
+      survey2Completed
+    useState<string | null>('last-session-survey2-seeded-id', () => null).value =
+      session.id
+  }
+}
+
+/**
  * Provides smart session-resumption helpers used across the landing page,
  * start page, and preferred-role gate.
  *
@@ -24,7 +45,7 @@ export function useLastSession(
     en: 'Resume previous session',
   },
 ) {
-  const { getSession, lastSessionId } = useAssessmentSession()
+  const { getSession, lastSessionId, session } = useAssessmentSession()
   const { getRoadmapsState } = useRoadmapsApiClient()
   const { isThai } = useLocale()
   const lastSessionSnapshot = useState<AssessmentSession | null>(
@@ -34,6 +55,10 @@ export function useLastSession(
   const survey2Completed = useState<boolean>(
     'last-session-survey2-completed',
     () => false,
+  )
+  const survey2SeededId = useState<string | null>(
+    'last-session-survey2-seeded-id',
+    () => null,
   )
 
   const isSurvey2Complete = computed(() => survey2Completed.value)
@@ -67,18 +92,34 @@ export function useLastSession(
     const sessionId = lastSessionId.value
     if (!sessionId || inflightSnapshotFetch) return
 
+    // Reuse data the current page already fetched during SSR: the shared
+    // session state covers the snapshot, and pages that also loaded the
+    // survey2 state seed it via seedLastSessionState().
+    const hasSession =
+      lastSessionSnapshot.value?.id === sessionId ||
+      session.value?.id === sessionId
+    if (session.value?.id === sessionId) {
+      lastSessionSnapshot.value = session.value
+    }
+    const hasSurvey2 = survey2SeededId.value === sessionId
+    if (hasSession && hasSurvey2) return
+
     inflightSnapshotFetch = (async () => {
-      try {
-        lastSessionSnapshot.value = await getSession(sessionId)
-      } catch {
-        lastSessionSnapshot.value = null
-        return
+      if (!hasSession) {
+        try {
+          lastSessionSnapshot.value = await getSession(sessionId)
+        } catch {
+          lastSessionSnapshot.value = null
+          return
+        }
       }
-      try {
-        const s2 = await getRoadmapsState(sessionId)
-        survey2Completed.value = s2.completed === true
-      } catch {
-        survey2Completed.value = false
+      if (!hasSurvey2) {
+        try {
+          const s2 = await getRoadmapsState(sessionId)
+          survey2Completed.value = s2.completed === true
+        } catch {
+          survey2Completed.value = false
+        }
       }
     })().finally(() => {
       inflightSnapshotFetch = null

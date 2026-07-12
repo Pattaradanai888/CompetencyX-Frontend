@@ -1,6 +1,5 @@
 import type {
   AssessmentHistory,
-  AssessmentInsights,
   AssessmentResult,
 } from '~~/shared/types/assessment'
 
@@ -13,12 +12,6 @@ export function useAssessmentResults() {
     )
   }
 
-  async function getInsights(sessionId: string) {
-    return await apiFetch<AssessmentInsights>(
-      `/api/assessment-sessions/${sessionId}/insights/`,
-    )
-  }
-
   async function getHistory(sessionId: string) {
     return await apiFetch<AssessmentHistory>(
       `/api/assessment-sessions/${sessionId}/history/`,
@@ -27,7 +20,6 @@ export function useAssessmentResults() {
 
   return {
     getHistory,
-    getInsights,
     getResults,
   }
 }
