@@ -102,6 +102,12 @@ const axes = computed(() => {
 })
 
 const hasDimensions = computed(() => props.dimensions.length > 0)
+
+const viewBox = computed(() => {
+  const inset = 20
+  const vbSize = size - inset * 2
+  return `${inset} ${inset} ${vbSize} ${vbSize}`
+})
 </script>
 
 <template>
@@ -133,7 +139,7 @@ const hasDimensions = computed(() => props.dimensions.length > 0)
       class="overflow-hidden rounded-[1.5rem] border border-border-subtle bg-surface-muted px-3 py-4 md:px-5"
     >
       <div
-        class="mx-auto mb-4 flex w-full max-w-[22rem] items-center justify-between gap-3 rounded-full border border-border-subtle bg-surface-elevated px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-ink-soft"
+        class="mx-auto mb-4 flex w-full max-w-[30rem] items-center justify-between gap-3 rounded-full border border-border-subtle bg-surface-elevated px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-ink-soft"
       >
         <span>Survey 2 live blend</span>
         <span class="rounded-full bg-accent/14 px-2 py-1 text-accent">
@@ -141,8 +147,8 @@ const hasDimensions = computed(() => props.dimensions.length > 0)
         </span>
       </div>
       <svg
-        :viewBox="`0 0 ${size} ${size}`"
-        class="mx-auto h-auto w-full max-w-[22rem] md:max-w-[25rem]"
+        :viewBox="viewBox"
+        class="mx-auto h-auto w-full max-w-[36rem] md:max-w-[38rem]"
         role="img"
         aria-label="Roadmaps PSP and SDLC skill spider chart"
       >

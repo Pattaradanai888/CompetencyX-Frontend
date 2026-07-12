@@ -213,6 +213,11 @@ export interface RoadmapsCatalogDimension {
   label: string
   track: 'psp' | 'sdlc'
   low_score_action: string
+  translations?: {
+    th?: {
+      low_score_action?: string
+    }
+  }
 }
 
 export interface RoadmapsCatalogQuestion {

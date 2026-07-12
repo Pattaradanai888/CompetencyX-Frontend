@@ -231,7 +231,16 @@ export interface TrackHighlight {
 }
 
 export function formatPillarScore(pillar: PillarInsight): string {
-  return `${(pillar.normalized_score * 10).toFixed(1)}/10`
+  return pillar.normalized_score.toFixed(2)
+}
+
+export function cleanPillarLabel(label: string): string {
+  return label.replace(/^[A-Z]+\d+\s*[-–—]\s*/, '').trim()
+}
+
+export function pillarScoreMax(pillars: PillarInsight[]): number {
+  if (!pillars.length) return 0
+  return Math.max(...pillars.map((p) => p.normalized_score))
 }
 
 export function getRoadmapScaleLabel(

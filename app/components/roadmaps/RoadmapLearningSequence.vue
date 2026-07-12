@@ -6,6 +6,7 @@ const props = defineProps<{
   topics: RoadmapTopic[]
   topicResources: Map<number, ResourceLink[]>
   isThai: boolean
+  roleTitle?: string
 }>()
 
 const t = usePageI18n('roadmaps', () => props.isThai)
@@ -47,6 +48,14 @@ function getResourceTypeLabel(type: ResourceLink['type']): string {
   }
   return labels[type] ?? type
 }
+
+function searchUrl(topic: RoadmapTopic, engine: 'google' | 'youtube'): string {
+  const q = encodeURIComponent(`${topic.title} ${props.roleTitle ?? ''} tutorial`.trim())
+  if (engine === 'youtube') {
+    return `https://www.youtube.com/results?search_query=${q}`
+  }
+  return `https://www.google.com/search?q=${q}`
+}
 </script>
 
 <template>
@@ -77,7 +86,7 @@ function getResourceTypeLabel(type: ResourceLink['type']): string {
           {{ index + 1 }}
         </div>
 
-        <article class="paper-panel ml-5 md:ml-14">
+        <article :id="'topic-' + topic.id" class="paper-panel ml-5 md:ml-14">
           <div class="grid gap-5 p-6 md:grid-cols-[minmax(0,1fr)_auto] md:p-8">
             <div class="max-w-3xl">
               <div class="flex flex-wrap items-center gap-2">
@@ -135,6 +144,34 @@ function getResourceTypeLabel(type: ResourceLink['type']): string {
                   >{{ getResourceTypeLabel(link.type) }}</span
                 >
                 <span>{{ link.title }}</span>
+              </a>
+            </div>
+          </div>
+          <div
+            v-else
+            class="border-t border-border-subtle px-6 py-4 md:px-8"
+          >
+            <p
+              class="text-[11px] font-bold uppercase tracking-[0.08em] text-ink-soft"
+            >
+              {{ t.resources }}
+            </p>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <a
+                :href="searchUrl(topic, 'google')"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border-subtle bg-surface-card/50 px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-accent/30 hover:text-accent"
+              >
+                <span class="text-nowrap">🔍 Search {{ topic.title }}</span>
+              </a>
+              <a
+                :href="searchUrl(topic, 'youtube')"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border-subtle bg-surface-card/50 px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-accent/30 hover:text-accent"
+              >
+                ▶ YouTube
               </a>
             </div>
           </div>

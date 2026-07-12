@@ -239,7 +239,7 @@ export default {
     asIs: 'As-Is',
     toBe: 'To-Be',
     gapInsightCopy:
-      'Compare your current capability level against what the target role requires.',
+      'This compares your current knowledge and skills (As-Is) against what is typically expected for this role (To-Be). It shows you which areas need the most development — no technical background needed to understand the overview.',
     topGaps: 'Top gap areas',
     gapTopicsCount: 'topics to focus on next',
     capabilityMap: 'Capability map',
@@ -316,5 +316,8 @@ export default {
     labelWebsite: 'Website',
     labelRoadmap: 'Roadmap',
     labelFeed: 'Feed',
+    dimensionVsTarget: 'Dimension vs target',
+    yourLevel: 'Your level',
+    targetLabel: 'Target',
   },
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatPillarScore } from '~/utils/roadmaps'
+import { formatPillarScore, cleanPillarLabel } from '~/utils/roadmaps'
 import type { DimensionCard, TrackHighlight } from '~/utils/roadmaps'
 import type { PillarInsight } from '~~/shared/types/assessment'
 
@@ -8,13 +8,19 @@ const props = defineProps<{
   trackHighlights: TrackHighlight[]
   strongestDimensionCards: DimensionCard[]
   topPersonalityPillars: PillarInsight[]
-  personalityFitScoreDisplay: string
+  personalityFitRaw: number
   personalityFitNarrative: string
   hasRoleAnswers: boolean
   isThai: boolean
 }>()
 
 const t = usePageI18n('roadmaps', () => props.isThai)
+
+const leadingTrack = computed(() => {
+  if (props.trackHighlights.length < 2) return null
+  const [a, b] = props.trackHighlights
+  return a.average >= b.average ? a : b
+})
 </script>
 
 <template>
@@ -34,7 +40,7 @@ const t = usePageI18n('roadmaps', () => props.isThai)
         class="mt-10 grid gap-6"
         :class="{ 'xl:grid-cols-2': hasRoleAnswers }"
       >
-        <article class="paper-panel p-6 md:p-8">
+        <article class="paper-panel p-6 md:p-8 min-h-[320px]">
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p class="eyebrow">{{ t.knowledgeFit }}</p>
@@ -58,7 +64,15 @@ const t = usePageI18n('roadmaps', () => props.isThai)
             {{ t.knowledgeFitCopy }}
           </p>
 
-          <div class="mt-8 grid gap-4 sm:grid-cols-2">
+          <div
+            v-if="leadingTrack"
+            class="mt-6 inline-flex items-center gap-2 rounded-full border border-accent/15 bg-accent/8 px-3 py-1.5 text-xs font-semibold text-accent"
+          >
+            {{ isThai ? `${leadingTrack.label} นำในโปรไฟล์ของคุณ` : `${leadingTrack.label} leads your profile` }}
+            <span class="opacity-60">{{ leadingTrack.average }}%</span>
+          </div>
+
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
             <div
               v-for="track in trackHighlights"
               :key="track.key"
@@ -114,7 +128,7 @@ const t = usePageI18n('roadmaps', () => props.isThai)
           </div>
         </article>
 
-        <article v-if="hasRoleAnswers" class="paper-panel p-6 md:p-8">
+        <article v-if="hasRoleAnswers" class="paper-panel p-6 md:p-8 min-h-[320px]">
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p class="eyebrow">{{ t.personalityFit }}</p>
@@ -122,15 +136,17 @@ const t = usePageI18n('roadmaps', () => props.isThai)
                 {{ t.behavioralAlignment }}
               </h3>
             </div>
-            <div class="text-right">
-              <p class="data-value text-4xl font-bold text-ink">
-                {{ personalityFitScoreDisplay }}
-              </p>
-              <p
-                class="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft"
-              >
-                {{ t.profileCoherence }}
-              </p>
+            <div class="shrink-0">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold text-ink-soft whitespace-nowrap">{{ t.profileCoherence }}</span>
+                <span class="data-value text-lg font-bold text-ink">{{ personalityFitRaw.toFixed(2) }}<span class="text-xs font-normal text-ink-soft">/1</span></span>
+              </div>
+              <div class="mt-1 h-1.5 w-36 rounded-full bg-ink/8">
+                <div
+                  class="h-1.5 rounded-full bg-[linear-gradient(90deg,var(--color-blueprint),var(--color-accent))]"
+                  :style="{ width: `${(personalityFitRaw / 1) * 100}%` }"
+                />
+              </div>
             </div>
           </div>
 
@@ -148,7 +164,7 @@ const t = usePageI18n('roadmaps', () => props.isThai)
             <div v-for="pillar in topPersonalityPillars" :key="pillar.key">
               <div class="flex items-center justify-between gap-3">
                 <p class="text-sm font-semibold text-ink">
-                  {{ pillar.label }}
+                  {{ cleanPillarLabel(pillar.label) }}
                 </p>
                 <p class="data-value text-sm font-bold text-accent">
                   {{ formatPillarScore(pillar) }}

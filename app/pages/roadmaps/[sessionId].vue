@@ -2,7 +2,7 @@
 import { useAssessmentResults } from '~/composables/useAssessmentResults'
 import { useLocale } from '~/composables/useLocale'
 import { sortTopicsByDisplayOrder } from '~/utils/assessment'
-import { buildRoadmapsEvaluation, getRoadmapScaleLabel } from '~/utils/roadmaps'
+import { buildRoadmapsEvaluation, getRoadmapScaleLabel, cleanPillarLabel } from '~/utils/roadmaps'
 import {
   getRoadmapTopics,
   fetchTopicResources,
@@ -17,7 +17,6 @@ import { useQuestionI18n } from '~/composables/useQuestionI18n'
 import type {
   ApiError,
   AssessmentSession,
-  PillarInsight,
   Recommendation,
   ResourceLink,
   RoadmapTopic,
@@ -416,12 +415,6 @@ const phase2PromptContext = computed(() => {
   return t.value.promptContext
 })
 
-const readinessStatus = computed(() => {
-  if (overallCapabilityScore.value >= 78) return t.value.roleReady
-  if (overallCapabilityScore.value >= 58) return t.value.projectReady
-  return t.value.foundationBuilding
-})
-
 const TARGET_READINESS_SCORE = 78
 
 const capabilityGap = computed(() =>
@@ -566,61 +559,43 @@ watch(
   { immediate: true },
 )
 
-const displayPersonalitySignals = computed(() => {
-  if (evaluation.value.personalitySignals.length) {
-    return evaluation.value.personalitySignals
-  }
-
-  const roleName = survey2RoleTitle.value
-  return [
-    isThai.value
-      ? `โปรไฟล์ปัจจุบันถูกปรับเทียบกับทิศทาง ${roleName}`
-      : `Current profile is calibrated for ${roleName}.`,
-    isThai.value
-      ? 'คะแนน Survey 2 สะท้อนนิสัยการทำงานในมิติ PSP และ SDLC'
-      : `Survey 2 scores reflect execution habits across PSP and SDLC dimensions.`,
-    isThai.value
-      ? 'ใช้มิติคะแนนต่ำเป็นลำดับสำคัญในการพัฒนาถัดไป'
-      : 'Use low-scoring dimensions as immediate next-improvement priorities.',
-  ]
-})
-
 const personalityFitNarrative = computed(() => {
   const roleName = survey2RoleTitle.value
   const topThree = topPersonalityPillars.value.slice(0, 3)
-  const pillarSummary = topThree.length
-    ? isThai.value
-      ? `เสาหลักที่มีคะแนนสูงสุด: ${topThree.map((p) => `${p.label} ${(p.normalized_score * 10).toFixed(1)}/10`).join(', ')}`
-      : `Top profile pillars: ${topThree.map((p) => `${p.label} ${(p.normalized_score * 10).toFixed(1)}/10`).join(', ')}`
-    : isThai.value
-      ? 'ยังไม่มีข้อมูลเสาหลักบุคลิกภาพที่เพียงพอ'
-      : 'Not enough personality pillar data yet.'
+  const labels = topThree.map((p) => cleanPillarLabel(p.label))
 
-  const avgScore = personalityPillars.value.length
-    ? (
-        (personalityPillars.value.reduce(
-          (sum: number, p: PillarInsight) => sum + p.normalized_score,
-          0,
-        ) /
-          personalityPillars.value.length) *
-        10
-      ).toFixed(1)
-    : '0.0'
+  const pillarSummary =
+    topThree.length >= 2
+      ? isThai.value
+        ? `โปรไฟล์ของคุณเน้นไปที่ "${labels[0]}" โดยมี "${labels[1]}" เป็นองค์ประกอบเสริม`
+        : `Your profile leans most on "${labels[0]}", complemented by "${labels[1]}"`
+      : topThree.length === 1
+        ? isThai.value
+          ? `โปรไฟล์ของคุณถูกขับเคลื่อนโดย "${labels[0]}" เป็นหลัก`
+          : `Your profile is primarily driven by "${labels[0]}"`
+        : isThai.value
+          ? 'ยังไม่มีข้อมูลบุคลิกภาพที่เพียงพอ'
+          : 'Not enough personality data yet.'
 
-  const alignmentContext = isThai.value
-    ? `คะแนนความสอดคล้องบุคลิกภาพโดยรวมอยู่ที่ ${avgScore}/10`
-    : `Your overall personality alignment score is ${avgScore}/10`
+  const alignmentContext =
+    result.value?.role_alignment_status === 'aligned'
+      ? isThai.value
+        ? `รูปแบบนี้สอดคล้องกับทิศทางของ ${roleName} — จุดแข็งตามธรรมชาติของคุณตรงกับสิ่งที่บทบาทนี้ต้องการ`
+        : `This pattern aligns with the ${roleName} direction — your natural tendencies match what this role typically demands.`
+      : isThai.value
+        ? `รูปแบบนี้ยังมีจุดที่แตกต่างจากทิศทางของ ${roleName} — ใช้ข้อมูลนี้เป็นแนวทางในการปรับทิศทางการพัฒนา`
+        : `This pattern has some differences from the ${roleName} direction — use this as a guide for where to focus your growth.`
 
   const guidanceSummary =
     result.value?.role_alignment_status === 'aligned'
       ? isThai.value
-        ? `คะแนนระดับนี้บ่งชี้ว่าคุณมีความสอดคล้องกับทิศทาง ${roleName} พอสมควร ควรใช้คะแนนเสาหลักต่ำเป็นจุดเน้นในการพัฒนา`
-        : `This alignment level suggests reasonable consistency with the ${roleName} direction. Use lower-scoring pillars as development focus areas.`
+        ? 'เสริมจุดแข็งที่มีอยู่แล้วโดยต่อยอดจากเสาหลักที่โดดเด่น และใช้เสาหลักที่ต่ำกว่าเป็นพื้นที่พัฒนาใหม่'
+        : 'Build on existing momentum by doubling down on your strongest pillars while using lower ones as deliberate growth areas.'
       : isThai.value
-        ? `คะแนนระดับนี้บ่งชี้ว่ายังมีโอกาสสำรวจเพิ่มเติมก่อนตัดสินใจเลือกเส้นทาง ใช้เสาหลักที่ได้คะแนนต่ำเป็น feedback เพื่อปรับทิศทาง`
-        : `This suggests room to explore before locking a path. Use low-scoring pillars as directional feedback.`
+        ? 'ลองสำรวจว่าเสาหลักที่สูงของคุณสามารถปรับใช้กับบทบาทนี้ได้หรือไม่ หรือลองพิจารณาบทบาทอื่นที่สอดคล้องกับธรรมชาติของคุณมากกว่า'
+        : 'Explore whether your higher pillars could be applied to this direction, or consider other roles that may better fit your natural style.'
 
-  return `${pillarSummary}. ${alignmentContext}. ${guidanceSummary}`
+  return `${pillarSummary}. ${alignmentContext} ${guidanceSummary}`
 })
 
 const personalityPillars = computed(() => result.value?.pillar_profile ?? [])
@@ -676,40 +651,23 @@ const trackHighlights = computed(() => {
 })
 
 const strongestDimensionCards = computed(() =>
-  sortedDimensionsDesc.value.slice(0, 4).map((dimension) => ({
-    ...dimension,
-    percent: Math.round(dimension.value * 100),
-    description: isThai.value
-      ? 'คำตอบของคุณแสดงถึงความสามารถที่สม่ำเสมอในด้านนี้'
-      : 'Your responses reflect consistent strength in this area.',
-  })),
+  sortedDimensionsDesc.value.slice(0, 4).map((dimension) => {
+    const cat = catalogByKey.value.get(dimension.key)
+    return {
+      ...dimension,
+      percent: Math.round(dimension.value * 100),
+      description: isThai.value
+        ? (cat?.translations?.th?.low_score_action ?? 'คงไว้ซึ่งจุดแข็ง')
+        : (cat?.low_score_action ?? 'Consistent strength'),
+    }
+  }),
 )
 
-const growthDimensionCards = computed(() =>
-  [...sortedDimensionsDesc.value]
-    .reverse()
-    .slice(0, 4)
-    .map((dimension) => {
-      const cat = catalogByKey.value.get(dimension.key)
-      return {
-        ...dimension,
-        percent: Math.round(dimension.value * 100),
-        description: isThai.value
-          ? 'ให้ความสำคัญกับด้านนี้เพื่อเพิ่มความพร้อม'
-          : (cat?.low_score_action ??
-            'Focus on this area to improve overall readiness.'),
-      }
-    }),
-)
-
-const personalityFitScoreDisplay = computed(() => {
-  if (!personalityPillars.value.length) return '0/10'
-  const avg =
-    personalityPillars.value.reduce(
-      (sum: number, p: PillarInsight) => sum + p.normalized_score,
-      0,
-    ) / personalityPillars.value.length
-  return `${(avg * 10).toFixed(1)}/10`
+const personalityFitRaw = computed(() => {
+  if (!personalityPillars.value.length) return 0
+  return Math.max(
+    ...personalityPillars.value.map((p: PillarInsight) => p.normalized_score),
+  )
 })
 
 async function submitRoadmaps() {
@@ -897,13 +855,10 @@ useSeoMeta({
     <template v-if="isRoadmapsComplete">
       <RoadmapCompletedOverview
         :role-title="survey2RoleTitle"
-        :personality-signal="displayPersonalitySignals[0]"
-        :top-personality-pillars="topPersonalityPillars"
-        :personality-fit-score-display="personalityFitScoreDisplay"
         :overall-capability-score="overallCapabilityScore"
-        :readiness-status="readinessStatus"
         :recalculated-strengths="recalculatedStrengths"
         :recalculated-growth-areas="recalculatedGrowthAreas"
+        :strongest-dimension-cards="strongestDimensionCards"
         :target-score="TARGET_READINESS_SCORE"
         :is-at-target="isAtTarget"
         :capability-gap="capabilityGap"
@@ -918,7 +873,7 @@ useSeoMeta({
         :track-highlights="trackHighlights"
         :strongest-dimension-cards="strongestDimensionCards"
         :top-personality-pillars="topPersonalityPillars"
-        :personality-fit-score-display="personalityFitScoreDisplay"
+        :personality-fit-raw="personalityFitRaw"
         :personality-fit-narrative="personalityFitNarrative"
         :has-role-answers="hasRoleAnswers"
         :is-thai="isThai"
@@ -928,13 +883,9 @@ useSeoMeta({
         :topics="displayTopics"
         :topic-resources="topicResources"
         :is-thai="isThai"
+        :role-title="survey2RoleTitle"
       />
 
-      <RoadmapInsightsSection
-        :strongest-dimension-cards="strongestDimensionCards"
-        :growth-dimension-cards="growthDimensionCards"
-        :is-thai="isThai"
-      />
     </template>
   </main>
 </template>
