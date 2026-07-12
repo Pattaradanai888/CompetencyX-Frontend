@@ -9,9 +9,6 @@ export default {
 
     heroFooter:
       'Designed for students navigating 11+ software engineering paths.',
-    livePreview: 'Live pathway preview',
-    previewFormula: 'Discovery signal + skill signal = career roadmap',
-    adaptive: 'Adaptive',
     howItWorks: 'How it works',
     twoAssessments: 'Two assessments, one usable direction.',
     howItWorksSub:
@@ -21,39 +18,10 @@ export default {
     roleFamiliesTitle: 'Software roles overview',
     roleFamiliesSub:
       'Each role path focuses on different problem types, workflows, and technical depth. Pick the one that aligns with how you prefer to think and build.',
-    processTitle: 'Assessment process',
-    processSub: 'From uncertainty to roadmap.',
-    rolePreviewTitle: 'Role preview',
-    rolePreviewSub: 'Preview the paths you can calibrate against.',
     openOnboarding: 'Open onboarding',
     faqTitle: 'FAQ',
     faqSub: 'Clear before you begin.',
     faqIntro: 'Common questions before starting the assessment flow.',
-    footerSub: 'Career discovery and skill roadmaps for software students.',
-    beginAssessment: 'Begin assessment',
-    startNow: 'Start now',
-    processSteps: [
-      {
-        eyebrow: 'Phase 1',
-        title: 'Role discovery',
-        copy: 'Personality, work-style, and preference prompts reveal the software roles that fit how you naturally solve problems.',
-      },
-      {
-        eyebrow: 'Decision point',
-        title: 'Choose or confirm a path',
-        copy: 'Students who already know their target role can skip discovery and move directly into skill assessment.',
-      },
-      {
-        eyebrow: 'Phase 2',
-        title: 'Skill calibration',
-        copy: 'Role-aware technical questions map your current level, confidence, and priority gaps.',
-      },
-      {
-        eyebrow: 'Outcome',
-        title: 'Roadmap dashboard',
-        copy: 'Results turn into a focused learning plan with next topics, suggested projects, and readiness signals.',
-      },
-    ],
     studentBenefits: [
       'Turns vague interest into a concrete role direction',
       'Separates personality fit from current technical readiness',
@@ -63,56 +31,48 @@ export default {
     roleFamilies: [
       {
         name: 'Frontend',
-        icon: '🎨',
         description: 'Interfaces, React, responsive systems',
         details:
           'Best for students who enjoy user experience, visual polish, and turning product ideas into interactive pages.',
       },
       {
         name: 'Backend',
-        icon: '⚙️',
         description: 'APIs, databases, authentication',
         details:
           'Focused on service logic, data reliability, and the server-side foundations that power applications.',
       },
       {
         name: 'Full Stack',
-        icon: '🥞',
         description: 'End-to-end product engineering',
         details:
           'Balances frontend and backend responsibilities for complete feature delivery across the stack.',
       },
       {
         name: 'Mobile',
-        icon: '📱',
         description: 'iOS, Android, cross-platform apps',
         details:
           'Ideal for building app-first experiences with performance, device capabilities, and touch UX in mind.',
       },
       {
         name: 'DevOps',
-        icon: '☁️',
         description: 'Deployment, automation, reliability',
         details:
           'Centers on CI/CD, infrastructure, observability, and stable software delivery in production.',
       },
       {
         name: 'Data',
-        icon: '📊',
         description: 'Pipelines, analytics, machine learning',
         details:
           'For students who like transforming raw data into clear metrics, models, and business decisions.',
       },
       {
         name: 'QA',
-        icon: '🛡️',
         description: 'Quality strategy and test automation',
         details:
           'Emphasizes defect prevention, test design, automation, and confidence before release.',
       },
       {
         name: 'Product',
-        icon: '📦',
         description: 'Discovery, prioritization, delivery',
         details:
           'For coordinating user value, scope decisions, and iterative outcomes across cross-functional teams.',
@@ -122,56 +82,46 @@ export default {
       {
         title: 'Start path',
         copy: 'Choose known role or open discovery',
-        icon: '◎',
       },
       {
         title: 'Survey 1',
         copy: 'Answer preference and personality prompts',
-        icon: '◉',
       },
       {
         title: 'Role match',
         copy: 'Review primary role and alternatives',
-        icon: '◈',
       },
       {
         title: 'Survey 2',
         copy: 'Complete role-aware skill assessment',
-        icon: '◍',
       },
       {
         title: 'Roadmap',
         copy: 'Get project-ready action plan and next steps',
-        icon: '◆',
       },
     ],
     faqs: [
       {
-        icon: '⏭️',
         question: 'Can I skip the personality assessment?',
         answer:
           'Yes. If you already know your preferred role, select it during onboarding and continue directly into the skill-focused path.',
       },
       {
-        icon: '🎯',
         question: 'Is this only for beginners?',
         answer:
           'No. The flow works for students who are exploring roles and for students who already have experience but need a clearer roadmap.',
       },
       {
-        icon: '🗺️',
         question: 'What do I get at the end?',
         answer:
           'You get a role-fit read, skill breakdown, gap topics, and a roadmap that turns the result into concrete next steps.',
       },
       {
-        icon: '🔁',
         question: 'Can I retake the assessment later?',
         answer:
           'Yes. You can restart the flow as your skills evolve and compare your newer roadmap against previous results.',
       },
       {
-        icon: '🧾',
         question: 'Will this replace my portfolio?',
         answer:
           'No. It complements your portfolio by helping you prioritize what to build next and which skill gaps to close first.',
