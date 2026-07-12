@@ -105,24 +105,34 @@ const leadingTrack = computed(() => {
             </div>
           </div>
 
-          <div class="mt-8 space-y-4">
-            <div
-              v-for="dimension in strongestDimensionCards.slice(0, 3)"
-              :key="dimension.key"
+          <div class="mt-8">
+            <h4
+              class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
             >
-              <div class="flex items-center justify-between gap-3">
-                <p class="text-sm font-semibold text-ink">
-                  {{ dimension.label }}
-                </p>
-                <p class="data-value text-sm font-bold text-accent">
-                  {{ dimension.percent }}%
-                </p>
-              </div>
-              <div class="mt-2 h-2 rounded-full bg-ink/8">
-                <div
-                  class="h-2 rounded-full bg-[linear-gradient(90deg,var(--color-blueprint),var(--color-accent))]"
-                  :style="{ width: `${dimension.percent}%` }"
-                />
+              {{ t.strongestDimensions }}
+            </h4>
+            <p class="mt-1 text-xs leading-6 text-ink-soft">
+              {{ t.strongestDimensionsCopy }}
+            </p>
+            <div class="mt-4 space-y-4">
+              <div
+                v-for="dimension in strongestDimensionCards.slice(0, 3)"
+                :key="dimension.key"
+              >
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-sm font-semibold text-ink">
+                    {{ dimension.label }}
+                  </p>
+                  <p class="data-value text-sm font-bold text-accent">
+                    {{ dimension.percent }}%
+                  </p>
+                </div>
+                <div class="mt-2 h-2 rounded-full bg-ink/8">
+                  <div
+                    class="h-2 rounded-full bg-[linear-gradient(90deg,var(--color-blueprint),var(--color-accent))]"
+                    :style="{ width: `${dimension.percent}%` }"
+                  />
+                </div>
               </div>
             </div>
           </div>

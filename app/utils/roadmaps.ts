@@ -81,8 +81,18 @@ function summarizeDimensions(dimensions: RadarDimension[]) {
   const ordered = [...dimensions].sort(
     (left, right) => right.value - left.value,
   )
-  const strengths = ordered.slice(0, 3).map((item) => item.label)
-  const growthAreas = ordered.slice(-3).map((item) => item.label)
+  const STRENGTH_THRESHOLD = 0.7
+  const GAP_THRESHOLD = 0.5
+  const above = ordered.filter((d) => d.value >= STRENGTH_THRESHOLD)
+  const below = ordered.filter((d) => d.value < GAP_THRESHOLD)
+  const strengths =
+    above.length > 0
+      ? above.map((item) => item.label)
+      : ordered.slice(0, 1).map((item) => item.label)
+  const growthAreas =
+    below.length > 0
+      ? below.map((item) => item.label)
+      : ordered.slice(-1).map((item) => item.label)
   return { strengths, growthAreas }
 }
 

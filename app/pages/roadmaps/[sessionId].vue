@@ -37,10 +37,6 @@ const RoadmapLearningSequence = defineAsyncComponent({
   loader: () => import('~/components/roadmaps/RoadmapLearningSequence.vue'),
   hydrate: hydrateOnVisible(),
 })
-const RoadmapInsightsSection = defineAsyncComponent({
-  loader: () => import('~/components/roadmaps/RoadmapInsightsSection.vue'),
-  hydrate: hydrateOnVisible(),
-})
 
 const route = useRoute('/roadmaps/[sessionId]')
 const sessionId = computed(() => route.params.sessionId as string)
@@ -324,16 +320,24 @@ watch(
   { immediate: true },
 )
 
-const recalculatedStrengths = computed(() =>
-  sortedDimensionsDesc.value.slice(0, 3).map((item) => item.label),
-)
+const STRENGTH_THRESHOLD = 0.7
+const GAP_THRESHOLD = 0.5
 
-const recalculatedGrowthAreas = computed(() =>
-  [...sortedDimensionsDesc.value]
-    .reverse()
-    .slice(0, 3)
-    .map((item) => item.label),
-)
+const recalculatedStrengths = computed(() => {
+  const above = sortedDimensionsDesc.value.filter(
+    (d) => d.value >= STRENGTH_THRESHOLD,
+  )
+  if (above.length > 0) return above.map((item) => item.label)
+  return sortedDimensionsDesc.value.slice(0, 1).map((item) => item.label)
+})
+
+const recalculatedGrowthAreas = computed(() => {
+  const below = sortedDimensionsDesc.value.filter(
+    (d) => d.value < GAP_THRESHOLD,
+  )
+  if (below.length > 0) return below.map((item) => item.label)
+  return sortedDimensionsDesc.value.slice(-1).map((item) => item.label)
+})
 
 const overallCapabilityScore = computed(() => {
   if (!blendedDimensions.value.length) return 0
@@ -342,6 +346,47 @@ const overallCapabilityScore = computed(() => {
     0,
   )
   return Math.round((total / blendedDimensions.value.length) * 100)
+})
+
+const DIMENSION_KEYWORDS: Record<string, string[]> = {
+  'psp-planning': ['planning', 'estimation'],
+  'psp-quality': ['quality', 'defect', 'review'],
+  'sdlc-requirements': ['requirement', 'analysis'],
+  'sdlc-design': ['design', 'architecture'],
+  'sdlc-development': ['coding', 'development', 'implementation'],
+  'sdlc-testing': ['testing', 'qa'],
+  'sdlc-deployment': ['deploy', 'release', 'delivery'],
+  'sdlc-maintenance': ['maintenance', 'support', 'operations'],
+}
+
+const survey2PrioritizedTopics = computed(() => {
+  if (!displayTopics.value.length) return []
+
+  const bottomKeys = new Set(
+    [...sortedDimensionsDesc.value]
+      .reverse()
+      .slice(0, recalculatedGrowthAreas.value.length)
+      .map((d) => d.key),
+  )
+
+  const weakKeywords = new Set<string>()
+  for (const key of bottomKeys) {
+    for (const kw of DIMENSION_KEYWORDS[key] ?? []) {
+      weakKeywords.add(kw)
+    }
+  }
+
+  const matching: RoadmapTopic[] = []
+  const rest: RoadmapTopic[] = []
+  for (const topic of displayTopics.value) {
+    const text = `${topic.title} ${topic.slug ?? ''}`.toLowerCase()
+    if ([...weakKeywords].some((kw) => text.includes(kw))) {
+      matching.push(topic)
+    } else {
+      rest.push(topic)
+    }
+  }
+  return [...matching, ...rest]
 })
 
 const roadmapsProgressPercent = computed(() => {
@@ -863,6 +908,7 @@ useSeoMeta({
         :is-at-target="isAtTarget"
         :capability-gap="capabilityGap"
         :display-topics="displayTopics"
+        :priority-topics="survey2PrioritizedTopics"
         :blended-dimensions="blendedDimensions"
         :has-role-answers="hasRoleAnswers"
         :is-thai="isThai"

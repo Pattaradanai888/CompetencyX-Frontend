@@ -12,6 +12,7 @@ const props = defineProps<{
   isAtTarget: boolean
   capabilityGap: number
   displayTopics: RoadmapTopic[]
+  priorityTopics: RoadmapTopic[]
   blendedDimensions: RadarDimension[]
   strongestDimensionCards: DimensionCard[]
   hasRoleAnswers: boolean
@@ -56,7 +57,7 @@ function scrollToTopic(topicId: number) {
     <div class="mt-8 grid gap-5 items-start xl:grid-cols-[1.3fr_1fr]">
       <!-- Left column -->
       <div class="flex flex-col gap-5 self-start">
-        <div v-if="hasRoleAnswers">
+        <div v-if="hasRoleAnswers || overallCapabilityScore > 0">
           <article class="paper-panel flex flex-col p-5">
             <p class="eyebrow">{{ t.overallReadiness }}</p>
             <div class="mt-3 flex flex-1 flex-col justify-center">
@@ -109,10 +110,7 @@ function scrollToTopic(topicId: number) {
             {{ isThai ? 'คิดง่าย ๆ: "ปัจจุบัน" คือสิ่งที่คุณรู้อยู่แล้ว "เป้าหมาย" คือสิ่งที่บทบาทนี้ต้องการ — ยิ่งช่องว่างน้อยเท่าไหร่ ยิ่งหมายความว่าคุณพร้อมมากขึ้น' : 'Think of it simply: "As-Is" is what you already know; "To-Be" is what this role looks for. The smaller the gap, the more ready you are.' }}
           </p>
 
-          <div
-            class="mt-4 grid gap-3"
-            :class="hasRoleAnswers ? '' : 'sm:grid-cols-2'"
-          >
+          <div class="mt-4 grid gap-3">
             <div
               class="rounded-xl border-l-4 border-l-blueprint bg-surface-card px-4 py-3"
             >
@@ -202,7 +200,7 @@ function scrollToTopic(topicId: number) {
                 class="mt-1 flex flex-wrap gap-1.5"
               >
                 <button
-                  v-for="topic in displayTopics.slice(0, 3)"
+                  v-for="topic in priorityTopics.slice(0, 3)"
                   :key="topic.id"
                   class="cursor-pointer rounded-full border border-border-subtle bg-surface-elevated/60 px-2 py-0.5 text-[11px] font-semibold text-ink-soft transition-colors hover:border-accent/40 hover:bg-accent/5 hover:text-accent"
                   @click="scrollToTopic(topic.id)"
@@ -254,6 +252,9 @@ function scrollToTopic(topicId: number) {
               <h3 class="mt-1 text-xs font-bold text-ink">
                 {{ t.strongestDimensions }}
               </h3>
+              <p class="mt-1 text-[11px] leading-5 text-ink-soft">
+                {{ t.strongestDimensionsCopy }}
+              </p>
             </div>
             <p class="data-value text-xs font-bold text-accent">
               {{ strongestDimensionCards.length }} {{ isThai ? 'ด้าน' : 'areas' }}
