@@ -18,6 +18,17 @@ export function clamp(value: number): number {
   return Math.max(0, Math.min(1, value))
 }
 
+export function buildRoadmapQuestions(
+  catalogQuestions: RoadmapsCatalogQuestion[] | undefined | null,
+): RoadmapQuestion[] {
+  return (catalogQuestions ?? []).map((question) => ({
+    id: question.id,
+    prompt: question.prompt,
+    translations: question.translations,
+    dimensionKey: question.dimension_key,
+  }))
+}
+
 export function normalizeRoadmapsAnswer(
   raw: number,
   answerScaleMin: number,

@@ -32,8 +32,12 @@ import type {
 const route = useRoute('/roadmaps/[sessionId]')
 const sessionId = computed(() => route.params.sessionId as string)
 const { getResults, getHistory } = useAssessmentResults()
-const { getRoadmapsCatalog, getRoadmapsState, saveRoadmapsState } =
-  useRoadmapsApiClient()
+const {
+  getRoadmapsCatalog,
+  getRoadmapsState,
+  getRoadmapsNextQuestion,
+  saveRoadmapsState,
+} = useRoadmapsApiClient()
 const toast = useToast()
 const { getSession } = useAssessmentSession()
 const prefersReduced = useReducedMotion()
@@ -68,7 +72,40 @@ const { data: _roadmapsData, refresh } = await useAsyncData(
         })),
       ],
     )
-    return { session, result, history, roadmapsCatalog, roadmapsState }
+    let initialQuestionId: string | null = null
+    if (!roadmapsState.completed) {
+      const questions = buildRoadmapQuestions(roadmapsCatalog?.questions)
+      const answers = { ...(roadmapsState.answers ?? {}) }
+      const unanswered = getUnansweredQuestions(questions, answers)
+
+      if (unanswered.length) {
+        try {
+          const response = await getRoadmapsNextQuestion(
+            sessionId.value,
+            answers,
+          )
+          initialQuestionId = response.next_question?.id ?? null
+        } catch {
+          const scaleValues = (roadmapsCatalog?.scale ?? []).map(
+            (option: RoadmapsScaleOption) => option.value,
+          )
+          const scaleMin = scaleValues.length ? Math.min(...scaleValues) : 1
+          const scaleMax = scaleValues.length ? Math.max(...scaleValues) : 5
+          initialQuestionId =
+            getBestLocalCandidate(unanswered, questions, answers, scaleMin, scaleMax)
+              ?.id ?? null
+        }
+      }
+    }
+
+    return {
+      session,
+      result,
+      history,
+      roadmapsCatalog,
+      roadmapsState,
+      initialQuestionId,
+    }
   },
 )
 
@@ -78,6 +115,7 @@ const _roadmapsSnapshot = _roadmapsData.value ?? {
   history: null,
   roadmapsCatalog: null,
   roadmapsState: null,
+  initialQuestionId: null,
 }
 const roadmapsCatalog = _roadmapsSnapshot.roadmapsCatalog
 const result = computed(
@@ -153,14 +191,9 @@ type RoadmapQuestion = {
   dimensionKey: string
 }
 
-const roadmapQuestions: RoadmapQuestion[] = (
-  roadmapsCatalog?.questions ?? []
-).map((question: RoadmapsCatalogQuestion) => ({
-  id: question.id,
-  prompt: question.prompt,
-  translations: question.translations,
-  dimensionKey: question.dimension_key,
-}))
+const roadmapQuestions: RoadmapQuestion[] = buildRoadmapQuestions(
+  roadmapsCatalog?.questions,
+)
 
 const answerScale = roadmapsCatalog?.scale ?? []
 const answerScaleValues = answerScale.map(
@@ -230,6 +263,10 @@ function setCurrentQuestionById(questionId: string | null) {
     (question) => question.id === questionId,
   )
   currentQuestionIndex.value = nextIndex === -1 ? 0 : nextIndex
+}
+
+if (!roadmapsState?.completed) {
+  setCurrentQuestionById(_roadmapsSnapshot.initialQuestionId ?? null)
 }
 
 const sortedDimensionsDesc = computed(() =>
@@ -744,12 +781,6 @@ async function goToNextQuestion() {
   void submitRoadmaps()
 }
 
-onMounted(async () => {
-  if (!roadmapsState?.completed) {
-    const nextQuestion = await pickNextQuestionWithRl()
-    setCurrentQuestionById(nextQuestion?.id ?? null)
-  }
-})
 
 onBeforeUnmount(() => {
   if (autoAdvanceTimer) {
