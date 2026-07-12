@@ -20,7 +20,39 @@ const pageError = ref<ApiError | null>(null)
 const toast = useToast()
 const questionShownAt = ref(Date.now())
 
-await useAsyncData(`assessment-session-${sessionId.value}`, loadSession)
+const { error: sessionError, refresh } = await useAsyncData(
+  () => `assessment-session-${sessionId.value}`,
+  async () => {
+    const nextSession = await getSession(sessionId.value)
+
+    if (isSessionComplete(nextSession)) {
+      await navigateTo(`/results/${nextSession.id}`)
+    }
+
+    return nextSession
+  },
+)
+
+watch(
+  sessionError,
+  (error) => {
+    if (!error) {
+      pageError.value = null
+      return
+    }
+
+    pageError.value = error as unknown as ApiError
+
+    if (import.meta.client) {
+      toast.add({
+        title: 'Could not load session',
+        description: getErrorMessage(pageError.value) ?? undefined,
+        color: 'error',
+      })
+    }
+  },
+  { immediate: true },
+)
 
 watch(
   () => session.value?.current_question?.id,
@@ -29,25 +61,6 @@ watch(
   },
   { immediate: true },
 )
-
-async function loadSession() {
-  pageError.value = null
-
-  try {
-    const nextSession = await getSession(sessionId.value)
-
-    if (isSessionComplete(nextSession)) {
-      await navigateTo(`/results/${nextSession.id}`)
-    }
-  } catch (error) {
-    pageError.value = error as ApiError
-    toast.add({
-      title: 'Could not load session',
-      description: getErrorMessage(error as ApiError) ?? undefined,
-      color: 'error',
-    })
-  }
-}
 
 type QuestionAnswerSelection =
   | { kind: 'option'; option: QuestionOption }
@@ -99,7 +112,7 @@ async function handleSelect(answer: QuestionAnswerSelection) {
     toast.add({ title: 'Could not save answer', color: 'error' })
 
     if ((error as ApiError).statusCode === 400) {
-      await loadSession()
+      await refresh()
     }
   }
 }
@@ -179,7 +192,7 @@ useSeoMeta({
             <button
               type="button"
               class="inline-flex items-center justify-center rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-accent-shadow transition hover:-translate-y-0.5 hover:bg-accent-hover"
-              @click="loadSession"
+              @click="refresh()"
             >
               <span
                 v-if="isSubmitting"
