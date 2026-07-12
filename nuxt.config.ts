@@ -4,6 +4,11 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   devtools: { enabled: true },
   modules: ['@nuxt/ui', '@nuxt/eslint', '@vueuse/nuxt', 'motion-v/nuxt'],
+  nitro: {
+    // Pre-compress static assets (JS/CSS/fonts) so the node server can serve
+    // gzip/brotli without a reverse proxy in front.
+    compressPublicAssets: true,
+  },
   fonts: {
     families: [
       { name: 'Anuphan', provider: 'google', weights: [400, 500, 700] },
