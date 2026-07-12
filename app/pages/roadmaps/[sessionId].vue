@@ -789,9 +789,14 @@ onBeforeUnmount(() => {
 })
 
 useSeoMeta({
-  title: 'CompetencyX | Roadmaps',
-  description:
-    'PSP and SDLC capability analysis with a personalized roadmap based on Survey 1 answers.',
+  title: computed(() =>
+    isThai.value ? 'CompetencyX | แผนเส้นทางพัฒนา' : 'CompetencyX | Roadmaps',
+  ),
+  description: computed(() =>
+    isThai.value
+      ? 'การวิเคราะห์ความสามารถด้าน PSP และ SDLC พร้อมแผนเส้นทางเฉพาะบุคคลจากคำตอบของแบบสำรวจแรก'
+      : 'PSP and SDLC capability analysis with a personalized roadmap based on Survey 1 answers.',
+  ),
 })
 </script>
 
