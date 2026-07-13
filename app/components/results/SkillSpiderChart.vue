@@ -6,6 +6,13 @@ const props = defineProps<{
   targetDimensions?: RadarDimension[]
 }>()
 
+const viewMode = ref<'as-is' | 'both' | 'to-be'>('both')
+
+const showAsIs = computed(() => viewMode.value !== 'to-be')
+const showToBe = computed(
+  () => viewMode.value !== 'as-is' && !!props.targetDimensions?.length,
+)
+
 const size = 520
 const center = size / 2
 const maxRadius = 132
@@ -94,10 +101,11 @@ const axes = computed(() => {
   return props.dimensions.map((item, index) => {
     const edge = toPoint(index, 1, total)
     const labelAnchor = toPoint(index, 1.18, total)
-    const node = toPoint(index, clampRatio(item.value), total)
+    const currentValue = clampRatio(item.value)
+    const node = toPoint(index, currentValue, total)
     const scoreAnchor = toPoint(
       index,
-      Math.max(0.16, clampRatio(item.value) - 0.1),
+      Math.max(0.16, currentValue - 0.1),
       total,
     )
     return {
@@ -112,6 +120,30 @@ const axes = computed(() => {
     }
   })
 })
+
+const targetAxes = computed(() => {
+  if (!props.targetDimensions?.length) return []
+  const total = props.targetDimensions.length || 1
+  return props.targetDimensions.map((item, index) => {
+    const targetValue = clampRatio(item.value)
+    const node = toPoint(index, targetValue, total)
+    const scoreAnchor = toPoint(
+      index,
+      Math.max(0.16, targetValue - 0.1),
+      total,
+    )
+    return {
+      ...item,
+      node,
+      scoreAnchor,
+      score: formatCapabilityScore(item.value),
+    }
+  })
+})
+
+const scoreColor = computed(() =>
+  viewMode.value === 'to-be' ? 'var(--color-accent)' : 'var(--color-blueprint)',
+)
 
 const hasDimensions = computed(() => props.dimensions.length > 0)
 
@@ -146,21 +178,7 @@ const viewBox = computed(() => {
         {{ Math.round(step * scaleMax) }}
       </span>
     </div>
-    <div
-      v-if="props.targetDimensions?.length"
-      class="mb-4 flex flex-wrap items-center gap-4 text-[0.68rem] font-semibold"
-    >
-      <span class="flex items-center gap-1.5">
-        <span class="inline-block h-2.5 w-2.5 rounded-full bg-accent" />
-        As-Is
-      </span>
-      <span class="flex items-center gap-1.5">
-        <span
-          class="inline-block h-2.5 w-2.5 rounded-full border-2 border-blueprint"
-        />
-        To-Be
-      </span>
-    </div>
+
     <div
       v-if="hasDimensions"
       class="overflow-hidden rounded-[1.5rem] border border-border-subtle bg-surface-muted px-3 py-4 md:px-5"
@@ -179,6 +197,39 @@ const viewBox = computed(() => {
         role="img"
         aria-label="Roadmaps PSP and SDLC skill spider chart"
       >
+        <foreignObject
+          v-if="props.targetDimensions?.length"
+          x="170"
+          y="25"
+          width="180"
+          height="36"
+        >
+          <div
+            class="flex flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-border-subtle bg-surface-card p-1 text-[0.68rem] font-semibold"
+          >
+            <button
+              class="rounded-xl px-3 py-1.5 transition-colors"
+              :class="viewMode === 'as-is' ? 'bg-accent/12 text-accent' : 'text-ink-soft hover:text-ink'"
+              @click="viewMode = 'as-is'"
+            >
+              As-Is
+            </button>
+            <button
+              class="rounded-xl px-3 py-1.5 transition-colors"
+              :class="viewMode === 'both' ? 'bg-accent/12 text-accent' : 'text-ink-soft hover:text-ink'"
+              @click="viewMode = 'both'"
+            >
+              Both
+            </button>
+            <button
+              class="rounded-xl px-3 py-1.5 transition-colors"
+              :class="viewMode === 'to-be' ? 'bg-accent/12 text-accent' : 'text-ink-soft hover:text-ink'"
+              @click="viewMode = 'to-be'"
+            >
+              To-Be
+            </button>
+          </div>
+        </foreignObject>
         <g>
           <polygon
             v-for="step in ringSteps"
@@ -211,33 +262,35 @@ const viewBox = computed(() => {
         </g>
 
         <polygon
+          v-if="showAsIs"
           :points="polygonPoints"
           fill="var(--chart-fill)"
-          stroke="var(--color-accent)"
+          stroke="var(--color-blueprint)"
           stroke-width="2"
         />
 
         <polygon
-          v-if="targetPolygonPoints"
+          v-if="showToBe"
           :points="targetPolygonPoints"
           fill="none"
-          stroke="var(--color-blueprint)"
+          stroke="var(--color-accent)"
           stroke-width="2"
           stroke-dasharray="5,4"
           opacity="0.7"
         />
 
         <circle
+          v-if="showAsIs"
           v-for="axis in axes"
           :key="`node-${axis.key}`"
           :cx="axis.node.x"
           :cy="axis.node.y"
           r="4"
-          fill="var(--color-accent)"
+          fill="var(--color-blueprint)"
         />
 
         <circle
-          v-if="props.targetDimensions?.length"
+          v-if="showToBe"
           v-for="(_, index) in props.targetDimensions"
           :key="`target-node-${index}`"
           :cx="
@@ -247,20 +300,22 @@ const viewBox = computed(() => {
             toPoint(index, clampRatio(props.targetDimensions[index].value), props.targetDimensions.length).y
           "
           r="3"
-          fill="var(--color-blueprint)"
+          fill="none"
+          stroke="var(--color-accent)"
+          stroke-width="2"
           opacity="0.7"
         />
 
         <g>
           <text
-            v-for="axis in axes"
+            v-for="axis in viewMode === 'to-be' ? targetAxes : axes"
             :key="`score-${axis.key}`"
             :x="axis.scoreAnchor.x"
             :y="axis.scoreAnchor.y"
             text-anchor="middle"
             dominant-baseline="middle"
             font-size="11"
-            fill="var(--color-accent)"
+            :fill="scoreColor"
             font-weight="800"
           >
             {{ axis.score }}/10
