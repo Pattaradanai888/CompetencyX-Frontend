@@ -3,6 +3,7 @@ import type { RadarDimension } from '~/utils/roadmaps'
 
 const props = defineProps<{
   dimensions: RadarDimension[]
+  targetDimensions?: RadarDimension[]
 }>()
 
 const size = 520
@@ -77,6 +78,17 @@ const polygonPoints = computed(() => {
     .join(' ')
 })
 
+const targetPolygonPoints = computed(() => {
+  if (!props.targetDimensions?.length) return ''
+  const total = props.targetDimensions.length || 1
+  return props.targetDimensions
+    .map((item, index) => {
+      const point = toPoint(index, clampRatio(item.value), total)
+      return `${point.x},${point.y}`
+    })
+    .join(' ')
+})
+
 const axes = computed(() => {
   const total = props.dimensions.length || 1
   return props.dimensions.map((item, index) => {
@@ -135,6 +147,21 @@ const viewBox = computed(() => {
       </span>
     </div>
     <div
+      v-if="props.targetDimensions?.length"
+      class="mb-4 flex flex-wrap items-center gap-4 text-[0.68rem] font-semibold"
+    >
+      <span class="flex items-center gap-1.5">
+        <span class="inline-block h-2.5 w-2.5 rounded-full bg-accent" />
+        As-Is
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span
+          class="inline-block h-2.5 w-2.5 rounded-full border-2 border-blueprint"
+        />
+        To-Be
+      </span>
+    </div>
+    <div
       v-if="hasDimensions"
       class="overflow-hidden rounded-[1.5rem] border border-border-subtle bg-surface-muted px-3 py-4 md:px-5"
     >
@@ -190,6 +217,16 @@ const viewBox = computed(() => {
           stroke-width="2"
         />
 
+        <polygon
+          v-if="targetPolygonPoints"
+          :points="targetPolygonPoints"
+          fill="none"
+          stroke="var(--color-blueprint)"
+          stroke-width="2"
+          stroke-dasharray="5,4"
+          opacity="0.7"
+        />
+
         <circle
           v-for="axis in axes"
           :key="`node-${axis.key}`"
@@ -197,6 +234,21 @@ const viewBox = computed(() => {
           :cy="axis.node.y"
           r="4"
           fill="var(--color-accent)"
+        />
+
+        <circle
+          v-if="props.targetDimensions?.length"
+          v-for="(_, index) in props.targetDimensions"
+          :key="`target-node-${index}`"
+          :cx="
+            toPoint(index, clampRatio(props.targetDimensions[index].value), props.targetDimensions.length).x
+          "
+          :cy="
+            toPoint(index, clampRatio(props.targetDimensions[index].value), props.targetDimensions.length).y
+          "
+          r="3"
+          fill="var(--color-blueprint)"
+          opacity="0.7"
         />
 
         <g>

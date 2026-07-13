@@ -29,11 +29,18 @@ function scrollToGapInsight() {
 }
 
 function scrollToTopic(topicId: number) {
-  const el = document.getElementById('topic-' + topicId)
+  const el = document.getElementById(`step-${topicId}`)
   if (el) {
     el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 }
+
+const targetPerDimension = computed<RadarDimension[]>(() =>
+  props.blendedDimensions.map((d) => ({
+    ...d,
+    value: props.targetScore / 100,
+  })),
+)
 </script>
 
 <template>
@@ -240,7 +247,10 @@ function scrollToTopic(topicId: number) {
             {{ t.mapCopy }}
           </p>
           <div class="mt-4">
-            <SkillSpiderChart :dimensions="blendedDimensions" />
+            <SkillSpiderChart
+              :dimensions="blendedDimensions"
+              :target-dimensions="targetPerDimension"
+            />
           </div>
         </article>
 
