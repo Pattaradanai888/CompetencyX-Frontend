@@ -133,6 +133,7 @@ const result = computed(
 const session = _roadmapsSnapshot.session
 const history = _roadmapsSnapshot.history
 const roadmapsState = _roadmapsSnapshot.roadmapsState
+seedLastSessionState(session, roadmapsState?.completed === true)
 const { isThai: globalIsThai, localeInitialized } = useLocale()
 const isThai = computed(() => {
   if (localeInitialized.value) return globalIsThai.value
@@ -310,15 +311,20 @@ async function loadTopicResources(topicId: number, topicTitle: string) {
   loadingResources.value = next
 }
 
-watch(
-  currentRoleSlug,
-  async (slug) => {
-    if (slug) {
-      roadmapShTopics.value = await getRoadmapTopics(slug)
-    }
-  },
-  { immediate: true },
-)
+// Client-only: fetches external roadmap.sh data (GitHub raw + a relative-URL
+// fallback that cannot run on the server); during SSR the result would be
+// discarded anyway since it lands in a plain ref.
+if (import.meta.client) {
+  watch(
+    currentRoleSlug,
+    async (slug) => {
+      if (slug) {
+        roadmapShTopics.value = await getRoadmapTopics(slug)
+      }
+    },
+    { immediate: true },
+  )
+}
 
 const STRENGTH_THRESHOLD = 0.7
 const GAP_THRESHOLD = 0.5
@@ -594,15 +600,19 @@ const displayTopics = computed<RoadmapTopic[]>(() =>
   }),
 )
 
-watch(
-  () => displayTopics.value,
-  (topics) => {
-    for (const t of topics) {
-      loadTopicResources(t.id, t.title)
-    }
-  },
-  { immediate: true },
-)
+// Client-only: per-topic resource links come from external roadmap.sh data
+// (see the currentRoleSlug watch above) and are only rendered after hydration.
+if (import.meta.client) {
+  watch(
+    () => displayTopics.value,
+    (topics) => {
+      for (const t of topics) {
+        loadTopicResources(t.id, t.title)
+      }
+    },
+    { immediate: true },
+  )
+}
 
 const personalityFitNarrative = computed(() => {
   const roleName = survey2RoleTitle.value
