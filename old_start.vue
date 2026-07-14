@@ -531,7 +531,7 @@ const t = computed(() => {
       emptyCatalog: 'ไม่พบตำแหน่งงานในระบบ',
       noRolesMatch: 'ไม่พบตำแหน่งงานที่ตรงกับคำค้นหา ลองล้างการค้นหาดู',
       preparingSession: 'กำลังเตรียมแบบประเมิน...',
-      startPhase2: 'เลือกตำแหน่งนี้และเริ่มประเมิน',
+      startSkillAssessment: 'เลือกตำแหน่งนี้และเริ่มประเมิน',
       chooseRoleToContinue: 'เลือกตำแหน่งเพื่อไปต่อ',
       settingUpQuestion: 'กำลังจัดเตรียมคำถามแรกของคุณ...',
       previewEyebrow: 'พรีวิวแผนการเรียนรู้',
@@ -572,7 +572,7 @@ const t = computed(() => {
     noRolesMatch:
       'No roles match the current search. Reset search or try a broader term.',
     preparingSession: 'Preparing your assessment...',
-    startPhase2: 'Select this role and start assessment',
+    startSkillAssessment: 'Select this role and start assessment',
     chooseRoleToContinue: 'Choose a role to continue',
     settingUpQuestion: 'Setting up your first question...',
     previewEyebrow: 'Roadmap preview',
@@ -695,7 +695,7 @@ const selectedRoleName = computed(
 
 const startButtonLabel = computed(() => {
   if (isSubmitting.value) return t.value.preparingSession
-  return selectedRole.value ? t.value.startPhase2 : t.value.chooseRoleToContinue
+  return selectedRole.value ? t.value.startSkillAssessment : t.value.chooseRoleToContinue
 })
 
 const canStart = computed(
@@ -750,14 +750,14 @@ async function handleStart() {
   }
 }
 
-const isSurvey2Complete = computed(() => {
+const isSkillAssessmentComplete = computed(() => {
   const profile = lastSessionSnapshot.value?.profile
   if (!profile) return false
-  const survey2 = (profile as Record<string, unknown>).survey2
+  const skillAssessment = (profile as Record<string, unknown>).skillAssessment
   return (
-    typeof survey2 === 'object' &&
-    survey2 !== null &&
-    (survey2 as Record<string, unknown>).completed === true
+    typeof skillAssessment === 'object' &&
+    skillAssessment !== null &&
+    (skillAssessment as Record<string, unknown>).completed === true
   )
 })
 
@@ -766,7 +766,7 @@ const lastSessionRoute = computed(() => {
   const snap = lastSessionSnapshot.value
   if (!snap) return `/assessment/${lastSessionId.value}`
 
-  if (isSurvey2Complete.value || snap.preferred_role)
+  if (isSkillAssessmentComplete.value || snap.preferred_role)
     return `/roadmaps/${lastSessionId.value}`
 
   if (snap.status === 'completed') return `/results/${lastSessionId.value}`
@@ -776,7 +776,7 @@ const lastSessionRoute = computed(() => {
 
 const resumeLabel = computed(() => {
   if (!lastSessionSnapshot.value) return t.value.resumeBtn
-  if (isSurvey2Complete.value) {
+  if (isSkillAssessmentComplete.value) {
     return isThai.value ? 'ดูผลลัพธ์เซสชันล่าสุด' : 'View last session result'
   }
   if (lastSessionSnapshot.value.status === 'completed') {

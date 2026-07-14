@@ -6,14 +6,14 @@ const {
   getSessionMock,
   getResultsMock,
   getHistoryMock,
-  getRoadmapsCatalogMock,
-  getRoadmapsStateMock,
+  getSkillAssessmentCatalogMock,
+  getSkillAssessmentStateMock,
 } = vi.hoisted(() => ({
   getSessionMock: vi.fn(),
   getResultsMock: vi.fn(),
   getHistoryMock: vi.fn(),
-  getRoadmapsCatalogMock: vi.fn(),
-  getRoadmapsStateMock: vi.fn(),
+  getSkillAssessmentCatalogMock: vi.fn(),
+  getSkillAssessmentStateMock: vi.fn(),
 }))
 
 mockNuxtImport('useRoute', () => () => ({
@@ -34,14 +34,14 @@ vi.mock('~/composables/useAssessmentResults', () => ({
   }),
 }))
 
-vi.mock('~/composables/useRoadmapsApiClient', () => ({
-  useRoadmapsApiClient: () => ({
-    getRoadmapsCatalog: getRoadmapsCatalogMock,
-    getRoadmapsNextQuestion: vi.fn().mockResolvedValue({
+vi.mock('~/composables/useSkillAssessmentApiClient', () => ({
+  useSkillAssessmentApiClient: () => ({
+    getSkillAssessmentCatalog: getSkillAssessmentCatalogMock,
+    getSkillAssessmentNextQuestion: vi.fn().mockResolvedValue({
       next_question: null,
     }),
-    getRoadmapsState: getRoadmapsStateMock,
-    saveRoadmapsState: vi.fn(),
+    getSkillAssessmentState: getSkillAssessmentStateMock,
+    saveSkillAssessmentState: vi.fn(),
   }),
 }))
 
@@ -163,7 +163,7 @@ describe('roadmaps page', () => {
       recommendations: [],
     })
 
-    getRoadmapsCatalogMock.mockResolvedValue({
+    getSkillAssessmentCatalogMock.mockResolvedValue({
       version: '1',
       scale: [
         { label: '1', value: 1 },
@@ -193,7 +193,7 @@ describe('roadmaps page', () => {
       ],
     })
 
-    getRoadmapsStateMock.mockResolvedValue({
+    getSkillAssessmentStateMock.mockResolvedValue({
       completed: true,
       answers: {},
       completed_at: '2026-04-17T04:05:00Z',
@@ -204,10 +204,9 @@ describe('roadmaps page', () => {
     const wrapper = await mountSuspended(RoadmapsPage)
 
     expect(wrapper.text()).toContain('Assessment complete')
-    expect(wrapper.text()).toContain('Personality result')
+    expect(wrapper.text()).toContain('Discovery result')
     expect(wrapper.text()).toContain('Knowledge + personality fit')
     expect(wrapper.text()).toContain('Recommended learning sequence')
-    expect(wrapper.text()).toContain('Additional insights and analytics')
     expect(wrapper.text()).toContain('Strength distribution')
     expect(wrapper.text()).toContain('API Design')
     expect(wrapper.text()).toContain('Auth Boundaries')

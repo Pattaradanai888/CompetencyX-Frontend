@@ -131,7 +131,7 @@ const selectedRoleName = computed(
 
 const startButtonLabel = computed(() => {
   if (isSubmitting.value) return t.value.preparingSession
-  return selectedRole.value ? t.value.startPhase2 : t.value.chooseRoleToContinue
+  return selectedRole.value ? t.value.startSkillAssessment : t.value.chooseRoleToContinue
 })
 
 const canStart = computed(

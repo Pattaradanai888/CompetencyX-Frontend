@@ -12,7 +12,7 @@ export default {
     howItWorks: 'How it works',
     twoAssessments: 'Two assessments, one usable direction.',
     howItWorksSub:
-      'Phase 1 helps students discover the role shape that fits their preferences. Phase 2 checks the technical skills needed for that role and produces a practical learning plan.',
+      'Role discovery helps students find the role shape that fits their preferences. Skill assessment checks the capabilities needed for that role and produces a practical learning plan.',
     whyStudents: 'Why students use it',
     lessGuessing: 'Less guessing. More evidence.',
     roleFamiliesTitle: 'Software roles overview',
@@ -84,7 +84,7 @@ export default {
         copy: 'Choose known role or open discovery',
       },
       {
-        title: 'Survey 1',
+        title: 'Role discovery',
         copy: 'Answer preference and personality prompts',
       },
       {
@@ -92,8 +92,8 @@ export default {
         copy: 'Review primary role and alternatives',
       },
       {
-        title: 'Survey 2',
-        copy: 'Complete role-aware skill assessment',
+        title: 'Skill assessment',
+        copy: 'Measure the capabilities behind your chosen role',
       },
       {
         title: 'Roadmap',
@@ -138,7 +138,7 @@ export default {
     noRolesMatch:
       'No roles match the current search. Reset search or try a broader term.',
     preparingSession: 'Preparing your assessment...',
-    startPhase2: 'Select this role and start assessment',
+    startSkillAssessment: 'Select this role and start skill assessment',
     chooseRoleToContinue: 'Choose a role to continue',
     settingUpQuestion: 'Setting up your first question...',
     previewEyebrow: 'Roadmap preview',
@@ -177,33 +177,33 @@ export default {
     noCopy:
       'Start with preference and work-style questions so the system can recommend your best-fit role.',
     yesAction: 'Choose a role',
-    noAction: 'Start survey page 1',
-    preparing: 'Preparing survey...',
+    noAction: 'Start role discovery',
+    preparing: 'Preparing role discovery...',
     footer:
       'You can restart later. This choice only affects the current onboarding session.',
-    errorTitle: 'Could not start survey',
+    errorTitle: 'Could not start role discovery',
   },
   results: {
     loadError: 'Could not load results',
-    startPhase2Error: 'Could not start Phase 2',
-    phaseComplete: 'Phase 1 complete',
+    startSkillAssessmentError: 'Could not start skill assessment',
+    phaseComplete: 'Role discovery complete',
     titleSuffix: 'looks like your strongest role direction.',
     primaryRole: 'Primary role',
     closeFit: 'Close fit',
     defaultSelection: 'Default selection',
     selected: 'Selected',
-    phase2WillStartWith: 'Phase 2 will start with',
+    skillAssessmentWillStartWith: 'Skill assessment will start with',
     selectPrimaryRole: 'Select primary role',
     useThisRole: 'Use this role instead',
-    assignment2: 'Assignment 2',
+    skillAssessment: 'Skill assessment',
     continueWith: 'Continue with',
     defaultPath:
       'Your recommended role is already prepared as the default path for the next assignment.',
     alternativePath:
       'You have selected an alternative software role for your skill assessment.',
     selectedRole: 'Selected role',
-    preparing: 'Preparing Assignment 2...',
-    continue: 'Continue to Assignment 2',
+    preparing: 'Preparing skill assessment...',
+    continue: 'Continue to skill assessment',
     fallbackRole: 'Recommended software role',
     fallbackDescription:
       'Your answers point toward this path as the clearest next direction.',
@@ -213,14 +213,14 @@ export default {
   },
   roadmaps: {
     backToHome: 'Back to Home',
-    backToSurvey1: 'Back to Survey 1 results',
+    backToRoleDiscovery: 'Back to role discovery results',
     session: 'Session',
     finalDashboard: 'Final result dashboard',
-    phase2Assessment: 'Phase 2 assessment',
+    skillAssessmentTitle: 'Skill assessment',
     readinessRoadmap: 'readiness roadmap',
     calibrateSkills: 'Calibrate the skills behind your recommended role',
     completeIntro:
-      'This profile blends your role discovery result with the Phase 2 skill assessment to map your current level, strongest signals, priority gaps, and next portfolio moves.',
+      'This profile blends your role discovery result with the skill assessment to map your current level, strongest signals, priority gaps, and next portfolio moves.',
     incompleteIntro:
       'Answer a short set of role-aware skill prompts. The full chart, roadmap, and recommendations stay hidden until this step is complete.',
     assessmentComplete: 'Assessment complete',
@@ -257,7 +257,7 @@ export default {
     capabilityAlignment: 'Capability alignment',
     currentReadiness: 'current readiness',
     knowledgeFitCopy:
-      'Your knowledge fit blends Survey 1 signals with Survey 2 execution evidence across PSP and SDLC dimensions.',
+      'Your knowledge fit blends role discovery signals with skill assessment evidence across PSP and SDLC dimensions.',
     strongest: 'Strongest',
     behavioralAlignment: 'Behavioral alignment',
     profileCoherence: 'profile coherence',

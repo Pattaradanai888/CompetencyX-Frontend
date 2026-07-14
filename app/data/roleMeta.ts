@@ -3,7 +3,7 @@
  * This data is frontend-only and supplements the API-driven `Role` records
  * with richer display metadata (responsibilities, work-style tags, etc.).
  *
- * NOTE: Role slugs here must match `GET /api/catalog/roles/` slugs from the
+ * NOTE: Role slugs here must match `GET /api/v1/catalog/roles/` slugs from the
  * backend. Unknown slugs fall back to `DEFAULT_ROLE_META` at runtime.
  */
 

@@ -186,7 +186,7 @@ const viewBox = computed(() => {
       <div
         class="mx-auto mb-4 flex w-full max-w-[30rem] items-center justify-between gap-3 rounded-full border border-border-subtle bg-surface-elevated px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-ink-soft"
       >
-        <span>Survey 2 live blend</span>
+        <span>Skill assessment live blend</span>
         <span class="rounded-full bg-accent/14 px-2 py-1 text-accent">
           {{ axes.length }} dimensions
         </span>
@@ -279,32 +279,34 @@ const viewBox = computed(() => {
           opacity="0.7"
         />
 
-        <circle
-          v-if="showAsIs"
-          v-for="axis in axes"
-          :key="`node-${axis.key}`"
-          :cx="axis.node.x"
-          :cy="axis.node.y"
-          r="4"
-          fill="var(--color-blueprint)"
-        />
+        <template v-if="showAsIs">
+          <circle
+            v-for="axis in axes"
+            :key="`node-${axis.key}`"
+            :cx="axis.node.x"
+            :cy="axis.node.y"
+            r="4"
+            fill="var(--color-blueprint)"
+          />
+        </template>
 
-        <circle
-          v-if="showToBe"
-          v-for="(_, index) in props.targetDimensions"
-          :key="`target-node-${index}`"
-          :cx="
-            toPoint(index, clampRatio(props.targetDimensions[index].value), props.targetDimensions.length).x
-          "
-          :cy="
-            toPoint(index, clampRatio(props.targetDimensions[index].value), props.targetDimensions.length).y
-          "
-          r="3"
-          fill="none"
-          stroke="var(--color-accent)"
-          stroke-width="2"
-          opacity="0.7"
-        />
+        <template v-if="showToBe">
+          <circle
+            v-for="(_, index) in props.targetDimensions"
+            :key="`target-node-${index}`"
+            :cx="
+              toPoint(index, clampRatio(props.targetDimensions[index].value), props.targetDimensions.length).x
+            "
+            :cy="
+              toPoint(index, clampRatio(props.targetDimensions[index].value), props.targetDimensions.length).y
+            "
+            r="3"
+            fill="none"
+            stroke="var(--color-accent)"
+            stroke-width="2"
+            opacity="0.7"
+          />
+        </template>
 
         <g>
           <text

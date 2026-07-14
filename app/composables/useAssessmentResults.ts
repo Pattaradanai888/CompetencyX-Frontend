@@ -8,13 +8,13 @@ export function useAssessmentResults() {
 
   async function getResults(sessionId: string) {
     return await apiFetch<AssessmentResult>(
-      `/api/assessment-sessions/${sessionId}/results/`,
+      `/api/v1/assessment-sessions/${sessionId}/results/`,
     )
   }
 
   async function getHistory(sessionId: string) {
     return await apiFetch<AssessmentHistory>(
-      `/api/assessment-sessions/${sessionId}/history/`,
+      `/api/v1/assessment-sessions/${sessionId}/history/`,
     )
   }
 

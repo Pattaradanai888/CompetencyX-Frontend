@@ -35,7 +35,7 @@ export function useAssessmentSession() {
 
   async function createSession(payload: SessionCreatePayload = {}) {
     const nextSession = await apiFetch<AssessmentSession>(
-      '/api/assessment-sessions/',
+      '/api/v1/assessment-sessions/',
       {
         method: 'POST',
         body: payload,
@@ -47,7 +47,7 @@ export function useAssessmentSession() {
 
   async function getSession(sessionId: string) {
     const nextSession = await apiFetch<AssessmentSession>(
-      `/api/assessment-sessions/${sessionId}/`,
+      `/api/v1/assessment-sessions/${sessionId}/`,
     )
     return rememberSession(nextSession)
   }
@@ -61,7 +61,7 @@ export function useAssessmentSession() {
 
     try {
       const nextSession = await apiFetch<AssessmentSession>(
-        `/api/assessment-sessions/${sessionId}/answers/`,
+        `/api/v1/assessment-sessions/${sessionId}/answers/`,
         {
           method: 'POST',
           body: payload,

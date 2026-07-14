@@ -5,7 +5,7 @@
 This document summarizes the current assessment API contract after the role-discovery refactor.
 
 - Backend base URL for local development: `http://localhost:8000`
-- Live schema endpoint: `GET /api/schema/`
+- Live schema endpoint: `GET /api/schema/` (application endpoints are under `/api/v1/`)
 - Swagger UI: `GET /api/schema/swagger-ui/`
 - Checked-in schema snapshot: [docs/openapi.json](/D:/Flook/SE/Personal%20Project/CompentencyX/docs/openapi.json)
 - Authentication: none currently required
@@ -15,14 +15,14 @@ The backend remains the source of truth for:
 - question selection
 - role-discovery progression
 - role resolution state
-- Survey 2 (PSP/SDLC self-rating) state
+- Skill assessment (PSP/SDLC self-rating) state
 - final recommendation output
 
 ## Main Contract Changes
 
 ### Lean session payloads
 
-`POST /api/assessment-sessions/`, `GET /api/assessment-sessions/{id}/`, and `POST /api/assessment-sessions/{id}/answers/` now return a lean session-state payload.
+`POST /api/v1/assessment-sessions/`, `GET /api/v1/assessment-sessions/{id}/`, and `POST /api/v1/assessment-sessions/{id}/answers/` now return a lean session-state payload.
 
 Fields included:
 
@@ -149,12 +149,12 @@ This means detailed role-fit analysis is available from:
 | `GET`  | `/api/assessment-sessions/{id}/insights/`              | Returns pillar profile and ranked-role analysis                       |
 | `GET`  | `/api/assessment-sessions/{id}/results/`               | Returns final recommendations, mastery, and analysis after completion |
 | `GET`  | `/api/assessment-sessions/{id}/history/`               | Returns answer and recommendation history after completion            |
-| `GET`  | `/api/assessment-sessions/{id}/survey2/`               | Returns saved Survey 2 state (`completed`, `answers`, `completed_at`) |
-| `POST` | `/api/assessment-sessions/{id}/survey2/`               | Replaces the whole Survey 2 answer set and completion state           |
-| `GET`  | `/api/assessment-sessions/{id}/survey2/catalog/`       | Returns the PSP/SDLC question catalog with role-aware guidance        |
-| `POST` | `/api/assessment-sessions/{id}/survey2/next-question/` | Returns the adaptively selected next Survey 2 question                |
+| `GET`  | `/api/v1/assessment-sessions/{id}/skill-assessment/`               | Returns saved skill assessment state (`completed`, `answers`, `completed_at`) |
+| `POST` | `/api/v1/assessment-sessions/{id}/skill-assessment/`               | Replaces the whole skill assessment answer set and completion state   |
+| `GET`  | `/api/v1/assessment-sessions/{id}/skill-assessment/catalog/`       | Returns the PSP/SDLC question catalog with role-aware guidance        |
+| `POST` | `/api/v1/assessment-sessions/{id}/skill-assessment/next-question/` | Returns the adaptively selected next skill assessment question        |
 
-Survey 2 state is stored in dedicated tables; the session `profile` field is free-form client data only and no longer carries a `survey2` key.
+Skill assessment state is stored in dedicated tables; the session `profile` field is free-form client data only and no longer carries a `skillAssessment` key.
 
 ## Role Discovery Notes
 
@@ -181,7 +181,7 @@ Important implications:
 - `role_alignment_status` remains `unknown` while the 46 core role questions are still in progress
 - the insights endpoint returns an empty `ranked_roles` list until the 46 core role questions are complete
 - after the 46th core role answer, the backend either resolves to one best-fit role or asks targeted tie-break questions
-- once role discovery completes the session enters `recommendation_ready`; Survey 2 is available at any time via its own endpoints
+- once role discovery completes the session enters `recommendation_ready`; skill assessment is available at any time via its own endpoints
 
 ### SWEBOK role metadata
 

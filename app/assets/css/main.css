@@ -1039,12 +1039,12 @@ button:focus-visible,
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
-.phase2-assessment-page {
+.skill-assessment-assessment-page {
   position: relative;
   isolation: isolate;
 }
 
-.phase2-assessment-page::before {
+.skill-assessment-assessment-page::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -1068,7 +1068,7 @@ button:focus-visible,
     );
 }
 
-.phase2-assessment-page::after {
+.skill-assessment-assessment-page::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -1083,8 +1083,8 @@ button:focus-visible,
   pointer-events: none;
 }
 
-.phase2-guidance-card,
-.phase2-panel {
+.skill-assessment-guidance-card,
+.skill-assessment-panel {
   border: 1px solid rgba(108, 87, 62, 0.12);
   background: linear-gradient(
     180deg,
@@ -1097,12 +1097,12 @@ button:focus-visible,
   backdrop-filter: blur(14px);
 }
 
-.phase2-guidance-card {
+.skill-assessment-guidance-card {
   border-radius: 1.75rem;
   padding: 1.45rem;
 }
 
-.phase2-guidance-card__toggle {
+.skill-assessment-guidance-card__toggle {
   display: flex;
   width: 100%;
   align-items: flex-start;
@@ -1111,7 +1111,7 @@ button:focus-visible,
   text-align: left;
 }
 
-.phase2-guidance-card__label {
+.skill-assessment-guidance-card__label {
   color: var(--color-warm);
   font-size: 0.72rem;
   font-weight: 700;
@@ -1119,7 +1119,7 @@ button:focus-visible,
   text-transform: uppercase;
 }
 
-.phase2-guidance-card__title {
+.skill-assessment-guidance-card__title {
   margin-top: 0.8rem;
   font-family: 'Prompt', sans-serif;
   font-size: clamp(2rem, 3vw, 2.85rem);
@@ -1127,14 +1127,14 @@ button:focus-visible,
   color: var(--color-ink);
 }
 
-.phase2-guidance-card__meta {
+.skill-assessment-guidance-card__meta {
   margin-top: 1rem;
   color: var(--color-ink-soft);
   font-size: 0.86rem;
   line-height: 1.6;
 }
 
-.phase2-guidance-card__icon {
+.skill-assessment-guidance-card__icon {
   display: inline-flex;
   height: 2.7rem;
   width: 2.7rem;
@@ -1151,18 +1151,18 @@ button:focus-visible,
     border-color 180ms ease;
 }
 
-.phase2-guidance-card__copy,
-.phase2-guidance-card__footnote {
+.skill-assessment-guidance-card__copy,
+.skill-assessment-guidance-card__footnote {
   color: var(--color-ink-soft);
   font-size: 0.94rem;
   line-height: 1.85;
 }
 
-.phase2-guidance-card__meter {
+.skill-assessment-guidance-card__meter {
   margin-top: 1.6rem;
 }
 
-.phase2-guidance-card__meter-head {
+.skill-assessment-guidance-card__meter-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1174,7 +1174,7 @@ button:focus-visible,
   text-transform: uppercase;
 }
 
-.phase2-guidance-card__progress {
+.skill-assessment-guidance-card__progress {
   margin-top: 0.85rem;
   height: 0.55rem;
   overflow: hidden;
@@ -1182,27 +1182,27 @@ button:focus-visible,
   background: rgba(64, 47, 32, 0.1);
 }
 
-.phase2-guidance-card__progress-fill {
+.skill-assessment-guidance-card__progress-fill {
   height: 100%;
   border-radius: 999px;
   background: linear-gradient(90deg, #df8b45, #b6632a 55%, #8f5e3a 100%);
   transition: width 280ms ease;
 }
 
-.phase2-guidance-card__facts {
+.skill-assessment-guidance-card__facts {
   display: grid;
   gap: 0.75rem;
   margin-top: 1.6rem;
 }
 
-.phase2-guidance-card__fact {
+.skill-assessment-guidance-card__fact {
   border: 1px solid rgba(108, 87, 62, 0.11);
   border-radius: 1.15rem;
   background: rgba(255, 255, 255, 0.66);
   padding: 0.9rem 1rem;
 }
 
-.phase2-guidance-card__fact-label {
+.skill-assessment-guidance-card__fact-label {
   display: block;
   color: var(--color-ink-soft);
   font-size: 0.68rem;
@@ -1211,7 +1211,7 @@ button:focus-visible,
   text-transform: uppercase;
 }
 
-.phase2-guidance-card__fact-value {
+.skill-assessment-guidance-card__fact-value {
   display: block;
   margin-top: 0.45rem;
   color: var(--color-ink);
@@ -1220,25 +1220,25 @@ button:focus-visible,
   line-height: 1.45;
 }
 
-.phase2-guidance-card__footnote {
+.skill-assessment-guidance-card__footnote {
   margin-top: 1.4rem;
   padding-top: 1.2rem;
   border-top: 1px solid rgba(108, 87, 62, 0.1);
 }
 
-.phase2-panel {
+.skill-assessment-panel {
   border-radius: 2rem;
   padding: 1.5rem;
 }
 
-.phase2-panel__chips {
+.skill-assessment-panel__chips {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.7rem;
 }
 
-.phase2-panel__eyebrow {
+.skill-assessment-panel__eyebrow {
   color: var(--color-warm);
   font-size: 0.72rem;
   font-weight: 700;
@@ -1246,7 +1246,7 @@ button:focus-visible,
   text-transform: uppercase;
 }
 
-.phase2-panel__chip {
+.skill-assessment-panel__chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1262,18 +1262,18 @@ button:focus-visible,
   text-transform: uppercase;
 }
 
-.phase2-panel__chip--soft {
+.skill-assessment-panel__chip--soft {
   background: rgba(246, 236, 223, 0.88);
   color: #8b5e3b;
 }
 
-.phase2-panel__intro {
+.skill-assessment-panel__intro {
   display: grid;
   gap: 1rem;
   margin-top: 1.8rem;
 }
 
-.phase2-panel__kicker {
+.skill-assessment-panel__kicker {
   color: #9a7653;
   font-size: 0.78rem;
   font-weight: 700;
@@ -1281,7 +1281,7 @@ button:focus-visible,
   text-transform: uppercase;
 }
 
-.phase2-panel__title {
+.skill-assessment-panel__title {
   margin-top: 0.65rem;
   max-width: 11ch;
   font-family: 'Prompt', sans-serif;
@@ -1290,18 +1290,18 @@ button:focus-visible,
   color: #2f261f;
 }
 
-.phase2-panel__lead {
+.skill-assessment-panel__lead {
   max-width: 38rem;
   color: #6e6257;
   font-size: 0.97rem;
   line-height: 1.9;
 }
 
-.phase2-question-shell {
+.skill-assessment-question-shell {
   margin-top: 2rem;
 }
 
-.phase2-question-card {
+.skill-assessment-question-card {
   border: 1px solid rgba(108, 87, 62, 0.11);
   border-radius: 2rem;
   background:
@@ -1321,18 +1321,18 @@ button:focus-visible,
   padding: 1.25rem;
 }
 
-.phase2-question-card--empty {
+.skill-assessment-question-card--empty {
   margin-top: 2rem;
 }
 
-.phase2-question-card__frame {
+.skill-assessment-question-card__frame {
   border: 1px solid rgba(108, 87, 62, 0.1);
   border-radius: 1.75rem;
   background: rgba(255, 253, 248, 0.9);
   padding: 1.5rem;
 }
 
-.phase2-question-card__prompt-label {
+.skill-assessment-question-card__prompt-label {
   color: #9a7653;
   font-size: 0.74rem;
   font-weight: 700;
@@ -1340,7 +1340,7 @@ button:focus-visible,
   text-transform: uppercase;
 }
 
-.phase2-question-card__prompt {
+.skill-assessment-question-card__prompt {
   margin-top: 1.2rem;
   font-family: 'Prompt', sans-serif;
   font-size: clamp(2rem, 4.2vw, 3.15rem);
@@ -1348,17 +1348,17 @@ button:focus-visible,
   color: #2f261f;
 }
 
-.phase2-question-card__prompt--compact {
+.skill-assessment-question-card__prompt--compact {
   max-width: 100%;
 }
 
-.phase2-scale {
+.skill-assessment-scale {
   margin: 2rem 0 0;
   border: none;
   padding: 0;
 }
 
-.phase2-scale__caption {
+.skill-assessment-scale__caption {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1371,7 +1371,7 @@ button:focus-visible,
   text-transform: uppercase;
 }
 
-.phase2-scale__track {
+.skill-assessment-scale__track {
   position: relative;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1380,7 +1380,7 @@ button:focus-visible,
   padding: 1.4rem 0.35rem 0;
 }
 
-.phase2-scale__rail {
+.skill-assessment-scale__rail {
   position: absolute;
   left: 9%;
   right: 9%;
@@ -1393,7 +1393,7 @@ button:focus-visible,
   );
 }
 
-.phase2-scale__option {
+.skill-assessment-scale__option {
   display: flex;
   min-width: 0;
   flex-direction: column;
@@ -1406,13 +1406,13 @@ button:focus-visible,
     color 180ms ease;
 }
 
-.phase2-scale__option:hover,
-.phase2-scale__option:focus-visible {
+.skill-assessment-scale__option:hover,
+.skill-assessment-scale__option:focus-visible {
   color: var(--color-ink);
   transform: translateY(-2px);
 }
 
-.phase2-scale__orb {
+.skill-assessment-scale__orb {
   position: relative;
   z-index: 1;
   display: grid;
@@ -1432,7 +1432,7 @@ button:focus-visible,
     background-color 180ms ease;
 }
 
-.phase2-scale__orb-core {
+.skill-assessment-scale__orb-core {
   height: 0.95rem;
   width: 0.95rem;
   border-radius: 999px;
@@ -1448,15 +1448,15 @@ button:focus-visible,
     transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.phase2-scale__option:hover .phase2-scale__orb,
-.phase2-scale__option:focus-visible .phase2-scale__orb {
+.skill-assessment-scale__option:hover .skill-assessment-scale__orb,
+.skill-assessment-scale__option:focus-visible .skill-assessment-scale__orb {
   border-color: rgba(199, 133, 83, 0.4);
   box-shadow:
     0 18px 30px rgba(96, 71, 48, 0.1),
     0 0 0 0.35rem rgba(223, 139, 69, 0.08);
 }
 
-.phase2-scale__option--selected .phase2-scale__orb {
+.skill-assessment-scale__option--selected .skill-assessment-scale__orb {
   border-color: rgba(188, 110, 55, 0.7);
   background: linear-gradient(
     180deg,
@@ -1469,12 +1469,12 @@ button:focus-visible,
   transform: scale(1.03);
 }
 
-.phase2-scale__option--selected .phase2-scale__orb-core {
+.skill-assessment-scale__option--selected .skill-assessment-scale__orb-core {
   opacity: 1;
   transform: scale(1);
 }
 
-.phase2-scale__option-label {
+.skill-assessment-scale__option-label {
   max-width: 8rem;
   color: inherit;
   font-size: 0.78rem;
@@ -1482,7 +1482,7 @@ button:focus-visible,
   line-height: 1.45;
 }
 
-.phase2-panel__footer {
+.skill-assessment-panel__footer {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1492,7 +1492,7 @@ button:focus-visible,
   padding-inline: 0.25rem;
 }
 
-.phase2-panel__microcopy {
+.skill-assessment-panel__microcopy {
   color: #7d7064;
   font-size: 0.82rem;
   font-weight: 700;
@@ -1500,14 +1500,14 @@ button:focus-visible,
   text-transform: uppercase;
 }
 
-.phase2-panel__actions {
+.skill-assessment-panel__actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.8rem;
 }
 
-.phase2-button {
+.skill-assessment-button {
   display: inline-flex;
   min-height: 3rem;
   align-items: center;
@@ -1524,30 +1524,30 @@ button:focus-visible,
     box-shadow 180ms ease;
 }
 
-.phase2-button:disabled {
+.skill-assessment-button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
 
-.phase2-button--ghost {
+.skill-assessment-button--ghost {
   border: 1px solid rgba(108, 87, 62, 0.12);
   background: rgba(255, 255, 255, 0.66);
   color: var(--color-ink);
 }
 
-.phase2-button--ghost:hover {
+.skill-assessment-button--ghost:hover {
   border-color: rgba(188, 110, 55, 0.4);
   color: var(--color-accent);
   transform: translateY(-1px);
 }
 
-.phase2-button--primary {
+.skill-assessment-button--primary {
   background: var(--color-accent);
   color: white;
   box-shadow: 0 18px 32px var(--color-accent-shadow);
 }
 
-.phase2-button--primary:hover {
+.skill-assessment-button--primary:hover {
   background: var(--color-accent-hover);
   transform: translateY(-1px);
   box-shadow: 0 22px 38px var(--color-accent-shadow);
@@ -1674,63 +1674,63 @@ button:focus-visible,
     gap: 0.5rem;
   }
 
-  .phase2-assessment-page::before,
-  .phase2-assessment-page::after {
+  .skill-assessment-assessment-page::before,
+  .skill-assessment-assessment-page::after {
     border-radius: 1.5rem;
   }
 
-  .phase2-guidance-card,
-  .phase2-panel,
-  .phase2-question-card,
-  .phase2-question-card__frame {
+  .skill-assessment-guidance-card,
+  .skill-assessment-panel,
+  .skill-assessment-question-card,
+  .skill-assessment-question-card__frame {
     border-radius: 1.5rem;
   }
 
-  .phase2-panel {
+  .skill-assessment-panel {
     padding: 1.15rem;
   }
 
-  .phase2-panel__title {
+  .skill-assessment-panel__title {
     max-width: 13ch;
   }
 
-  .phase2-question-card__prompt {
+  .skill-assessment-question-card__prompt {
     max-width: 100%;
   }
 
-  .phase2-scale__track {
+  .skill-assessment-scale__track {
     gap: 0.45rem;
     padding-top: 1.1rem;
     overflow-x: auto;
     padding-bottom: 0.25rem;
   }
 
-  .phase2-scale__rail {
+  .skill-assessment-scale__rail {
     left: 7%;
     right: 7%;
     top: 2.35rem;
   }
 
-  .phase2-scale__orb {
+  .skill-assessment-scale__orb {
     height: 3.5rem;
     width: 3.5rem;
   }
 
-  .phase2-scale__option-label {
+  .skill-assessment-scale__option-label {
     max-width: 5.2rem;
     font-size: 0.7rem;
   }
 
-  .phase2-panel__footer {
+  .skill-assessment-panel__footer {
     align-items: stretch;
   }
 
-  .phase2-panel__actions {
+  .skill-assessment-panel__actions {
     width: 100%;
     justify-content: space-between;
   }
 
-  .phase2-button {
+  .skill-assessment-button {
     flex: 1 1 0;
   }
 }
@@ -1741,28 +1741,28 @@ button:focus-visible,
     letter-spacing: 0.22em;
   }
 
-  .phase2-guidance-card {
+  .skill-assessment-guidance-card {
     padding: 1.1rem;
   }
 
-  .phase2-guidance-card__title {
+  .skill-assessment-guidance-card__title {
     font-size: 1.8rem;
   }
 
-  .phase2-panel__title {
+  .skill-assessment-panel__title {
     font-size: 2.3rem;
   }
 
-  .phase2-question-card__prompt {
+  .skill-assessment-question-card__prompt {
     font-size: 1.9rem;
   }
 
-  .phase2-scale__caption {
+  .skill-assessment-scale__caption {
     font-size: 0.64rem;
     letter-spacing: 0.1em;
   }
 
-  .phase2-scale__track {
+  .skill-assessment-scale__track {
     grid-template-columns: repeat(5, minmax(4.35rem, 1fr));
   }
 }
@@ -1786,8 +1786,8 @@ button:focus-visible,
     backdrop-filter: none;
   }
 
-  .phase2-guidance-card,
-  .phase2-panel {
+  .skill-assessment-guidance-card,
+  .skill-assessment-panel {
     backdrop-filter: none;
   }
 

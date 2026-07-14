@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { motion } from 'motion-v'
 import { getRoadmapScaleLabel } from '~/utils/roadmaps'
-import type { RoadmapsScaleOption } from '~~/shared/types/assessment'
+import type { SkillAssessmentScaleOption } from '~~/shared/types/assessment'
 
 const props = withDefaults(
   defineProps<{
@@ -9,7 +9,7 @@ const props = withDefaults(
     prompt: string
     promptContext: string
     microcopy: string
-    answerScale: RoadmapsScaleOption[]
+    answerScale: SkillAssessmentScaleOption[]
     selectedValue: number | null
     isSaving: boolean
     isAutoAdvancing: boolean
@@ -27,16 +27,16 @@ const emit = defineEmits<{
 
 const t = usePageI18n('roadmaps', () => props.isThai)
 
-function getScaleLabel(option: RoadmapsScaleOption): string {
+function getScaleLabel(option: SkillAssessmentScaleOption): string {
   return getRoadmapScaleLabel(option, props.isThai)
 }
 </script>
 
 <template>
-  <section class="phase2-panel">
-    <div class="phase2-panel__chips">
-      <span class="phase2-panel__eyebrow">Skill assessment</span>
-      <span class="phase2-panel__chip phase2-panel__chip--soft">
+  <section class="skill-assessment-panel">
+    <div class="skill-assessment-panel__chips">
+      <span class="skill-assessment-panel__eyebrow">Skill assessment</span>
+      <span class="skill-assessment-panel__chip skill-assessment-panel__chip--soft">
         Agreement scale
       </span>
     </div>
@@ -44,22 +44,22 @@ function getScaleLabel(option: RoadmapsScaleOption): string {
     <motion.div
       v-if="question"
       :key="question.id"
-      class="phase2-question-shell"
+      class="skill-assessment-question-shell"
       :initial="prefersReduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 18 }"
       :animate="{ opacity: 1, y: 0 }"
       :transition="prefersReduced ? { duration: 0 } : { duration: 0.28 }"
     >
-      <div class="phase2-question-card">
-        <div class="phase2-question-card__frame">
-          <p class="phase2-question-card__prompt-label">
+      <div class="skill-assessment-question-card">
+        <div class="skill-assessment-question-card__frame">
+          <p class="skill-assessment-question-card__prompt-label">
             {{ promptContext }}
           </p>
-          <h2 class="phase2-question-card__prompt">
+          <h2 class="skill-assessment-question-card__prompt">
             {{ prompt }}
           </h2>
         </div>
 
-        <fieldset class="phase2-scale" :disabled="isSaving || isAutoAdvancing">
+        <fieldset class="skill-assessment-scale" :disabled="isSaving || isAutoAdvancing">
           <legend class="sr-only">
             {{
               isThai
@@ -68,24 +68,24 @@ function getScaleLabel(option: RoadmapsScaleOption): string {
             }}
           </legend>
 
-          <div class="phase2-scale__caption">
+          <div class="skill-assessment-scale__caption">
             <span>{{
               isThai ? 'ไม่เห็นด้วยอย่างยิ่ง' : 'Strongly disagree'
             }}</span>
             <span>{{ isThai ? 'เห็นด้วยอย่างยิ่ง' : 'Strongly agree' }}</span>
           </div>
 
-          <div class="phase2-scale__track">
-            <span class="phase2-scale__rail" aria-hidden="true" />
+          <div class="skill-assessment-scale__track">
+            <span class="skill-assessment-scale__rail" aria-hidden="true" />
 
             <button
               v-for="option in answerScale"
               :key="`${question.id}-${option.value}`"
               type="button"
-              class="phase2-scale__option"
+              class="skill-assessment-scale__option"
               :class="
                 selectedValue === option.value
-                  ? 'phase2-scale__option--selected'
+                  ? 'skill-assessment-scale__option--selected'
                   : ''
               "
               :aria-pressed="selectedValue === option.value"
@@ -93,10 +93,10 @@ function getScaleLabel(option: RoadmapsScaleOption): string {
               :disabled="isSaving || isAutoAdvancing"
               @click="emit('select', option.value)"
             >
-              <span class="phase2-scale__orb" aria-hidden="true">
-                <span class="phase2-scale__orb-core" />
+              <span class="skill-assessment-scale__orb" aria-hidden="true">
+                <span class="skill-assessment-scale__orb-core" />
               </span>
-              <span class="phase2-scale__option-label">
+              <span class="skill-assessment-scale__option-label">
                 {{ getScaleLabel(option) }}
               </span>
             </button>
@@ -104,14 +104,14 @@ function getScaleLabel(option: RoadmapsScaleOption): string {
         </fieldset>
       </div>
 
-      <div class="phase2-panel__footer">
-        <p class="phase2-panel__microcopy">
+      <div class="skill-assessment-panel__footer">
+        <p class="skill-assessment-panel__microcopy">
           {{ microcopy }}
         </p>
-        <div class="phase2-panel__actions">
+        <div class="skill-assessment-panel__actions">
           <button
             type="button"
-            class="phase2-button phase2-button--ghost"
+            class="skill-assessment-button skill-assessment-button--ghost"
             :disabled="isFirstQuestion"
             @click="emit('previous')"
           >
@@ -121,16 +121,16 @@ function getScaleLabel(option: RoadmapsScaleOption): string {
       </div>
     </motion.div>
 
-    <div v-else class="phase2-question-card phase2-question-card--empty">
-      <p class="phase2-question-card__prompt-label">
+    <div v-else class="skill-assessment-question-card skill-assessment-question-card--empty">
+      <p class="skill-assessment-question-card__prompt-label">
         {{ t.preparingPrompt }}
       </p>
       <h2
-        class="phase2-question-card__prompt phase2-question-card__prompt--compact"
+        class="skill-assessment-question-card__prompt skill-assessment-question-card__prompt--compact"
       >
         {{ t.resolvingQuestion }}
       </h2>
-      <p class="phase2-panel__lead mt-4">
+      <p class="skill-assessment-panel__lead mt-4">
         {{ t.refreshPrompt }}
       </p>
     </div>

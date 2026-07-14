@@ -2,8 +2,8 @@ Refactor: Break up massive components, update APIs, and fix state sync bugs
 
 - Refactored massive 1000+ line components (start.vue, roadmaps/[sessionId].vue) into smaller, modular components.
 - Extracted logic into discrete composables (useAssessmentSession, useSessionCreate, useAssessmentResults, useRoadmapQuestions).
-- Fixed API endpoint mismatch (pointed Survey 2 fetching to /survey2 instead of /answer).
+- Fixed API endpoint mismatch (pointed Skill Assessment fetching to /skillAssessment instead of /answer).
 - Added isThai prop drilling resolution across multiple components to eliminate reactivity loss.
 - Migrated global constants to proper composable scopes.
-- Fixed navigation bug where choosing a preferred role bypassed Survey 2 unexpectedly, now directing to /roadmaps natively.
+- Fixed navigation bug where choosing a preferred role bypassed Skill Assessment unexpectedly, now directing to /roadmaps natively.
 - Standardized formatting across the repository with prettier.

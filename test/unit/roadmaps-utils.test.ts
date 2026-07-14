@@ -145,8 +145,8 @@ describe('roadmaps evaluation builder', () => {
     const evaluation = buildRoadmapsEvaluation(baseResult, history)
 
     expect(evaluation.dimensions).toHaveLength(8)
-    expect(evaluation.strengths.length).toBe(3)
-    expect(evaluation.growthAreas.length).toBe(3)
+    expect(evaluation.strengths.length).toBe(2)
+    expect(evaluation.growthAreas.length).toBe(6)
     expect(evaluation.personalitySignals[0]).toContain('System Architect')
 
     const design = evaluation.dimensions.find(

@@ -196,19 +196,19 @@ export interface AssessmentHistory {
   recommendations: Recommendation[]
 }
 
-export interface RoadmapsSessionState {
+export interface SkillAssessmentSessionState {
   completed: boolean
   answers: Record<string, number>
   completed_at: string | null
 }
 
-export interface RoadmapsScaleOption {
+export interface SkillAssessmentScaleOption {
   label: string
   value: number
   label_th?: string
 }
 
-export interface RoadmapsCatalogDimension {
+export interface SkillAssessmentCatalogDimension {
   key: string
   label: string
   track: 'psp' | 'sdlc'
@@ -220,7 +220,7 @@ export interface RoadmapsCatalogDimension {
   }
 }
 
-export interface RoadmapsCatalogQuestion {
+export interface SkillAssessmentCatalogQuestion {
   id: string
   prompt: string
   dimension_key: string
@@ -232,16 +232,16 @@ export interface RoadmapsCatalogQuestion {
   }
 }
 
-export interface RoadmapsCatalog {
+export interface SkillAssessmentCatalog {
   version: string
-  scale: RoadmapsScaleOption[]
-  dimensions: RoadmapsCatalogDimension[]
-  questions: RoadmapsCatalogQuestion[]
+  scale: SkillAssessmentScaleOption[]
+  dimensions: SkillAssessmentCatalogDimension[]
+  questions: SkillAssessmentCatalogQuestion[]
   role_guidance: string[]
 }
 
-export interface RoadmapsNextQuestionResponse {
-  next_question: RoadmapsCatalogQuestion | null
+export interface SkillAssessmentNextQuestionResponse {
+  next_question: SkillAssessmentCatalogQuestion | null
 }
 
 export interface SessionCreatePayload {

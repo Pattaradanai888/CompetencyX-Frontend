@@ -139,10 +139,10 @@ describe('results page', () => {
     })
   })
 
-  it('renders the simplified Phase 1 role recommendation', async () => {
+  it('renders the simplified role discovery recommendation', async () => {
     const wrapper = await mountSuspended(ResultsPage)
 
-    expect(wrapper.text()).toContain('Phase 1 complete')
+    expect(wrapper.text()).toContain('Role discovery complete')
     expect(wrapper.text()).toContain(
       'Backend Engineer looks like your strongest role direction.',
     )
@@ -150,7 +150,7 @@ describe('results page', () => {
     expect(wrapper.text()).toContain('DevOps Engineer')
     expect(wrapper.text()).toContain('Systems Design')
     expect(wrapper.text()).toContain('Default selection')
-    expect(wrapper.text()).toContain('Continue to Assignment 2')
+    expect(wrapper.text()).toContain('Continue to skill assessment')
     expect(wrapper.text()).toContain('Use this role instead')
     expect(wrapper.text()).not.toContain('62%')
     expect(wrapper.text()).not.toContain('24%')
@@ -162,7 +162,7 @@ describe('results page', () => {
     expect(navigateToMock).not.toHaveBeenCalled()
   })
 
-  it('allows selecting an alternative role and starts Assignment 2 only when continuing', async () => {
+  it('allows selecting an alternative role and starts skill assessment only when continuing', async () => {
     getSessionMock
       .mockResolvedValueOnce({
         id: 'session-1',
@@ -250,7 +250,7 @@ describe('results page', () => {
     // Find and click the Continue button at the bottom
     const continueBtn = wrapper
       .findAll('button')
-      .find((button) => button.text().includes('Continue to Assignment 2'))
+      .find((button) => button.text().includes('Continue to skill assessment'))
     expect(continueBtn).toBeDefined()
 
     await continueBtn!.trigger('click')

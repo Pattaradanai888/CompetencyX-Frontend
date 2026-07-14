@@ -10,8 +10,8 @@ import {
 } from '~/utils/roadmapTopics'
 import type { RadarDimension } from '~/utils/roadmaps'
 import { defineAsyncComponent, hydrateOnVisible } from 'vue'
-import RoadmapGuidanceCard from '~/components/roadmaps/RoadmapGuidanceCard.vue'
-import RoadmapQuestionPanel from '~/components/roadmaps/RoadmapQuestionPanel.vue'
+import SkillAssessmentGuidanceCard from '~/components/roadmaps/SkillAssessmentGuidanceCard.vue'
+import SkillAssessmentQuestionPanel from '~/components/roadmaps/SkillAssessmentQuestionPanel.vue'
 import { getErrorMessage } from '~/utils/api'
 import { useQuestionI18n } from '~/composables/useQuestionI18n'
 import type {
@@ -20,9 +20,9 @@ import type {
   Recommendation,
   ResourceLink,
   RoadmapTopic,
-  RoadmapsCatalogDimension,
-  RoadmapsCatalogQuestion,
-  RoadmapsScaleOption,
+  SkillAssessmentCatalogDimension,
+  SkillAssessmentCatalogQuestion,
+  SkillAssessmentScaleOption,
 } from '~~/shared/types/assessment'
 
 const RoadmapCompletedOverview = defineAsyncComponent({
@@ -42,19 +42,19 @@ const route = useRoute('/roadmaps/[sessionId]')
 const sessionId = computed(() => route.params.sessionId as string)
 const { getResults, getHistory } = useAssessmentResults()
 const {
-  getRoadmapsCatalog,
-  getRoadmapsState,
-  getRoadmapsNextQuestion,
-  saveRoadmapsState,
-} = useRoadmapsApiClient()
+  getSkillAssessmentCatalog,
+  getSkillAssessmentState,
+  getSkillAssessmentNextQuestion,
+  saveSkillAssessmentState,
+} = useSkillAssessmentApiClient()
 const toast = useToast()
 const { getSession } = useAssessmentSession()
 const prefersReduced = useReducedMotion()
 const AUTO_ADVANCE_DELAY_MS = 220
 let autoAdvanceTimer: ReturnType<typeof setTimeout> | null = null
 
-const { data: _roadmapsData, refresh } = await useAsyncData(
-  `roadmaps-${sessionId.value}`,
+const { data: _skillAssessmentData, refresh } = await useAsyncData(
+  `skill-assessment-${sessionId.value}`,
   async () => {
     const session = await getSession(sessionId.value).catch(
       () => null as AssessmentSession | null,
@@ -69,12 +69,12 @@ const { data: _roadmapsData, refresh } = await useAsyncData(
       },
     )
 
-    const [result, history, roadmapsCatalog, roadmapsState] = await Promise.all(
+    const [result, history, skillAssessmentCatalog, skillAssessmentState] = await Promise.all(
       [
         Promise.resolve(assessmentResult),
         getHistory(sessionId.value).catch(() => null),
-        getRoadmapsCatalog(sessionId.value),
-        getRoadmapsState(sessionId.value).catch(() => ({
+        getSkillAssessmentCatalog(sessionId.value),
+        getSkillAssessmentState(sessionId.value).catch(() => ({
           completed: false,
           answers: {},
           completed_at: null,
@@ -82,21 +82,21 @@ const { data: _roadmapsData, refresh } = await useAsyncData(
       ],
     )
     let initialQuestionId: string | null = null
-    if (!roadmapsState.completed) {
-      const questions = buildRoadmapQuestions(roadmapsCatalog?.questions)
-      const answers = { ...(roadmapsState.answers ?? {}) }
+    if (!skillAssessmentState.completed) {
+      const questions = buildSkillAssessmentQuestions(skillAssessmentCatalog?.questions)
+      const answers = { ...(skillAssessmentState.answers ?? {}) }
       const unanswered = getUnansweredQuestions(questions, answers)
 
       if (unanswered.length) {
         try {
-          const response = await getRoadmapsNextQuestion(
+          const response = await getSkillAssessmentNextQuestion(
             sessionId.value,
             answers,
           )
           initialQuestionId = response.next_question?.id ?? null
         } catch {
-          const scaleValues = (roadmapsCatalog?.scale ?? []).map(
-            (option: RoadmapsScaleOption) => option.value,
+          const scaleValues = (skillAssessmentCatalog?.scale ?? []).map(
+            (option: SkillAssessmentScaleOption) => option.value,
           )
           const scaleMin = scaleValues.length ? Math.min(...scaleValues) : 1
           const scaleMax = scaleValues.length ? Math.max(...scaleValues) : 5
@@ -111,29 +111,29 @@ const { data: _roadmapsData, refresh } = await useAsyncData(
       session,
       result,
       history,
-      roadmapsCatalog,
-      roadmapsState,
+      skillAssessmentCatalog,
+      skillAssessmentState,
       initialQuestionId,
     }
   },
 )
 
-const _roadmapsSnapshot = _roadmapsData.value ?? {
+const _skillAssessmentSnapshot = _skillAssessmentData.value ?? {
   session: null,
   result: null,
   history: null,
-  roadmapsCatalog: null,
-  roadmapsState: null,
+  skillAssessmentCatalog: null,
+  skillAssessmentState: null,
   initialQuestionId: null,
 }
-const roadmapsCatalog = _roadmapsSnapshot.roadmapsCatalog
+const skillAssessmentCatalog = _skillAssessmentSnapshot.skillAssessmentCatalog
 const result = computed(
-  () => _roadmapsData.value?.result ?? _roadmapsSnapshot.result,
+  () => _skillAssessmentData.value?.result ?? _skillAssessmentSnapshot.result,
 )
-const session = _roadmapsSnapshot.session
-const history = _roadmapsSnapshot.history
-const roadmapsState = _roadmapsSnapshot.roadmapsState
-seedLastSessionState(session, roadmapsState?.completed === true)
+const session = _skillAssessmentSnapshot.session
+const history = _skillAssessmentSnapshot.history
+const skillAssessmentState = _skillAssessmentSnapshot.skillAssessmentState
+seedLastSessionState(session, skillAssessmentState?.completed === true)
 const { isThai: globalIsThai, localeInitialized } = useLocale()
 const isThai = computed(() => {
   if (localeInitialized.value) return globalIsThai.value
@@ -154,7 +154,7 @@ const bestFitRoleName = computed(
   () =>
     result.value?.best_fit_role?.name ?? session?.best_fit_role?.name ?? null,
 )
-const survey2RoleTitle = computed(
+const skillAssessmentRoleTitle = computed(
   () =>
     bestFitRoleName.value ??
     preferredRoleName.value ??
@@ -179,7 +179,7 @@ const baseDimensions = computed<RadarDimension[]>(() => {
     evaluation.value.dimensions.map((item) => [item.key, item]),
   )
 
-  return (roadmapsCatalog?.dimensions ?? []).map(
+  return (skillAssessmentCatalog?.dimensions ?? []).map(
     (dimension: { key: string; label: string; track: 'psp' | 'sdlc' }) => {
       const existing = fromEvaluation.get(dimension.key)
       return {
@@ -192,22 +192,22 @@ const baseDimensions = computed<RadarDimension[]>(() => {
   )
 })
 
-const isRoadmapsComplete = ref(roadmapsState?.completed)
+const isSkillAssessmentComplete = ref(skillAssessmentState?.completed)
 
-type RoadmapQuestion = {
+type SkillAssessmentQuestion = {
   id: string
   prompt: string
-  translations?: RoadmapsCatalogQuestion['translations']
+  translations?: SkillAssessmentCatalogQuestion['translations']
   dimensionKey: string
 }
 
-const roadmapQuestions: RoadmapQuestion[] = buildRoadmapQuestions(
-  roadmapsCatalog?.questions,
+const skillAssessmentQuestions: SkillAssessmentQuestion[] = buildSkillAssessmentQuestions(
+  skillAssessmentCatalog?.questions,
 )
 
-const answerScale = roadmapsCatalog?.scale ?? []
+const answerScale = skillAssessmentCatalog?.scale ?? []
 const answerScaleValues = answerScale.map(
-  (option: RoadmapsScaleOption) => option.value,
+  (option: SkillAssessmentScaleOption) => option.value,
 )
 const answerScaleMin = answerScaleValues.length
   ? Math.min(...answerScaleValues)
@@ -216,21 +216,21 @@ const answerScaleMax = answerScaleValues.length
   ? Math.max(...answerScaleValues)
   : 5
 
-const roadmapAnswers = ref<Record<string, number>>({
-  ...(roadmapsState?.answers ?? {}),
+const skillAssessmentAnswers = ref<Record<string, number>>({
+  ...(skillAssessmentState?.answers ?? {}),
 })
 const currentQuestionIndex = ref(0)
-const isSavingRoadmaps = ref(false)
+const isSavingSkillAssessment = ref(false)
 const isAutoAdvancing = ref(false)
 
 const hasAnsweredAll = computed(() => {
-  return roadmapQuestions.every((question) =>
-    Number.isFinite(roadmapAnswers.value[question.id]),
+  return skillAssessmentQuestions.every((question) =>
+    Number.isFinite(skillAssessmentAnswers.value[question.id]),
   )
 })
 
 const activeQuestion = computed(
-  () => roadmapQuestions[currentQuestionIndex.value] ?? null,
+  () => skillAssessmentQuestions[currentQuestionIndex.value] ?? null,
 )
 
 const activeQuestionRef = computed(() => activeQuestion.value)
@@ -241,22 +241,22 @@ const activeQuestionAnswer = computed(() => {
     return null
   }
 
-  return roadmapAnswers.value[activeQuestion.value.id] ?? null
+  return skillAssessmentAnswers.value[activeQuestion.value.id] ?? null
 })
 
 const catalogByKey = computed(
   () =>
-    new Map<string, RoadmapsCatalogDimension>(
-      (roadmapsCatalog?.dimensions ?? []).map(
-        (item: RoadmapsCatalogDimension) => [item.key, item],
+    new Map<string, SkillAssessmentCatalogDimension>(
+      (skillAssessmentCatalog?.dimensions ?? []).map(
+        (item: SkillAssessmentCatalogDimension) => [item.key, item],
       ),
     ),
 )
 
-const { blendedDimensions, pickNextQuestionWithRl } = useRoadmapQuestions(
+const { blendedDimensions, pickNextQuestionWithRl } = useSkillAssessmentQuestions(
   computed(() => sessionId.value),
-  computed(() => roadmapQuestions),
-  roadmapAnswers,
+  computed(() => skillAssessmentQuestions),
+  skillAssessmentAnswers,
   computed(() => answerScaleMin),
   computed(() => answerScaleMax),
   baseDimensions,
@@ -269,14 +269,14 @@ function setCurrentQuestionById(questionId: string | null) {
     return
   }
 
-  const nextIndex = roadmapQuestions.findIndex(
+  const nextIndex = skillAssessmentQuestions.findIndex(
     (question) => question.id === questionId,
   )
   currentQuestionIndex.value = nextIndex === -1 ? 0 : nextIndex
 }
 
-if (!roadmapsState?.completed) {
-  setCurrentQuestionById(_roadmapsSnapshot.initialQuestionId ?? null)
+if (!skillAssessmentState?.completed) {
+  setCurrentQuestionById(_skillAssessmentSnapshot.initialQuestionId ?? null)
 }
 
 const sortedDimensionsDesc = computed(() =>
@@ -365,7 +365,7 @@ const DIMENSION_KEYWORDS: Record<string, string[]> = {
   'sdlc-maintenance': ['maintenance', 'support', 'operations'],
 }
 
-const survey2PrioritizedTopics = computed(() => {
+const skillAssessmentPrioritizedTopics = computed(() => {
   if (!displayTopics.value.length) return []
 
   const bottomKeys = new Set(
@@ -395,18 +395,18 @@ const survey2PrioritizedTopics = computed(() => {
   return [...matching, ...rest]
 })
 
-const roadmapsProgressPercent = computed(() => {
-  if (!roadmapQuestions.length) return 0
-  if (isRoadmapsComplete.value) return 100
-  const answeredCount = roadmapQuestions.filter((question) =>
-    Number.isFinite(roadmapAnswers.value[question.id]),
+const skillAssessmentProgressPercent = computed(() => {
+  if (!skillAssessmentQuestions.length) return 0
+  if (isSkillAssessmentComplete.value) return 100
+  const answeredCount = skillAssessmentQuestions.filter((question) =>
+    Number.isFinite(skillAssessmentAnswers.value[question.id]),
   ).length
-  return Math.round((answeredCount / roadmapQuestions.length) * 100)
+  return Math.round((answeredCount / skillAssessmentQuestions.length) * 100)
 })
 
 const answeredPromptCount = computed(() => {
-  return roadmapQuestions.filter((question) =>
-    Number.isFinite(roadmapAnswers.value[question.id]),
+  return skillAssessmentQuestions.filter((question) =>
+    Number.isFinite(skillAssessmentAnswers.value[question.id]),
   ).length
 })
 
@@ -417,33 +417,33 @@ const selectedScaleOption = computed(() => {
 
   return (
     answerScale.find(
-      (option: RoadmapsScaleOption) =>
+      (option: SkillAssessmentScaleOption) =>
         option.value === activeQuestionAnswer.value,
     ) ?? null
   )
 })
 
-const phase2GuidanceTitle = computed(() => {
+const skillAssessmentGuidanceTitle = computed(() => {
   return preferredRoleName.value
     ? `${preferredRoleName.value} track`
     : 'Skill calibration'
 })
 
-const phase2ProgressSummary = computed(() => {
+const skillAssessmentProgressSummary = computed(() => {
   const calibrationState = hasAnsweredAll.value
     ? t.value.readyToReview
     : answeredPromptCount.value
       ? t.value.buildingConfidence
       : t.value.stillCalibrating
-  const progressState = isSavingRoadmaps.value
+  const progressState = isSavingSkillAssessment.value
     ? t.value.saving
     : t.value.inProgress
 
   return `Q${answeredPromptCount.value} ${t.value.answered} • ${calibrationState} • ${progressState}`
 })
 
-const phase2Microcopy = computed(() => {
-  if (isSavingRoadmaps.value) {
+const skillAssessmentMicrocopy = computed(() => {
+  if (isSavingSkillAssessment.value) {
     return t.value.savingSignal
   }
 
@@ -458,7 +458,7 @@ const phase2Microcopy = computed(() => {
   return t.value.selectOne
 })
 
-const phase2PromptContext = computed(() => {
+const skillAssessmentPromptContext = computed(() => {
   if (!activeQuestion.value) {
     return t.value.preparingPrompt
   }
@@ -615,7 +615,7 @@ if (import.meta.client) {
 }
 
 const personalityFitNarrative = computed(() => {
-  const roleName = survey2RoleTitle.value
+  const roleName = skillAssessmentRoleTitle.value
   const topThree = topPersonalityPillars.value.slice(0, 3)
   const labels = topThree.map((p) => cleanPillarLabel(p.label))
 
@@ -725,17 +725,17 @@ const personalityFitRaw = computed(() => {
   )
 })
 
-async function submitRoadmaps() {
+async function submitSkillAssessment() {
   if (!hasAnsweredAll.value) {
     return
   }
 
-  isSavingRoadmaps.value = true
+  isSavingSkillAssessment.value = true
 
   try {
-    const savePromise = saveRoadmapsState(sessionId.value, {
+    const savePromise = saveSkillAssessmentState(sessionId.value, {
       completed: true,
-      answers: { ...roadmapAnswers.value },
+      answers: { ...skillAssessmentAnswers.value },
       completed_at: new Date().toISOString(),
     })
     const timeoutPromise = new Promise<never>((_resolve, reject) => {
@@ -743,12 +743,12 @@ async function submitRoadmaps() {
     })
     const saved = await Promise.race([savePromise, timeoutPromise])
 
-    roadmapAnswers.value = { ...saved.answers }
-    isRoadmapsComplete.value = saved.completed
+    skillAssessmentAnswers.value = { ...saved.answers }
+    isSkillAssessmentComplete.value = saved.completed
     await refresh()
   } catch (error) {
     toast.add({
-      title: 'Could not save Roadmaps',
+      title: 'Could not save Skill Assessment',
       description:
         error instanceof Error && error.message === 'Save timeout'
           ? 'Saving took too long. Please try again.'
@@ -756,14 +756,14 @@ async function submitRoadmaps() {
       color: 'error',
     })
   } finally {
-    isSavingRoadmaps.value = false
+    isSavingSkillAssessment.value = false
   }
 }
 
 function selectAnswer(value: number) {
   if (
     !activeQuestion.value ||
-    isSavingRoadmaps.value ||
+    isSavingSkillAssessment.value ||
     isAutoAdvancing.value
   ) {
     return
@@ -773,7 +773,7 @@ function selectAnswer(value: number) {
     clearTimeout(autoAdvanceTimer)
   }
 
-  roadmapAnswers.value[activeQuestion.value.id] = value
+  skillAssessmentAnswers.value[activeQuestion.value.id] = value
   isAutoAdvancing.value = true
 
   autoAdvanceTimer = setTimeout(() => {
@@ -805,7 +805,7 @@ async function goToNextQuestion() {
     return
   }
 
-  void submitRoadmaps()
+  void submitSkillAssessment()
 }
 
 
@@ -822,7 +822,7 @@ useSeoMeta({
   description: computed(() =>
     isThai.value
       ? 'การวิเคราะห์ความสามารถด้าน PSP และ SDLC พร้อมแผนเส้นทางเฉพาะบุคคลจากคำตอบของแบบสำรวจแรก'
-      : 'PSP and SDLC capability analysis with a personalized roadmap based on Survey 1 answers.',
+      : 'PSP and SDLC capability analysis with a personalized roadmap based on your role discovery results.',
   ),
 })
 </script>
@@ -830,7 +830,7 @@ useSeoMeta({
 <template>
   <main
     id="main-content"
-    :class="['page-wrap', !isRoadmapsComplete ? 'phase2-assessment-page' : '']"
+    :class="['page-wrap', !isSkillAssessmentComplete ? 'skill-assessment-assessment-page' : '']"
   >
     <div class="flex flex-wrap items-center justify-between gap-4">
       <NuxtLink
@@ -838,26 +838,26 @@ useSeoMeta({
         :to="`/results/${route.params.sessionId}`"
         class="editorial-link text-sm"
       >
-        {{ t.backToSurvey1 }}
+        {{ t.backToRoleDiscovery }}
       </NuxtLink>
       <p class="text-sm text-ink-soft">
         {{ t.session }} {{ route.params.sessionId }}
       </p>
     </div>
 
-    <section v-if="isRoadmapsComplete" class="glass-panel mt-6 p-6 md:p-8">
+    <section v-if="isSkillAssessmentComplete" class="glass-panel mt-6 p-6 md:p-8">
       <p class="eyebrow">
-        {{ isRoadmapsComplete ? t.finalDashboard : t.phase2Assessment }}
+        {{ isSkillAssessmentComplete ? t.finalDashboard : t.skillAssessmentTitle }}
       </p>
       <h1 class="mt-4 font-display text-4xl leading-tight text-ink md:text-6xl">
         {{
-          isRoadmapsComplete
-            ? `${survey2RoleTitle} ${t.readinessRoadmap}`
+          isSkillAssessmentComplete
+            ? `${skillAssessmentRoleTitle} ${t.readinessRoadmap}`
             : t.calibrateSkills
         }}
       </h1>
       <p class="mt-4 max-w-3xl text-sm leading-7 text-ink-soft">
-        {{ isRoadmapsComplete ? t.completeIntro : t.incompleteIntro }}
+        {{ isSkillAssessmentComplete ? t.completeIntro : t.incompleteIntro }}
       </p>
       <div class="mt-5 flex flex-wrap items-center gap-2">
         <span
@@ -876,28 +876,28 @@ useSeoMeta({
     </section>
 
     <section
-      v-if="!isRoadmapsComplete"
+      v-if="!isSkillAssessmentComplete"
       class="mt-8 grid gap-6 lg:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)] lg:items-start"
       aria-live="polite"
     >
       <aside class="lg:sticky lg:top-8">
-        <RoadmapGuidanceCard
-          :title="phase2GuidanceTitle"
-          :progress-summary="phase2ProgressSummary"
-          :progress-percent="roadmapsProgressPercent"
-          :prompt-context="phase2PromptContext"
+        <SkillAssessmentGuidanceCard
+          :title="skillAssessmentGuidanceTitle"
+          :progress-summary="skillAssessmentProgressSummary"
+          :progress-percent="skillAssessmentProgressPercent"
+          :prompt-context="skillAssessmentPromptContext"
           :preferred-role-name="preferredRoleName"
         />
       </aside>
 
-      <RoadmapQuestionPanel
+      <SkillAssessmentQuestionPanel
         :question="activeQuestion"
         :prompt="localizedPrompt || activeQuestion?.prompt || ''"
-        :prompt-context="phase2PromptContext"
-        :microcopy="phase2Microcopy"
+        :prompt-context="skillAssessmentPromptContext"
+        :microcopy="skillAssessmentMicrocopy"
         :answer-scale="answerScale"
         :selected-value="activeQuestionAnswer"
-        :is-saving="isSavingRoadmaps"
+        :is-saving="isSavingSkillAssessment"
         :is-auto-advancing="isAutoAdvancing"
         :is-first-question="currentQuestionIndex === 0"
         :is-thai="isThai"
@@ -907,9 +907,9 @@ useSeoMeta({
       />
     </section>
 
-    <template v-if="isRoadmapsComplete">
+    <template v-if="isSkillAssessmentComplete">
       <RoadmapCompletedOverview
-        :role-title="survey2RoleTitle"
+        :role-title="skillAssessmentRoleTitle"
         :overall-capability-score="overallCapabilityScore"
         :recalculated-strengths="recalculatedStrengths"
         :recalculated-growth-areas="recalculatedGrowthAreas"
@@ -918,7 +918,7 @@ useSeoMeta({
         :is-at-target="isAtTarget"
         :capability-gap="capabilityGap"
         :display-topics="displayTopics"
-        :priority-topics="survey2PrioritizedTopics"
+        :priority-topics="skillAssessmentPrioritizedTopics"
         :blended-dimensions="blendedDimensions"
         :has-role-answers="hasRoleAnswers"
         :is-thai="isThai"
@@ -939,7 +939,7 @@ useSeoMeta({
         :topics="displayTopics"
         :topic-resources="topicResources"
         :is-thai="isThai"
-        :role-title="survey2RoleTitle"
+        :role-title="skillAssessmentRoleTitle"
       />
 
     </template>

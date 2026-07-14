@@ -133,7 +133,7 @@ async function handleContinue() {
     })
   } catch (error) {
     toast.add({
-      title: t.value.startPhase2Error,
+      title: t.value.startSkillAssessmentError,
       description: getErrorMessage(error as ApiError) ?? undefined,
       color: 'error',
     })
@@ -227,7 +227,7 @@ onMounted(async () => {
                   {{ t.defaultSelection }}
                 </p>
                 <p class="mt-2 text-sm leading-6 text-ink-soft">
-                  {{ t.phase2WillStartWith }}
+                  {{ t.skillAssessmentWillStartWith }}
                   <span class="font-semibold text-ink">{{
                     primaryRole.name
                   }}</span
@@ -281,7 +281,7 @@ onMounted(async () => {
                   {{ t.selected }}
                 </p>
                 <p class="mt-2 text-sm leading-6 text-ink-soft">
-                  {{ t.phase2WillStartWith }}
+                  {{ t.skillAssessmentWillStartWith }}
                   <span class="font-semibold text-ink">{{ role.name }}</span
                   >.
                 </p>
@@ -303,7 +303,7 @@ onMounted(async () => {
         >
           <div class="flex flex-wrap items-center justify-between gap-4">
             <div class="max-w-2xl">
-              <p class="eyebrow">{{ t.assignment2 }}</p>
+              <p class="eyebrow">{{ t.skillAssessment }}</p>
               <h2 class="mt-3 text-2xl font-bold text-ink">
                 {{ t.continueWith }} {{ selectedRoleName }}
               </h2>

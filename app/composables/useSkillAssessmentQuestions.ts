@@ -3,21 +3,21 @@ import type { Ref } from 'vue'
 import { clamp } from '~/utils/roadmaps'
 import type { RadarDimension } from '~/utils/roadmaps'
 import type {
-  RoadmapsCatalogDimension,
-  RoadmapsCatalogQuestion,
+  SkillAssessmentCatalogDimension,
+  SkillAssessmentCatalogQuestion,
 } from '~~/shared/types/assessment'
-import { useRoadmapsApiClient } from '~/composables/useRoadmapsApiClient'
+import { useSkillAssessmentApiClient } from '~/composables/useSkillAssessmentApiClient'
 
-export type RoadmapQuestion = {
+export type SkillAssessmentQuestion = {
   id: string
   prompt: string
-  translations?: RoadmapsCatalogQuestion['translations']
+  translations?: SkillAssessmentCatalogQuestion['translations']
   dimensionKey: string
 }
 
-export function buildRoadmapQuestions(
-  catalogQuestions: RoadmapsCatalogQuestion[] | undefined | null,
-): RoadmapQuestion[] {
+export function buildSkillAssessmentQuestions(
+  catalogQuestions: SkillAssessmentCatalogQuestion[] | undefined | null,
+): SkillAssessmentQuestion[] {
   return (catalogQuestions ?? []).map((question) => ({
     id: question.id,
     prompt: question.prompt,
@@ -26,7 +26,7 @@ export function buildRoadmapQuestions(
   }))
 }
 
-export function normalizeRoadmapsAnswer(
+export function normalizeSkillAssessmentAnswer(
   raw: number,
   answerScaleMin: number,
   answerScaleMax: number,
@@ -41,7 +41,7 @@ export function normalizeRoadmapsAnswer(
 }
 
 export function getQuestionInfluence(
-  question: RoadmapQuestion,
+  question: SkillAssessmentQuestion,
   answers: Record<string, number>,
   answerScaleMin: number,
   answerScaleMax: number,
@@ -50,12 +50,12 @@ export function getQuestionInfluence(
   if (typeof raw !== 'number' || !Number.isFinite(raw)) {
     return null
   }
-  return normalizeRoadmapsAnswer(raw, answerScaleMin, answerScaleMax)
+  return normalizeSkillAssessmentAnswer(raw, answerScaleMin, answerScaleMax)
 }
 
 export function answeredQuestionsCountForDimension(
   dimensionKey: string,
-  questions: RoadmapQuestion[],
+  questions: SkillAssessmentQuestion[],
   answers: Record<string, number>,
 ): number {
   return questions.filter((question) => {
@@ -68,7 +68,7 @@ export function answeredQuestionsCountForDimension(
 
 export function getDimensionMastery(
   dimensionKey: string,
-  questions: RoadmapQuestion[],
+  questions: SkillAssessmentQuestion[],
   answers: Record<string, number>,
   answerScaleMin: number,
   answerScaleMax: number,
@@ -83,7 +83,7 @@ export function getDimensionMastery(
   }
 
   const normalized = matchingAnswers.map((value) =>
-    normalizeRoadmapsAnswer(value, answerScaleMin, answerScaleMax),
+    normalizeSkillAssessmentAnswer(value, answerScaleMin, answerScaleMax),
   )
   const average =
     normalized.reduce((sum: number, value: number) => sum + value, 0) /
@@ -92,8 +92,8 @@ export function getDimensionMastery(
 }
 
 export function scoreAdaptiveCandidate(
-  question: RoadmapQuestion,
-  questions: RoadmapQuestion[],
+  question: SkillAssessmentQuestion,
+  questions: SkillAssessmentQuestion[],
   answers: Record<string, number>,
   answerScaleMin: number,
   answerScaleMax: number,
@@ -119,21 +119,21 @@ export function scoreAdaptiveCandidate(
 }
 
 export function getUnansweredQuestions(
-  questions: RoadmapQuestion[],
+  questions: SkillAssessmentQuestion[],
   answers: Record<string, number>,
-): RoadmapQuestion[] {
+): SkillAssessmentQuestion[] {
   return questions.filter((question) => !Number.isFinite(answers[question.id]))
 }
 
 export function getBestLocalCandidate(
-  unanswered: RoadmapQuestion[],
-  questions: RoadmapQuestion[],
+  unanswered: SkillAssessmentQuestion[],
+  questions: SkillAssessmentQuestion[],
   answers: Record<string, number>,
   answerScaleMin: number,
   answerScaleMax: number,
-): RoadmapQuestion | null {
+): SkillAssessmentQuestion | null {
   return unanswered.reduce(
-    (best: RoadmapQuestion | null, current: RoadmapQuestion) => {
+    (best: SkillAssessmentQuestion | null, current: SkillAssessmentQuestion) => {
       if (!best) {
         return current
       }
@@ -154,20 +154,20 @@ export function getBestLocalCandidate(
         ? current
         : best
     },
-    null as RoadmapQuestion | null,
+    null as SkillAssessmentQuestion | null,
   )
 }
 
-export function useRoadmapQuestions(
+export function useSkillAssessmentQuestions(
   sessionId: Ref<string>,
-  roadmapQuestions: Ref<RoadmapQuestion[]>,
-  roadmapAnswers: Ref<Record<string, number>>,
+  skillAssessmentQuestions: Ref<SkillAssessmentQuestion[]>,
+  skillAssessmentAnswers: Ref<Record<string, number>>,
   answerScaleMin: Ref<number>,
   answerScaleMax: Ref<number>,
   baseDimensions: Ref<RadarDimension[]>,
-  catalogByKey: Ref<Map<string, RoadmapsCatalogDimension>>,
+  catalogByKey: Ref<Map<string, SkillAssessmentCatalogDimension>>,
 ) {
-  const { getRoadmapsNextQuestion } = useRoadmapsApiClient()
+  const { getSkillAssessmentNextQuestion } = useSkillAssessmentApiClient()
 
   const blendedDimensions = computed<RadarDimension[]>(() => {
     const baseByKey = new Map(
@@ -175,14 +175,14 @@ export function useRoadmapQuestions(
     )
 
     return baseDimensions.value.map((dimension) => {
-      const matchingQuestions = roadmapQuestions.value.filter(
+      const matchingQuestions = skillAssessmentQuestions.value.filter(
         (question) => question.dimensionKey === dimension.key,
       )
       const influences = matchingQuestions
         .map((question) =>
           getQuestionInfluence(
             question,
-            roadmapAnswers.value,
+            skillAssessmentAnswers.value,
             answerScaleMin.value,
             answerScaleMax.value,
           ),
@@ -206,34 +206,34 @@ export function useRoadmapQuestions(
     })
   })
 
-  async function pickNextQuestionWithRl(): Promise<RoadmapQuestion | null> {
+  async function pickNextQuestionWithRl(): Promise<SkillAssessmentQuestion | null> {
     const unanswered = getUnansweredQuestions(
-      roadmapQuestions.value,
-      roadmapAnswers.value,
+      skillAssessmentQuestions.value,
+      skillAssessmentAnswers.value,
     )
     if (!unanswered.length) {
       return null
     }
 
     try {
-      const response = await getRoadmapsNextQuestion(
+      const response = await getSkillAssessmentNextQuestion(
         sessionId.value,
-        roadmapAnswers.value,
+        skillAssessmentAnswers.value,
       )
       const nextQuestionId = response.next_question?.id
       if (!nextQuestionId) {
         return null
       }
       return (
-        roadmapQuestions.value.find(
+        skillAssessmentQuestions.value.find(
           (question) => question.id === nextQuestionId,
         ) ?? null
       )
     } catch {
       return getBestLocalCandidate(
         unanswered,
-        roadmapQuestions.value,
-        roadmapAnswers.value,
+        skillAssessmentQuestions.value,
+        skillAssessmentAnswers.value,
         answerScaleMin.value,
         answerScaleMax.value,
       )

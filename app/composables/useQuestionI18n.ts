@@ -25,7 +25,7 @@ const STANDARD_SCALES: Record<string, Record<string, string>> = {
 }
 
 /**
- * Minimal structural shape shared by survey-1 questions and survey-2
+ * Minimal structural shape shared by role discovery questions and skill assessment
  * catalog questions — anything with a prompt plus optional translations,
  * options, and response scale can be localized.
  */
