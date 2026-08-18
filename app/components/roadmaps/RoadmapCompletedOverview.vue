@@ -9,6 +9,7 @@ const props = defineProps<{
   recalculatedStrengths: string[]
   recalculatedGrowthAreas: string[]
   targetScore: number
+  targetByDimension?: Record<string, number>
   isAtTarget: boolean
   capabilityGap: number
   displayTopics: RoadmapTopic[]
@@ -35,10 +36,15 @@ function scrollToTopic(topicId: number) {
   }
 }
 
+/**
+ * The target the As-Is profile is compared against. Each axis takes the target
+ * derived from the role's own roadmap; an axis with none falls back to the
+ * overall score so the polygon stays closed.
+ */
 const targetPerDimension = computed<RadarDimension[]>(() =>
   props.blendedDimensions.map((d) => ({
     ...d,
-    value: props.targetScore / 100,
+    value: props.targetByDimension?.[d.key] ?? props.targetScore / 100,
   })),
 )
 </script>

@@ -506,14 +506,41 @@ const skillAssessmentPromptContext = computed(() => {
   return t.value.promptContext
 })
 
-const TARGET_READINESS_SCORE = 78
+/**
+ * Used only for a role whose roadmap has not been imported, so no per-topic
+ * target can be derived. Every other role's target comes from its own roadmap:
+ * a topic that unlocks others has to be held more firmly than a terminal one.
+ */
+const FALLBACK_TARGET_READINESS_SCORE = 78
+
+const skillAssessmentReadiness = computed(
+  () => skillAssessmentState?.readiness ?? null,
+)
+
+/** Per-axis target, keyed by dimension so the radar can plot the role's shape. */
+const targetByDimension = computed<Record<string, number>>(() => {
+  const targets = skillAssessmentReadiness.value?.targets ?? {}
+  const map: Record<string, number> = {}
+  for (const question of skillAssessmentCatalog?.questions ?? []) {
+    const slug = question.topic_slug
+    if (slug && targets[slug] !== undefined) {
+      map[question.dimension_key] = targets[slug]
+    }
+  }
+  return map
+})
+
+const targetReadinessScore = computed(() => {
+  const overall = skillAssessmentReadiness.value?.overall_target
+  return overall ? Math.round(overall * 100) : FALLBACK_TARGET_READINESS_SCORE
+})
 
 const capabilityGap = computed(() =>
-  Math.max(0, TARGET_READINESS_SCORE - overallCapabilityScore.value),
+  Math.max(0, targetReadinessScore.value - overallCapabilityScore.value),
 )
 
 const isAtTarget = computed(
-  () => overallCapabilityScore.value >= TARGET_READINESS_SCORE,
+  () => overallCapabilityScore.value >= targetReadinessScore.value,
 )
 
 const topRoadmapTopics = computed<RoadmapTopic[]>(() => {
@@ -954,7 +981,8 @@ useSeoMeta({
         :recalculated-strengths="recalculatedStrengths"
         :recalculated-growth-areas="recalculatedGrowthAreas"
         :strongest-dimension-cards="strongestDimensionCards"
-        :target-score="TARGET_READINESS_SCORE"
+        :target-score="targetReadinessScore"
+        :target-by-dimension="targetByDimension"
         :is-at-target="isAtTarget"
         :capability-gap="capabilityGap"
         :display-topics="displayTopics"

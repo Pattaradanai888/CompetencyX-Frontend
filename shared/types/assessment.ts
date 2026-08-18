@@ -99,6 +99,20 @@ export interface RoleRoadmap {
   external_source: ExternalRoadmapSource | null
 }
 
+export interface SkillAssessmentReadiness {
+  targets: Record<string, number>
+  overall_target: number
+  overall_mastery: number
+}
+
+export interface SkillAssessmentRecommendedTopic {
+  topic_slug: string
+  topic_title: string
+  mastery: number
+  prerequisite_titles: string[]
+  reason: string
+}
+
 export interface QuestionOption {
   id: number
   key: string
