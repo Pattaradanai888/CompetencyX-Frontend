@@ -1,63 +1,149 @@
 # CompetencyX Frontend
 
-Nuxt 4 frontend for the CompetencyX assessment flow. The app talks to the backend over HTTP using the public runtime config key `NUXT_PUBLIC_API_BASE`.
+Nuxt 4 frontend ของ CompetencyX — หน้าเว็บสำหรับทำ Role Discovery, Skill Assessment, ดูผล และดู roadmap
+คุยกับ backend ผ่าน HTTP ล้วน โดยอ่าน base URL จาก `NUXT_PUBLIC_API_BASE`
 
-## Setup
+Backend อยู่คนละ repo: [CompetencyX-Backend](https://github.com/Pattaradanai888/CompetencyX-Backend)
 
-Install dependencies with `pnpm`:
+---
 
-```bash
-pnpm install
-```
+## 1. สิ่งที่ต้องมีก่อน
 
-Create a local env file from the example:
+| ต้องมี             | หมายเหตุ                                                    |
+| ------------------ | ----------------------------------------------------------- |
+| Node.js 22 ขึ้นไป  | ดู `engines` ใน `package.json`                              |
+| pnpm 10            | โปรเจกต์ commit `pnpm-lock.yaml` ไว้ อย่าใช้ npm/yarn ปนกัน |
+| Backend ที่รันอยู่ | ถ้าไม่มี หน้าเว็บจะขึ้นแต่โหลดคำถามไม่ได้                   |
 
-```bash
-cp .env.example .env
-```
-
-On Windows PowerShell:
+เปิด pnpm ผ่าน corepack ได้เลย ไม่ต้องติดตั้งเอง
 
 ```powershell
-Copy-Item .env.example .env
+corepack enable
 ```
 
-## API Connection
+---
 
-Set the backend base URL in `.env`:
+## 2. เริ่มใช้งาน
+
+```powershell
+# 2.1 ติดตั้ง dependencies
+pnpm install
+
+# 2.2 สร้างไฟล์ .env
+Copy-Item .env.example .env
+
+# 2.3 รัน dev server ที่ http://localhost:3000
+pnpm dev
+```
+
+ใน `.env` ชี้ไปที่ backend
 
 ```env
 NUXT_PUBLIC_API_BASE=http://localhost:8000
 ```
 
-The frontend API client prefixes all backend requests with this value. Current endpoints used by the app include:
+ต้องสตาร์ท backend คู่กันด้วย (ดูวิธีใน README ของ repo backend) ให้อยู่ที่พอร์ต 8000
 
-- `/api/catalog/roles/`
-- `/api/catalog/roles/:roleSlug/topics/`
-- `/api/assessment-sessions/`
-- `/api/assessment-sessions/:sessionId/`
-- `/api/assessment-sessions/:sessionId/answers/`
-- `/api/assessment-sessions/:sessionId/results/`
-- `/api/assessment-sessions/:sessionId/history/`
+---
 
-## Development
+## 3. คำสั่งที่ใช้บ่อย
 
-Start the frontend on `http://localhost:3000`:
+```powershell
+pnpm dev            # dev server + HMR
+pnpm build          # production build ออกไปที่ .output/
+pnpm preview        # ลองรัน production build ในเครื่อง
+pnpm generate       # static build (ใช้เฉพาะกรณีที่ไม่ต้องการ server)
 
-```bash
-pnpm dev
+pnpm lint           # ESLint
+pnpm lint:fix       # ESLint แก้อัตโนมัติเท่าที่ปลอดภัย
+pnpm format         # Prettier เขียนทับไฟล์
+pnpm format:check   # เช็ค format เฉย ๆ ใช้ก่อนเปิด PR
+
+pnpm test           # vitest ทุก project
+pnpm test:unit      # เฉพาะ test/unit
+pnpm test:nuxt      # เฉพาะ test/nuxt (รันใน environment ของ Nuxt)
+pnpm test:e2e       # เฉพาะ test/e2e
+pnpm test:watch     # โหมด watch
 ```
 
-## Build
+รัน `pnpm lint` กับ `pnpm test` ให้ผ่านก่อนเปิด PR
 
-Create a production build:
+---
 
-```bash
+## 4. การต่อกับ backend
+
+ทุก request วิ่งผ่าน `useApiClient()` (`app/composables/useApiClient.ts`) ซึ่งเติม `runtimeConfig.public.apiBase` ให้อัตโนมัติ
+ถ้าจะเปลี่ยนปลายทาง API ให้แก้ที่ env ตัวเดียว ไม่ต้องไล่แก้ในโค้ด
+
+endpoint ที่หน้าเว็บเรียกอยู่ตอนนี้
+
+- `GET  /api/v1/catalog/roles/`
+- `GET  /api/v1/catalog/roles/{slug}/topics/`
+- `GET  /api/v1/catalog/roles/{slug}/roadmap/`
+- `POST /api/v1/assessment-sessions/`
+- `GET  /api/v1/assessment-sessions/{id}/`
+- `POST /api/v1/assessment-sessions/{id}/answers/`
+- `GET  /api/v1/assessment-sessions/{id}/results/`
+- `GET  /api/v1/assessment-sessions/{id}/history/`
+- `GET  /api/v1/assessment-sessions/{id}/skill-assessment/catalog/`
+- `POST /api/v1/assessment-sessions/{id}/skill-assessment/next-question/`
+- `GET|POST /api/v1/assessment-sessions/{id}/skill-assessment/`
+
+รายละเอียด payload ดูที่ `frontend-integration.md` และ `openapi.json` ใน repo นี้ (snapshot จาก backend)
+
+---
+
+## 5. โครงสร้างหน้า
+
+| Route                        | ไฟล์                                      | ทำอะไร                                 |
+| ---------------------------- | ----------------------------------------- | -------------------------------------- |
+| `/`                          | `app/pages/index.vue`                     | หน้าแรก                                |
+| `/assessment/start`          | `app/pages/assessment/start.vue`          | เริ่มทำแบบประเมิน                      |
+| `/assessment/preferred-role` | `app/pages/assessment/preferred-role.vue` | เลือก role ที่อยากไป (Role Aspiration) |
+| `/assessment/{sessionId}`    | `app/pages/assessment/[sessionId].vue`    | ตอบคำถามทีละข้อ                        |
+| `/results/{sessionId}`       | `app/pages/results/[sessionId].vue`       | สรุปผลและ recommendation               |
+| `/roadmaps/{sessionId}`      | `app/pages/roadmaps/[sessionId].vue`      | roadmap ของ role ที่ได้                |
+
+โค้ดส่วนอื่น: `app/components/` (แยกตามโดเมน), `app/composables/` (เรียก API + state), `app/utils/` (logic ล้วน), `app/i18n/` (ข้อความ ไทย/อังกฤษ), `test/` (unit / nuxt / e2e)
+
+---
+
+## 6. Deploy ขึ้น Railway
+
+repo นี้ deploy ด้วย `Dockerfile` (multi-stage: build ด้วย pnpm แล้วเหลือแต่ `.output` ตอนรัน) และมี `railway.json` กำหนด healthcheck ที่ `/`
+
+### 6.1 สร้าง service
+
+1. ไปที่ [railway.com/new](https://railway.com/new) → **Deploy from GitHub repo** → เลือก `CompetencyX-Frontend`
+   (จะอยู่ project เดียวกับ backend ก็ได้ กด **+ Create** → **GitHub Repo** ใน project เดิม)
+2. Settings → Networking → **Generate Domain**
+
+### 6.2 ตั้งค่า Variables
+
+| ตัวแปร                 | ค่าที่ใส่                                                                                                              |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `NUXT_PUBLIC_API_BASE` | URL ของ backend เช่น `https://${{backend.RAILWAY_PUBLIC_DOMAIN}}` (ใช้ variable reference ได้ถ้าอยู่ project เดียวกัน) |
+
+`PORT` ไม่ต้องตั้ง — Nitro อ่านจาก env ที่ Railway ใส่ให้เอง และ `NUXT_PUBLIC_API_BASE` มีผลตอน runtime จึงเปลี่ยนค่าได้โดยไม่ต้อง build ใหม่
+
+### 6.3 ฝั่ง backend ต้องยอมให้เรียก
+
+backend ต้องเปิด CORS ให้โดเมนของ frontend — ตั้ง `DJANGO_CORS_ALLOW_ALL_ORIGINS=true` ที่ service ของ backend (หรือกำหนดโดเมนแบบเจาะจงถ้าจะรัดกุมกว่านั้น)
+
+### 6.4 ลองรันแบบ production ในเครื่องก่อน
+
+```powershell
 pnpm build
+node .output/server/index.mjs   # หรือ pnpm preview
 ```
 
-Preview the production build locally:
+---
 
-```bash
-pnpm preview
-```
+## 7. ปัญหาที่เจอบ่อย
+
+| อาการ                            | วิธีแก้                                                                          |
+| -------------------------------- | -------------------------------------------------------------------------------- |
+| หน้าเว็บขึ้นแต่ไม่มีคำถาม / role | backend ไม่ได้รัน หรือ `NUXT_PUBLIC_API_BASE` ผิด                                |
+| CORS error ใน console            | backend ยังไม่ได้เปิด `DJANGO_CORS_ALLOW_ALL_ORIGINS`                            |
+| แก้ `.env` แล้วค่าไม่เปลี่ยน     | ต้องรีสตาร์ท `pnpm dev` ใหม่                                                     |
+| ติดตั้ง dependencies แล้วพัง     | ลบ `node_modules` แล้ว `pnpm install --frozen-lockfile` ใหม่ อย่าใช้ npm install |
