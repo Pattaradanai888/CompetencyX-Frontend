@@ -67,6 +67,38 @@ export interface RoadmapTopic {
   resource_links?: ResourceLink[]
 }
 
+export interface ExternalRoadmapTopic {
+  slug: string
+  title: string
+  topic_group?: string
+  node_type: 'topic' | 'subtopic'
+  display_order: number
+  parent_title?: string
+  prerequisite_titles: string[]
+  subtopic_titles: string[]
+  follow_on_titles: string[]
+}
+
+export interface ExternalRoadmapSource {
+  source: string
+  source_url: string
+  retrieved_on: string | null
+  node_count: number
+}
+
+export interface RoleRoadmap {
+  role: Role
+  topics: RoadmapTopic[]
+  prerequisite_edges: {
+    topic: string
+    prerequisite: string
+    required_mastery_threshold: number
+    dependency_weight: number
+  }[]
+  external_topics: ExternalRoadmapTopic[]
+  external_source: ExternalRoadmapSource | null
+}
+
 export interface QuestionOption {
   id: number
   key: string

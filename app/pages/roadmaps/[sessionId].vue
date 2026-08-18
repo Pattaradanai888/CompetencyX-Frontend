@@ -4,10 +4,10 @@ import { useLocale } from '~/composables/useLocale'
 import { sortTopicsByDisplayOrder } from '~/utils/assessment'
 import { buildRoadmapsEvaluation, getRoadmapScaleLabel, cleanPillarLabel } from '~/utils/roadmaps'
 import {
-  getRoadmapTopics,
   fetchTopicResources,
   getRoadmapSlug,
 } from '~/utils/roadmapTopics'
+import { useCatalogApi } from '~/composables/useCatalogApi'
 import type { RadarDimension } from '~/utils/roadmaps'
 import { defineAsyncComponent, hydrateOnVisible } from 'vue'
 import SkillAssessmentGuidanceCard from '~/components/roadmaps/SkillAssessmentGuidanceCard.vue'
@@ -60,19 +60,27 @@ const { data: _skillAssessmentData, refresh } = await useAsyncData(
       () => null as AssessmentSession | null,
     )
 
-    const assessmentResult = await getResults(sessionId.value).catch(
-      (error) => {
-        if ((error as ApiError).statusCode === 409) {
-          return null
-        }
-        throw error
-      },
-    )
+    // A session started from a known role never ran role discovery, so the
+    // results and history endpoints answer 409 for it. The browser logs every
+    // 4xx at the network layer even when the promise is caught, so skip the
+    // calls outright instead of catching the error afterwards.
+    const hasRoleDiscoveryResult = session?.phase === 'recommendation_ready'
+
+    const assessmentResult = hasRoleDiscoveryResult
+      ? await getResults(sessionId.value).catch((error) => {
+          if ((error as ApiError).statusCode === 409) {
+            return null
+          }
+          throw error
+        })
+      : null
 
     const [result, history, skillAssessmentCatalog, skillAssessmentState] = await Promise.all(
       [
         Promise.resolve(assessmentResult),
-        getHistory(sessionId.value).catch(() => null),
+        hasRoleDiscoveryResult
+          ? getHistory(sessionId.value).catch(() => null)
+          : Promise.resolve(null),
         getSkillAssessmentCatalog(sessionId.value),
         getSkillAssessmentState(sessionId.value).catch(() => ({
           completed: false,
@@ -311,15 +319,47 @@ async function loadTopicResources(topicId: number, topicTitle: string) {
   loadingResources.value = next
 }
 
-// Client-only: fetches external roadmap.sh data (GitHub raw + a relative-URL
-// fallback that cannot run on the server); during SSR the result would be
-// discarded anyway since it lands in a plain ref.
+const { getRoleRoadmap } = useCatalogApi()
+
+/**
+ * The role's roadmap now comes from our own backend, which imports the
+ * roadmap.sh graph as master data (already ordered so a prerequisite precedes
+ * what it unlocks). The page used to fetch that graph from
+ * raw.githubusercontent.com in the browser and fail silently offline, which
+ * dropped the sequence from a full roadmap back to a handful of curated topics.
+ * A role with no imported snapshot returns an empty list and the page falls
+ * back to the curated topics exactly as before.
+ */
+async function loadRoleRoadmap(slug: string): Promise<RoadmapTopic[]> {
+  try {
+    const roadmap = await getRoleRoadmap(slug)
+    return roadmap.external_topics.map((topic, index) => ({
+      id: -(index + 30),
+      slug: topic.slug,
+      title: topic.title,
+      description: undefined,
+      difficulty: 0,
+      display_order: topic.display_order,
+      parent_id: null,
+      prerequisites: [],
+      topic_group: topic.topic_group,
+      prerequisite_titles: topic.prerequisite_titles,
+      subtopic_titles: topic.subtopic_titles,
+      follow_on_titles: topic.follow_on_titles,
+    }))
+  } catch {
+    return []
+  }
+}
+
+// Client-only: the roadmap is supplementary to the server-rendered session data
+// and lands in a plain ref, so an SSR fetch would be discarded anyway.
 if (import.meta.client) {
   watch(
     currentRoleSlug,
     async (slug) => {
       if (slug) {
-        roadmapShTopics.value = await getRoadmapTopics(slug)
+        roadmapShTopics.value = await loadRoleRoadmap(slug)
       }
     },
     { immediate: true },
