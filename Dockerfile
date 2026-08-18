@@ -11,9 +11,11 @@ RUN corepack enable
 # The whole project is copied before installing because the `postinstall` hook
 # runs `nuxt prepare`, which needs nuxt.config.ts and the app/ directory. The
 # store cache mount is what keeps reinstalls cheap instead of a deps-only layer.
+# The cache id must spell out the service (s/<service id>-<target>): Railway's
+# builder rejects an id-less cache mount and keys the shared cache on that string.
 COPY . .
 
-RUN --mount=type=cache,target=/pnpm/store \
+RUN --mount=type=cache,id=s/f13aee82-77f4-4a72-8255-75986fd5cf4e-/pnpm/store,target=/pnpm/store \
     pnpm install --frozen-lockfile --store-dir=/pnpm/store
 
 RUN pnpm build
