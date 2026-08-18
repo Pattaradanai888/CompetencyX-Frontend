@@ -44,3 +44,7 @@ yarn-error.log*
 *.local
 !.env.example
 .tokensave
+
+# Local tool artifacts (code graph indexes, Playwright MCP captures)
+.codegraph/
+.playwright-mcp/
