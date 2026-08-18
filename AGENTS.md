@@ -40,3 +40,17 @@ This repository has Git initialized but no commit history yet, so there is no es
 ## Configuration Notes
 
 Core project settings live in `nuxt.config.ts`. Update `compatibilityDate` and module registrations deliberately, and avoid committing generated folders such as `.nuxt/` or local package stores.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs are tracked in this repository's GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The standard Matt Pocock triage labels are used. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This is a single-context repository. See `docs/agents/domain.md`.
