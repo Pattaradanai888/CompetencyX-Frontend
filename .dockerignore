@@ -1,0 +1,37 @@
+.git
+.github
+node_modules
+.pnpm-store
+.nuxt
+.output
+.nitro
+.data
+.cache
+dist
+coverage
+playwright-report
+test-results
+.env
+.env.*
+!.env.example
+*.log
+.nuxt-dev.err
+
+# Local agent/tool state
+.agents
+.claude
+.codex
+.codegraph
+.interface-design
+.pi-lens
+.playwright-mcp
+.serena
+.tokensave
+.vscode
+
+# Local scratch files
+shots
+html.txt
+html_output.txt
+old_start.vue
+commit_msg.txt
