@@ -8,8 +8,6 @@ export type QuestionType =
   | 'single_choice'
   | 'ranked_choice'
   | 'likert_5'
-export type PathKind = 'preferred' | 'best_fit'
-export type PolicyType = 'rule_based' | 'q_learning'
 export type ConfidenceIndicator = 'low' | 'medium' | 'high'
 export type RoleAlignmentStatus = 'unknown' | 'aligned' | 'mismatch'
 export type RoleResolutionStatus =
@@ -184,19 +182,6 @@ export interface RankedRoleInsight {
   top_supporting_pillars: string[]
 }
 
-export interface Recommendation {
-  id: number
-  role_slug: string
-  topic_id: number | null
-  topic_slug: string | null
-  topic_title: string | null
-  reason: string
-  path_kind?: PathKind
-  policy_type?: PolicyType
-  score?: number | null
-  created_at: string
-}
-
 export interface AssessmentResult extends Omit<
   AssessmentSession,
   'current_question'
@@ -204,8 +189,6 @@ export interface AssessmentResult extends Omit<
   pillar_profile: PillarInsight[]
   ranked_roles: RankedRoleInsight[]
   preferred_role_gap_topics: RoadmapTopic[]
-  preferred_path_recommendation: Recommendation | null
-  best_fit_path_recommendation: Recommendation | null
 }
 
 export interface AssessmentInsights {
@@ -239,7 +222,6 @@ export interface AssessmentHistory {
   phase: AssessmentPhase
   status: AssessmentStatus
   answers: AnswerHistory[]
-  recommendations: Recommendation[]
 }
 
 export interface SkillAssessmentSessionState {

@@ -3,14 +3,11 @@ import {
   formatConfidencePercent,
   getAlignmentLabel,
   getQuestionTypeLabel,
-  getRecommendationHeadline,
-  hasTopicRecommendation,
   isSessionComplete,
 } from '../../app/utils/assessment'
 import type {
   AssessmentResult,
   AssessmentSession,
-  Recommendation,
 } from '../../shared/types/assessment'
 
 const baseSession: AssessmentSession = {
@@ -75,8 +72,6 @@ describe('assessment utils', () => {
       pillar_profile: [],
       ranked_roles: [],
       preferred_role_gap_topics: [],
-      preferred_path_recommendation: null,
-      best_fit_path_recommendation: null,
     }
 
     expect(isSessionComplete(result)).toBe(true)
@@ -89,20 +84,4 @@ describe('assessment utils', () => {
     expect(formatConfidencePercent(0.784)).toBe('78%')
   })
 
-  it('handles nullable recommendation topics', () => {
-    const emptyRecommendation: Recommendation | null = {
-      id: 2,
-      role_slug: 'backend-engineer',
-      topic_id: null,
-      topic_slug: null,
-      topic_title: null,
-      reason: 'No recommendation.',
-      created_at: '2026-04-17T04:00:00Z',
-    }
-
-    expect(getRecommendationHeadline(emptyRecommendation)).toBe(
-      'No next topic recommended yet',
-    )
-    expect(hasTopicRecommendation(emptyRecommendation)).toBe(false)
-  })
 })

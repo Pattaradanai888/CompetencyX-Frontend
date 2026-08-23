@@ -126,16 +126,6 @@ describe('results page', () => {
         },
       ],
       preferred_role_gap_topics: [],
-      preferred_path_recommendation: {
-        id: 1,
-        role_slug: 'backend-engineer',
-        topic_id: 77,
-        topic_slug: 'api-design',
-        topic_title: 'API Design',
-        reason: 'Strong next step.',
-        created_at: '2026-04-17T04:02:00Z',
-      },
-      best_fit_path_recommendation: null,
     })
   })
 
@@ -156,9 +146,7 @@ describe('results page', () => {
     expect(wrapper.text()).not.toContain('24%')
     expect(wrapper.text()).not.toContain('14%')
     expect(wrapper.text()).not.toContain('How to read these numbers')
-    expect(wrapper.text()).not.toContain('API Design')
     expect(wrapper.text()).not.toContain('Resolved')
-    expect(wrapper.text()).not.toContain('Recommendation in progress')
     expect(navigateToMock).not.toHaveBeenCalled()
   })
 

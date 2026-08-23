@@ -17,7 +17,6 @@ import { useQuestionI18n } from '~/composables/useQuestionI18n'
 import type {
   ApiError,
   AssessmentSession,
-  Recommendation,
   ResourceLink,
   RoadmapTopic,
   SkillAssessmentCatalogDimension,
@@ -561,24 +560,6 @@ const topRoadmapTopics = computed<RoadmapTopic[]>(() => {
       is_gap:
         gapTitles.has(rt.title.toLowerCase().trim()) ||
         gapTitles.has(rt.slug.replace(/-/g, ' ')),
-    }))
-  }
-
-  const recs = [
-    result.value?.preferred_path_recommendation,
-    result.value?.best_fit_path_recommendation,
-  ].filter((r): r is Recommendation => r != null && r.topic_title != null)
-
-  if (recs.length) {
-    return recs.slice(0, 6).map((rec, index) => ({
-      id: rec.topic_id ?? -(index + 1),
-      slug: rec.topic_slug ?? '',
-      title: rec.topic_title!,
-      description: rec.reason,
-      difficulty: 0,
-      display_order: index,
-      parent_id: null,
-      prerequisites: [],
     }))
   }
 

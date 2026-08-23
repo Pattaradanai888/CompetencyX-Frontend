@@ -4,7 +4,6 @@ import type {
   AssessmentSession,
   QuestionStage,
   QuestionType,
-  Recommendation,
   RoleAlignmentStatus,
   RoleResolutionStatus,
   SessionMilestones,
@@ -144,26 +143,6 @@ function formatPercent(value?: number | null): string {
 }
 
 export const formatConfidencePercent = formatPercent
-
-export function getRecommendationHeadline(
-  recommendation: Recommendation | null,
-): string {
-  if (!recommendation) {
-    return 'Recommendation in progress'
-  }
-
-  return recommendation.topic_title || 'No next topic recommended yet'
-}
-
-export function hasTopicRecommendation(
-  recommendation: Recommendation | null,
-): boolean {
-  return Boolean(
-    recommendation?.topic_id &&
-    recommendation.topic_slug &&
-    recommendation.topic_title,
-  )
-}
 
 export function sortTopicsByDisplayOrder<
   T extends { display_order?: number | null },

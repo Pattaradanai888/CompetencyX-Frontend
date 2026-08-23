@@ -151,8 +151,6 @@ describe('roadmaps page', () => {
           ],
         },
       ],
-      preferred_path_recommendation: null,
-      best_fit_path_recommendation: null,
     })
 
     getHistoryMock.mockResolvedValue({

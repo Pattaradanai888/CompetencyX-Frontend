@@ -346,20 +346,6 @@
                                                     "confidence_indicator": "high",
                                                     "responded_at": "2026-04-17T04:01:00Z"
                                                 }
-                                            ],
-                                            "recommendations": [
-                                                {
-                                                    "id": 301,
-                                                    "role_slug": "backend-engineer",
-                                                    "topic_id": 12,
-                                                    "topic_slug": "databases",
-                                                    "topic_title": "Databases",
-                                                    "reason": "Lowest-order topic with satisfied prerequisites and insufficient mastery.",
-                                                    "path_kind": "preferred",
-                                                    "policy_type": "rule_based",
-                                                    "score": 0.5,
-                                                    "created_at": "2026-04-17T04:05:00Z"
-                                                }
                                             ]
                                         },
                                         "summary": "History response"
@@ -367,7 +353,7 @@
                                 }
                             }
                         },
-                        "description": "Completed assessment answers and recommendations."
+                        "description": "Completed assessment answers."
                     },
                     "404": {
                         "description": "Assessment session was not found."
@@ -579,27 +565,14 @@
                                                         }
                                                     ]
                                                 }
-                                            ],
-                                            "preferred_path_recommendation": {
-                                                "id": 301,
-                                                "role_slug": "backend-engineer",
-                                                "topic_id": 12,
-                                                "topic_slug": "databases",
-                                                "topic_title": "Databases",
-                                                "reason": "Lowest-order topic with satisfied prerequisites and insufficient mastery.",
-                                                "path_kind": "preferred",
-                                                "policy_type": "rule_based",
-                                                "score": 0.5,
-                                                "created_at": "2026-04-17T04:05:00Z"
-                                            },
-                                            "best_fit_path_recommendation": null
+                                            ]
                                         },
                                         "summary": "Results response"
                                     }
                                 }
                             }
                         },
-                        "description": "Final recommendations and gap topics."
+                        "description": "Role result, mastery, and gap topics."
                     },
                     "404": {
                         "description": "Assessment session was not found."
@@ -872,6 +845,88 @@
                 }
             }
         },
+        "/api/v1/catalog/roles/{slug}/roadmap/": {
+            "get": {
+                "operationId": "retrieveRoleRoadmap",
+                "description": "Returns the role, its curated topics ordered by display order, the prerequisite edges between them, and the full external roadmap (roadmap.sh) imported into our own database. `external_topics` is empty for a role with no vendored snapshot.",
+                "summary": "Retrieve a role's full roadmap",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Catalog"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RoleRoadmap"
+                                },
+                                "examples": {
+                                    "BackendDeveloperRoadmap": {
+                                        "value": {
+                                            "role": {
+                                                "id": 1,
+                                                "slug": "backend-developer",
+                                                "name": "Backend Developer",
+                                                "description": "Builds and operates server-side systems.",
+                                                "top_ka_codes": [
+                                                    "KA-SWE-01"
+                                                ],
+                                                "core_tasks": [
+                                                    "Design APIs"
+                                                ],
+                                                "swebok_source_version": "v4"
+                                            },
+                                            "topics": [
+                                                {
+                                                    "id": 10,
+                                                    "slug": "http",
+                                                    "title": "HTTP Fundamentals",
+                                                    "topic_group": "Web",
+                                                    "description": "Requests, responses, status codes.",
+                                                    "difficulty": "beginner",
+                                                    "display_order": 1,
+                                                    "parent_id": null,
+                                                    "prerequisites": []
+                                                }
+                                            ],
+                                            "prerequisite_edges": [
+                                                {
+                                                    "topic": "apis",
+                                                    "prerequisite": "http",
+                                                    "required_mastery_threshold": 0.7,
+                                                    "dependency_weight": 1.0
+                                                }
+                                            ]
+                                        },
+                                        "summary": "Backend developer roadmap"
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "description": "Role slug was not found or is inactive."
+                    }
+                }
+            }
+        },
         "/api/v1/catalog/roles/{slug}/topics/": {
             "get": {
                 "operationId": "listRoleTopics",
@@ -1090,19 +1145,11 @@
                             "$ref": "#/components/schemas/AnswerHistory"
                         },
                         "readOnly": true
-                    },
-                    "recommendations": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/Recommendation"
-                        },
-                        "readOnly": true
                     }
                 },
                 "required": [
                     "answers",
-                    "id",
-                    "recommendations"
+                    "id"
                 ]
             },
             "AssessmentResult": {
@@ -1202,36 +1249,16 @@
                             "$ref": "#/components/schemas/RoadmapTopic"
                         },
                         "readOnly": true
-                    },
-                    "preferred_path_recommendation": {
-                        "allOf": [
-                            {
-                                "$ref": "#/components/schemas/Recommendation"
-                            }
-                        ],
-                        "nullable": true,
-                        "readOnly": true
-                    },
-                    "best_fit_path_recommendation": {
-                        "allOf": [
-                            {
-                                "$ref": "#/components/schemas/Recommendation"
-                            }
-                        ],
-                        "nullable": true,
-                        "readOnly": true
                     }
                 },
                 "required": [
                     "best_fit_confidence",
-                    "best_fit_path_recommendation",
                     "best_fit_role",
                     "current_role",
                     "guidance_summary",
                     "id",
                     "milestones",
                     "pillar_profile",
-                    "preferred_path_recommendation",
                     "preferred_role",
                     "preferred_role_gap_topics",
                     "profile",
@@ -1376,6 +1403,98 @@
                 "type": "string",
                 "description": "* `beginner` - Beginner\n* `intermediate` - Intermediate\n* `advanced` - Advanced"
             },
+            "ExternalRoadmapSource": {
+                "type": "object",
+                "description": "Provenance of the imported third-party graph backing ``external_topics``.",
+                "properties": {
+                    "source": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "source_url": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "retrieved_on": {
+                        "type": "string",
+                        "format": "date",
+                        "readOnly": true,
+                        "nullable": true
+                    },
+                    "node_count": {
+                        "type": "integer",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "node_count",
+                    "retrieved_on",
+                    "source",
+                    "source_url"
+                ]
+            },
+            "ExternalRoadmapTopic": {
+                "type": "object",
+                "description": "One topic of the role's external roadmap, served from imported master data.\n\nThe list is already ordered so a prerequisite precedes what it unlocks;\n``prerequisite_titles`` / ``follow_on_titles`` / ``subtopic_titles`` are the\ngraph relationships resolved to human-readable titles.",
+                "properties": {
+                    "slug": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "title": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "topic_group": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "node_type": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "display_order": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "parent_title": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "prerequisite_titles": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "readOnly": true
+                    },
+                    "subtopic_titles": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "readOnly": true
+                    },
+                    "follow_on_titles": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "display_order",
+                    "follow_on_titles",
+                    "node_type",
+                    "parent_title",
+                    "prerequisite_titles",
+                    "slug",
+                    "subtopic_titles",
+                    "title",
+                    "topic_group"
+                ]
+            },
             "LanguageEnum": {
                 "enum": [
                     "en",
@@ -1383,14 +1502,6 @@
                 ],
                 "type": "string",
                 "description": "* `en` - English\n* `th` - Thai"
-            },
-            "PathKindEnum": {
-                "enum": [
-                    "preferred",
-                    "best_fit"
-                ],
-                "type": "string",
-                "description": "* `preferred` - Preferred Role Path\n* `best_fit` - Best-Fit Role Path"
             },
             "PhaseEnum": {
                 "enum": [
@@ -1429,14 +1540,6 @@
                     "raw_score"
                 ]
             },
-            "PolicyTypeEnum": {
-                "enum": [
-                    "rule_based",
-                    "q_learning"
-                ],
-                "type": "string",
-                "description": "* `rule_based` - Rule Based\n* `q_learning` - Q Learning"
-            },
             "RankedRoleInsight": {
                 "type": "object",
                 "properties": {
@@ -1469,57 +1572,36 @@
                     "top_supporting_pillars"
                 ]
             },
-            "Recommendation": {
+            "RoadmapPrerequisiteEdge": {
                 "type": "object",
+                "description": "One prerequisite edge of a role's roadmap graph.\n\n``prerequisite`` may point at a topic owned by another role, so a client\nrendering the graph should tolerate an edge whose endpoint is not in the\n``topics`` list.",
                 "properties": {
-                    "id": {
-                        "type": "integer",
-                        "readOnly": true
-                    },
-                    "role_slug": {
+                    "topic": {
                         "type": "string",
-                        "readOnly": true
+                        "readOnly": true,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
                     },
-                    "topic_id": {
-                        "type": "integer",
-                        "nullable": true,
-                        "readOnly": true
-                    },
-                    "topic_slug": {
+                    "prerequisite": {
                         "type": "string",
-                        "readOnly": true
+                        "readOnly": true,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
                     },
-                    "topic_title": {
-                        "type": "string",
-                        "readOnly": true
-                    },
-                    "reason": {
-                        "type": "string"
-                    },
-                    "path_kind": {
-                        "$ref": "#/components/schemas/PathKindEnum"
-                    },
-                    "policy_type": {
-                        "$ref": "#/components/schemas/PolicyTypeEnum"
-                    },
-                    "score": {
+                    "required_mastery_threshold": {
                         "type": "number",
-                        "format": "double"
+                        "format": "double",
+                        "readOnly": true
                     },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
+                    "dependency_weight": {
+                        "type": "number",
+                        "format": "double",
                         "readOnly": true
                     }
                 },
                 "required": [
-                    "created_at",
-                    "id",
-                    "reason",
-                    "role_slug",
-                    "topic_id",
-                    "topic_slug",
-                    "topic_title"
+                    "dependency_weight",
+                    "prerequisite",
+                    "required_mastery_threshold",
+                    "topic"
                 ]
             },
             "RoadmapTopic": {
@@ -1659,6 +1741,57 @@
                     "pillar_profile",
                     "ranked_roles",
                     "role_resolution_status"
+                ]
+            },
+            "RoleRoadmap": {
+                "type": "object",
+                "description": "A role's full roadmap: the role, its active topics in prerequisite order, and the edges between them.",
+                "properties": {
+                    "role": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Role"
+                            }
+                        ],
+                        "readOnly": true
+                    },
+                    "topics": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RoadmapTopic"
+                        },
+                        "readOnly": true
+                    },
+                    "prerequisite_edges": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RoadmapPrerequisiteEdge"
+                        },
+                        "readOnly": true
+                    },
+                    "external_topics": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ExternalRoadmapTopic"
+                        },
+                        "readOnly": true
+                    },
+                    "external_source": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ExternalRoadmapSource"
+                            }
+                        ],
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "external_source",
+                    "external_topics",
+                    "prerequisite_edges",
+                    "role",
+                    "topics"
                 ]
             },
             "SkillAssessmentCatalog": {
@@ -1817,9 +1950,37 @@
                     "completed_at": {
                         "type": "string",
                         "format": "date-time",
+                        "readOnly": true,
                         "nullable": true
+                    },
+                    "topic_mastery": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "number",
+                            "format": "double"
+                        },
+                        "readOnly": true
+                    },
+                    "recommended_topics": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        },
+                        "readOnly": true
+                    },
+                    "readiness": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
                     }
-                }
+                },
+                "required": [
+                    "completed_at",
+                    "readiness",
+                    "recommended_topics",
+                    "topic_mastery"
+                ]
             },
             "StatusEnum": {
                 "enum": [

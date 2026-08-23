@@ -88,8 +88,6 @@ const baseResult: AssessmentResult = {
   ],
   ranked_roles: [],
   preferred_role_gap_topics: [],
-  preferred_path_recommendation: null,
-  best_fit_path_recommendation: null,
 }
 
 const history: AssessmentHistory = {
