@@ -224,10 +224,43 @@ export interface AssessmentHistory {
   answers: AnswerHistory[]
 }
 
+export interface SkillAssessmentProgress {
+  answered: number
+  total: number
+  remaining: number
+  floor: number
+  ceiling: number
+  settled: boolean
+}
+
 export interface SkillAssessmentSessionState {
   completed: boolean
   answers: Record<string, number>
   completed_at: string | null
+  topic_mastery?: Record<string, number>
+  /** Every assessable unit and its state, so nothing unasked reads as a gap. */
+  topic_states?: SkillAssessmentTopicEntry[]
+  recommended_topics?: SkillAssessmentTopicEntry[]
+  /** What the post-assessment screen reads: the next few topics, not the graph. */
+  next_topics?: SkillAssessmentTopicEntry[]
+  readiness?: SkillAssessmentReadiness & { assessed_count?: number }
+  progress?: SkillAssessmentProgress
+  confidence?: 'low' | 'high' | null
+}
+
+export type TopicAssessmentState = 'held' | 'assessed_gap' | 'unassessed'
+
+/**
+ * One assessable unit as the backend reports it: a held topic, an assessed
+ * gap, or an unassessed topic. An unassessed topic is never a gap.
+ */
+export interface SkillAssessmentTopicEntry {
+  topic_slug: string
+  topic_title: string
+  state: TopicAssessmentState
+  mastery: number | null
+  reason?: string
+  statement?: string
 }
 
 export interface SkillAssessmentScaleOption {

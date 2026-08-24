@@ -12,6 +12,7 @@ import type { RadarDimension } from '~/utils/roadmaps'
 import { defineAsyncComponent, hydrateOnVisible } from 'vue'
 import SkillAssessmentGuidanceCard from '~/components/roadmaps/SkillAssessmentGuidanceCard.vue'
 import SkillAssessmentQuestionPanel from '~/components/roadmaps/SkillAssessmentQuestionPanel.vue'
+import RoadmapNextTopics from '~/components/roadmaps/RoadmapNextTopics.vue'
 import { getErrorMessage } from '~/utils/api'
 import { useQuestionI18n } from '~/composables/useQuestionI18n'
 import type {
@@ -21,6 +22,7 @@ import type {
   RoadmapTopic,
   SkillAssessmentCatalogDimension,
   SkillAssessmentCatalogQuestion,
+  SkillAssessmentSessionState,
   SkillAssessmentScaleOption,
 } from '~~/shared/types/assessment'
 
@@ -140,6 +142,21 @@ const result = computed(
 const session = _skillAssessmentSnapshot.session
 const history = _skillAssessmentSnapshot.history
 const skillAssessmentState = _skillAssessmentSnapshot.skillAssessmentState
+
+/**
+ * The live copy of the skill-assessment state. Marking or unmarking a Held
+ * Topic replaces it with the backend's recomputed response, so the
+ * suggestions react without a page reload.
+ */
+const liveSkillState = ref<SkillAssessmentSessionState>(
+  skillAssessmentState ?? { completed: false, answers: {}, completed_at: null },
+)
+
+/** The next three to five topics, in the order the API returned them. */
+const suggestedTopics = computed(
+  () => liveSkillState.value.next_topics ?? [],
+)
+const topicStates = computed(() => liveSkillState.value.topic_states ?? [])
 seedLastSessionState(session, skillAssessmentState?.completed === true)
 const { isThai: globalIsThai, localeInitialized } = useLocale()
 const isThai = computed(() => {
@@ -393,47 +410,6 @@ const overallCapabilityScore = computed(() => {
   return Math.round((total / blendedDimensions.value.length) * 100)
 })
 
-const DIMENSION_KEYWORDS: Record<string, string[]> = {
-  'psp-planning': ['planning', 'estimation'],
-  'psp-quality': ['quality', 'defect', 'review'],
-  'sdlc-requirements': ['requirement', 'analysis'],
-  'sdlc-design': ['design', 'architecture'],
-  'sdlc-development': ['coding', 'development', 'implementation'],
-  'sdlc-testing': ['testing', 'qa'],
-  'sdlc-deployment': ['deploy', 'release', 'delivery'],
-  'sdlc-maintenance': ['maintenance', 'support', 'operations'],
-}
-
-const skillAssessmentPrioritizedTopics = computed(() => {
-  if (!displayTopics.value.length) return []
-
-  const bottomKeys = new Set(
-    [...sortedDimensionsDesc.value]
-      .reverse()
-      .slice(0, recalculatedGrowthAreas.value.length)
-      .map((d) => d.key),
-  )
-
-  const weakKeywords = new Set<string>()
-  for (const key of bottomKeys) {
-    for (const kw of DIMENSION_KEYWORDS[key] ?? []) {
-      weakKeywords.add(kw)
-    }
-  }
-
-  const matching: RoadmapTopic[] = []
-  const rest: RoadmapTopic[] = []
-  for (const topic of displayTopics.value) {
-    const text = `${topic.title} ${topic.slug ?? ''}`.toLowerCase()
-    if ([...weakKeywords].some((kw) => text.includes(kw))) {
-      matching.push(topic)
-    } else {
-      rest.push(topic)
-    }
-  }
-  return [...matching, ...rest]
-})
-
 const skillAssessmentProgressPercent = computed(() => {
   if (!skillAssessmentQuestions.length) return 0
   if (isSkillAssessmentComplete.value) return 100
@@ -505,15 +481,8 @@ const skillAssessmentPromptContext = computed(() => {
   return t.value.promptContext
 })
 
-/**
- * Used only for a role whose roadmap has not been imported, so no per-topic
- * target can be derived. Every other role's target comes from its own roadmap:
- * a topic that unlocks others has to be held more firmly than a terminal one.
- */
-const FALLBACK_TARGET_READINESS_SCORE = 78
-
 const skillAssessmentReadiness = computed(
-  () => skillAssessmentState?.readiness ?? null,
+  () => liveSkillState.value.readiness ?? null,
 )
 
 /** Per-axis target, keyed by dimension so the radar can plot the role's shape. */
@@ -529,17 +498,26 @@ const targetByDimension = computed<Record<string, number>>(() => {
   return map
 })
 
-const targetReadinessScore = computed(() => {
+/**
+ * The role's own target from its roadmap. There is no flat fallback: a role
+ * with no readiness data is shown without a To-Be comparison rather than
+ * against an invented constant.
+ */
+const targetReadinessScore = computed<number | null>(() => {
   const overall = skillAssessmentReadiness.value?.overall_target
-  return overall ? Math.round(overall * 100) : FALLBACK_TARGET_READINESS_SCORE
+  return overall ? Math.round(overall * 100) : null
 })
 
-const capabilityGap = computed(() =>
-  Math.max(0, targetReadinessScore.value - overallCapabilityScore.value),
+const capabilityGap = computed<number | null>(() =>
+  targetReadinessScore.value === null
+    ? null
+    : Math.max(0, targetReadinessScore.value - overallCapabilityScore.value),
 )
 
 const isAtTarget = computed(
-  () => overallCapabilityScore.value >= targetReadinessScore.value,
+  () =>
+    targetReadinessScore.value !== null &&
+    overallCapabilityScore.value >= targetReadinessScore.value,
 )
 
 const topRoadmapTopics = computed<RoadmapTopic[]>(() => {
@@ -660,6 +638,69 @@ if (import.meta.client) {
     },
     { immediate: true },
   )
+}
+
+/**
+ * Variants of a title used to join an Assessable Topic Set to its roadmap
+ * entry: the raw title and the de-dashed slug form. The API does not expose
+ * which graph nodes a set covers, so this reviewed-title match is the join;
+ * a rename on either side silently drops the held marker.
+ */
+function titleKeyVariants(value: string): string[] {
+  const trimmed = value.toLowerCase().trim()
+  return [trimmed, trimmed.replace(/-/g, ' ')]
+}
+
+/** Roadmap entries whose Assessable Topic Set is held by this respondent. */
+const heldDisplayTopicIds = computed<number[]>(() => {
+  const heldTitleKeys = new Set<string>()
+  for (const entry of topicStates.value) {
+    if (entry.state !== 'held') continue
+    for (const key of titleKeyVariants(entry.topic_title)) {
+      heldTitleKeys.add(key)
+    }
+  }
+  if (!heldTitleKeys.size) return []
+  return displayTopics.value
+    .filter((topic) =>
+      titleKeyVariants(topic.title).some((key) => heldTitleKeys.has(key)),
+    )
+    .map((topic) => topic.id)
+})
+
+const suggestedPriorityTopics = computed(() =>
+  suggestedTopics.value.map((entry) => ({
+    topic_slug: entry.topic_slug,
+    topic_title: entry.topic_title,
+  })),
+)
+
+const { canMarkHeld, busyTopicKey, heldEntries, markTopicHeld, unmarkTopicHeld } =
+  useHeldTopicMarking(
+    () => sessionId.value,
+    liveSkillState,
+    () => isThai.value,
+  )
+
+/**
+ * The full roadmap is one click away from the suggestions — it opens in place
+ * rather than being what a finished respondent lands on.
+ */
+const showFullRoadmap = ref(false)
+const fullRoadmapSection = ref<HTMLElement | null>(null)
+
+function toggleFullRoadmap() {
+  if (showFullRoadmap.value) {
+    showFullRoadmap.value = false
+    return
+  }
+  void openFullRoadmap()
+}
+
+async function openFullRoadmap() {
+  showFullRoadmap.value = true
+  await nextTick()
+  fullRoadmapSection.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 const personalityFitNarrative = computed(() => {
@@ -956,6 +997,16 @@ useSeoMeta({
     </section>
 
     <template v-if="isSkillAssessmentComplete">
+      <RoadmapNextTopics
+        :topics="suggestedTopics"
+        :is-thai="isThai"
+        :can-mark="canMarkHeld"
+        :busy-topic-key="busyTopicKey"
+        :held-entries="heldEntries"
+        @mark="markTopicHeld"
+        @unmark="unmarkTopicHeld"
+      />
+
       <RoadmapCompletedOverview
         :role-title="skillAssessmentRoleTitle"
         :overall-capability-score="overallCapabilityScore"
@@ -967,7 +1018,7 @@ useSeoMeta({
         :is-at-target="isAtTarget"
         :capability-gap="capabilityGap"
         :display-topics="displayTopics"
-        :priority-topics="skillAssessmentPrioritizedTopics"
+        :priority-topics="suggestedPriorityTopics"
         :blended-dimensions="blendedDimensions"
         :has-role-answers="hasRoleAnswers"
         :is-thai="isThai"
@@ -984,12 +1035,27 @@ useSeoMeta({
         :is-thai="isThai"
       />
 
-      <RoadmapLearningSequence
-        :topics="displayTopics"
-        :topic-resources="topicResources"
-        :is-thai="isThai"
-        :role-title="skillAssessmentRoleTitle"
-      />
+      <div class="mt-10 flex justify-center">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-full border border-border-subtle bg-surface-elevated/70 px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent/40 hover:bg-accent/5 hover:text-accent"
+          :aria-expanded="showFullRoadmap"
+          aria-controls="full-roadmap"
+          @click="toggleFullRoadmap"
+        >
+          {{ showFullRoadmap ? t.hideFullRoadmap : t.viewFullRoadmap }}
+        </button>
+      </div>
+
+      <div v-if="showFullRoadmap" id="full-roadmap" ref="fullRoadmapSection">
+        <RoadmapLearningSequence
+          :topics="displayTopics"
+          :topic-resources="topicResources"
+          :held-topic-ids="heldDisplayTopicIds"
+          :is-thai="isThai"
+          :role-title="skillAssessmentRoleTitle"
+        />
+      </div>
 
     </template>
   </main>

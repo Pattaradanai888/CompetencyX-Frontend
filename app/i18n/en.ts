@@ -319,5 +319,18 @@ export default {
     dimensionVsTarget: 'Dimension vs target',
     yourLevel: 'Your level',
     targetLabel: 'Target',
+    nextTopicsEyebrow: 'What to learn next',
+    nextTopicsTitle: 'Start with these topics',
+    nextTopicsIntro:
+      'Each topic appears after the ones it builds on. Topics you rated low come first; topics nobody asked about are marked as not assessed rather than as gaps.',
+    stateAssessedGap: 'Gap to close',
+    stateUnassessed: 'Not assessed yet',
+    viewFullRoadmap: 'View full roadmap',
+    hideFullRoadmap: 'Hide full roadmap',
+    heldStatement: 'You said you can already work on this',
+    markHeld: 'I already know this',
+    undoMark: 'Undo mark',
+    markingRequiresAccount: 'Marking a topic as already held requires an account.',
+    markErrorTitle: 'Could not save your mark',
   },
 }

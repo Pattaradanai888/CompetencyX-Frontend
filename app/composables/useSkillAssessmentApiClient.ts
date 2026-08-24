@@ -1,3 +1,4 @@
+import { useAccountToken } from '~/composables/useAccountToken'
 import { useApiClient } from '~/composables/useApiClient'
 import type {
   SkillAssessmentCatalog,
@@ -7,6 +8,12 @@ import type {
 
 export function useSkillAssessmentApiClient() {
   const { apiFetch } = useApiClient()
+  const { getToken } = useAccountToken()
+
+  function authHeaders(): Record<string, string> | undefined {
+    const token = getToken()
+    return token ? { Authorization: `Token ${token}` } : undefined
+  }
 
   async function getSkillAssessmentCatalog(sessionId: string) {
     return await apiFetch<SkillAssessmentCatalog>(
@@ -46,10 +53,38 @@ export function useSkillAssessmentApiClient() {
     )
   }
 
+  /**
+   * Marking is the respondent's own statement about themself, so it belongs
+   * to their account; the response is the updated skill-assessment state so
+   * the suggestions visibly react.
+   */
+  async function markHeldTopic(sessionId: string, topicKey: string) {
+    return await apiFetch<SkillAssessmentSessionState>(
+      `/api/v1/assessment-sessions/${sessionId}/skill-assessment/held-topics/`,
+      {
+        method: 'POST',
+        body: { topic_key: topicKey },
+        headers: authHeaders(),
+      },
+    )
+  }
+
+  async function unmarkHeldTopic(sessionId: string, topicKey: string) {
+    return await apiFetch<SkillAssessmentSessionState>(
+      `/api/v1/assessment-sessions/${sessionId}/skill-assessment/held-topics/${encodeURIComponent(topicKey)}/`,
+      {
+        method: 'DELETE',
+        headers: authHeaders(),
+      },
+    )
+  }
+
   return {
     getSkillAssessmentCatalog,
     getSkillAssessmentNextQuestion,
     getSkillAssessmentState,
     saveSkillAssessmentState,
+    markHeldTopic,
+    unmarkHeldTopic,
   }
 }

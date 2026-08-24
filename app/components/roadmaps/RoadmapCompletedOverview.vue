@@ -8,12 +8,14 @@ const props = defineProps<{
   overallCapabilityScore: number
   recalculatedStrengths: string[]
   recalculatedGrowthAreas: string[]
-  targetScore: number
+  /** The backend-derived target, or null when this role has no readiness data. */
+  targetScore: number | null
   targetByDimension?: Record<string, number>
   isAtTarget: boolean
-  capabilityGap: number
+  capabilityGap: number | null
   displayTopics: RoadmapTopic[]
-  priorityTopics: RoadmapTopic[]
+  /** The suggested topics, so the chips jump to the live suggestions. */
+  priorityTopics: { topic_slug: string; topic_title: string }[]
   blendedDimensions: RadarDimension[]
   strongestDimensionCards: DimensionCard[]
   hasRoleAnswers: boolean
@@ -29,8 +31,8 @@ function scrollToGapInsight() {
   }
 }
 
-function scrollToTopic(topicId: number) {
-  const el = document.getElementById(`step-${topicId}`)
+function scrollToTopic(topicSlug: string) {
+  const el = document.getElementById(`next-topic-${topicSlug}`)
   if (el) {
     el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
@@ -38,13 +40,15 @@ function scrollToTopic(topicId: number) {
 
 /**
  * The target the As-Is profile is compared against. Each axis takes the target
- * derived from the role's own roadmap; an axis with none falls back to the
- * overall score so the polygon stays closed.
+ * derived from the role's own roadmap; with no backend target the polygon
+ * closes on the current shape instead of a made-up constant.
  */
 const targetPerDimension = computed<RadarDimension[]>(() =>
   props.blendedDimensions.map((d) => ({
     ...d,
-    value: props.targetByDimension?.[d.key] ?? props.targetScore / 100,
+    value:
+      props.targetByDimension?.[d.key] ??
+      (props.targetScore !== null ? props.targetScore / 100 : d.value),
   })),
 )
 </script>
@@ -155,6 +159,7 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
             </div>
 
             <div
+              v-if="targetScore !== null"
               class="rounded-xl border-l-4 border-l-accent bg-surface-card px-4 py-3"
             >
               <p
@@ -214,11 +219,11 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
               >
                 <button
                   v-for="topic in priorityTopics.slice(0, 3)"
-                  :key="topic.id"
+                  :key="topic.topic_slug"
                   class="cursor-pointer rounded-full border border-border-subtle bg-surface-elevated/60 px-2 py-0.5 text-[11px] font-semibold text-ink-soft transition-colors hover:border-accent/40 hover:bg-accent/5 hover:text-accent"
-                  @click="scrollToTopic(topic.id)"
+                  @click="scrollToTopic(topic.topic_slug)"
                 >
-                  {{ topic.title }}
+                  {{ topic.topic_title }}
                 </button>
               </div>
             </div>

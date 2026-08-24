@@ -7,9 +7,17 @@ const props = defineProps<{
   topicResources: Map<number, ResourceLink[]>
   isThai: boolean
   roleTitle?: string
+  /** Topics the respondent said they can already do, kept visible as their own statement. */
+  heldTopicIds?: number[]
 }>()
 
 const t = usePageI18n('roadmaps', () => props.isThai)
+
+const heldIds = computed(() => new Set(props.heldTopicIds ?? []))
+
+function isHeld(topic: RoadmapTopic): boolean {
+  return heldIds.value.has(topic.id)
+}
 
 function difficultyLabel(topic: RoadmapTopic): string {
   return getTopicDifficultyLabel(topic.difficulty, {
@@ -95,6 +103,12 @@ function searchUrl(topic: RoadmapTopic, engine: 'google' | 'youtube'): string {
                   class="rounded-full border border-accent/16 bg-accent/8 px-3 py-1 text-xs font-bold uppercase tracking-[0.06em] text-accent"
                 >
                   {{ difficultyLabel(topic) }}
+                </span>
+                <span
+                  v-if="isHeld(topic)"
+                  class="rounded-full border border-blueprint/20 bg-blueprint/10 px-3 py-1 text-xs font-bold text-blueprint"
+                >
+                  {{ t.heldStatement }}
                 </span>
               </div>
               <h3 class="mt-3 text-2xl font-bold text-ink">
