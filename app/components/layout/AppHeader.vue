@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import LocaleToggler from '~/components/layout/LocaleToggler.vue'
+import { useLocale } from '~/composables/useLocale'
+
+const { isThai } = useLocale()
 
 defineProps<{
   variant?: 'full' | 'slim'
@@ -8,8 +11,15 @@ defineProps<{
 
 <template>
   <header class="app-header">
-    <nav class="app-header__inner" aria-label="Main navigation">
-      <NuxtLink to="/" class="app-header__brand" aria-label="CompetencyX home">
+    <nav
+      class="app-header__inner"
+      :aria-label="isThai ? 'เมนูหลัก' : 'Main navigation'"
+    >
+      <NuxtLink
+        to="/"
+        class="app-header__brand"
+        :aria-label="isThai ? 'หน้าแรก CompetencyX' : 'CompetencyX home'"
+      >
         <span class="app-header__mark" aria-hidden="true">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path

@@ -34,6 +34,13 @@ const { error: sessionError, refresh } = await useAsyncData(
   },
 )
 
+// Declared ahead of the immediate watch below, which reads it on first run.
+const { isThai: globalIsThai, localeInitialized } = useLocale()
+const isThai = computed(() => {
+  if (localeInitialized.value) return globalIsThai.value
+  return session.value?.language === 'th'
+})
+
 watch(
   sessionError,
   (error) => {
@@ -46,7 +53,7 @@ watch(
 
     if (import.meta.client) {
       toast.add({
-        title: 'Could not load session',
+        title: isThai.value ? 'โหลดเซสชันไม่สำเร็จ' : 'Could not load session',
         description: getErrorMessage(pageError.value) ?? undefined,
         color: 'error',
       })
@@ -110,7 +117,10 @@ async function handleSelect(answer: QuestionAnswerSelection) {
     }
   } catch (error) {
     pageError.value = error as ApiError
-    toast.add({ title: 'Could not save answer', color: 'error' })
+    toast.add({
+      title: isThai.value ? 'บันทึกคำตอบไม่สำเร็จ' : 'Could not save answer',
+      color: 'error',
+    })
 
     if ((error as ApiError).statusCode === 400) {
       await refresh()
@@ -132,17 +142,9 @@ const isAwaitingResolution = computed(() => {
   )
 })
 
-const { isThai: globalIsThai, localeInitialized } = useLocale()
-const isThai = computed(() => {
-  if (localeInitialized.value) return globalIsThai.value
-  return session.value?.language === 'th'
-})
-
 useSeoMeta({
   title: computed(() =>
-    isThai.value
-      ? 'CompetencyX | ทำแบบประเมินเชิงรุก'
-      : 'CompetencyX | Active assessment',
+    isThai.value ? 'ทำแบบประเมินเชิงรุก' : 'Active assessment',
   ),
   description: computed(() =>
     isThai.value

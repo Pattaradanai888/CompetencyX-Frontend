@@ -89,7 +89,7 @@ function getScaleLabel(option: SkillAssessmentScaleOption): string {
                   : ''
               "
               :aria-pressed="selectedValue === option.value"
-              :aria-label="option.label"
+              :aria-label="getScaleLabel(option)"
               :disabled="isSaving || isAutoAdvancing"
               @click="emit('select', option.value)"
             >

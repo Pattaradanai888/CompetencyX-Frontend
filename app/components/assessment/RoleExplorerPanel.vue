@@ -100,7 +100,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
               ? 'border-accent bg-accent-soft/20 shadow-[0_16px_34px_rgba(234,112,31,0.14)]'
               : ''
           "
-          :aria-label="`Select ${role.name}`"
+          :aria-label="isThai ? `เลือก ${role.name}` : `Select ${role.name}`"
           :aria-pressed="role.slug === preferredRoleSlug ? 'true' : 'false'"
           @click="emit('select-role', role.slug)"
         >

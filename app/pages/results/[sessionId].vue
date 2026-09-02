@@ -144,9 +144,7 @@ async function handleContinue() {
 
 useSeoMeta({
   title: computed(() =>
-    isThai.value
-      ? 'CompetencyX | ผลแนะนำบทบาท'
-      : 'CompetencyX | Role recommendation',
+    isThai.value ? 'ผลแนะนำบทบาท' : 'Role recommendation',
   ),
   description: computed(() =>
     isThai.value

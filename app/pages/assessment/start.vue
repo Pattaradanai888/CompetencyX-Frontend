@@ -213,8 +213,8 @@ async function handleStart() {
 useSeoMeta({
   title: computed(() =>
     isThai.value
-      ? 'CompetencyX | เลือกตำแหน่งงาน'
-      : 'CompetencyX | Choose role',
+      ? 'เลือกตำแหน่งงาน'
+      : 'Choose role',
   ),
   description: computed(() =>
     isThai.value

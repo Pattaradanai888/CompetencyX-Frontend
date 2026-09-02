@@ -45,9 +45,7 @@ async function chooseDiscovery() {
 
 useSeoMeta({
   title: computed(() =>
-    isThai.value
-      ? 'CompetencyX | คำถามเริ่มต้น'
-      : 'CompetencyX | Preferred role question',
+    isThai.value ? 'คำถามเริ่มต้น' : 'Preferred role question',
   ),
   description: computed(() =>
     isThai.value

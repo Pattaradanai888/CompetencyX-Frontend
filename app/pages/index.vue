@@ -26,8 +26,8 @@ const t = usePageI18n('index', isThai)
 useSeoMeta({
   title: computed(() =>
     isThai.value
-      ? 'CompetencyX | การประเมินแผนผังที่ปรับเปลี่ยนตามความเหมาะสม'
-      : 'CompetencyX | Adaptive roadmap assessment',
+      ? 'การประเมินแผนผังที่ปรับเปลี่ยนตามความเหมาะสม'
+      : 'Adaptive roadmap assessment',
   ),
   description: computed(() =>
     isThai.value
