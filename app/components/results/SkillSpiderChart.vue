@@ -184,11 +184,7 @@ const targetAxes = computed(() => {
   return props.targetDimensions.map((item, index) => {
     const targetValue = clampRatio(item.value)
     const node = toPoint(index, targetValue, total)
-    const scoreAnchor = toPoint(
-      index,
-      Math.max(0.16, targetValue - 0.1),
-      total,
-    )
+    const scoreAnchor = toPoint(index, Math.max(0.16, targetValue - 0.1), total)
     return {
       ...item,
       node,
@@ -260,45 +256,55 @@ const viewBox = computed(() => {
           {{ axes.length }} {{ t.dimensionsCount }}
         </span>
       </div>
+      <!--
+        The view toggle lives outside the SVG on purpose: inside it, it sat at
+        the top of the plot where the topmost axis label lands once the label
+        ring widens for a crowded radar.
+      -->
+      <div
+        v-if="props.targetDimensions?.length"
+        class="mx-auto mb-3 flex w-fit flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-border-subtle bg-surface-card p-1 text-[0.68rem] font-semibold"
+      >
+        <button
+          class="rounded-xl px-3 py-1.5 transition-colors"
+          :class="
+            viewMode === 'as-is'
+              ? 'bg-accent/12 text-accent'
+              : 'text-ink-soft hover:text-ink'
+          "
+          @click="viewMode = 'as-is'"
+        >
+          {{ t.asIs }}
+        </button>
+        <button
+          class="rounded-xl px-3 py-1.5 transition-colors"
+          :class="
+            viewMode === 'both'
+              ? 'bg-accent/12 text-accent'
+              : 'text-ink-soft hover:text-ink'
+          "
+          @click="viewMode = 'both'"
+        >
+          {{ t.viewBoth }}
+        </button>
+        <button
+          class="rounded-xl px-3 py-1.5 transition-colors"
+          :class="
+            viewMode === 'to-be'
+              ? 'bg-accent/12 text-accent'
+              : 'text-ink-soft hover:text-ink'
+          "
+          @click="viewMode = 'to-be'"
+        >
+          {{ t.toBe }}
+        </button>
+      </div>
       <svg
         :viewBox="viewBox"
         class="mx-auto h-auto w-full max-w-[36rem] md:max-w-[38rem]"
         role="img"
         :aria-label="t.capabilityMap"
       >
-        <foreignObject
-          v-if="props.targetDimensions?.length"
-          x="170"
-          y="25"
-          width="180"
-          height="36"
-        >
-          <div
-            class="flex flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-border-subtle bg-surface-card p-1 text-[0.68rem] font-semibold"
-          >
-            <button
-              class="rounded-xl px-3 py-1.5 transition-colors"
-              :class="viewMode === 'as-is' ? 'bg-accent/12 text-accent' : 'text-ink-soft hover:text-ink'"
-              @click="viewMode = 'as-is'"
-            >
-              {{ t.asIs }}
-            </button>
-            <button
-              class="rounded-xl px-3 py-1.5 transition-colors"
-              :class="viewMode === 'both' ? 'bg-accent/12 text-accent' : 'text-ink-soft hover:text-ink'"
-              @click="viewMode = 'both'"
-            >
-              {{ t.viewBoth }}
-            </button>
-            <button
-              class="rounded-xl px-3 py-1.5 transition-colors"
-              :class="viewMode === 'to-be' ? 'bg-accent/12 text-accent' : 'text-ink-soft hover:text-ink'"
-              @click="viewMode = 'to-be'"
-            >
-              {{ t.toBe }}
-            </button>
-          </div>
-        </foreignObject>
         <g>
           <polygon
             v-for="step in ringSteps"
@@ -364,10 +370,18 @@ const viewBox = computed(() => {
             v-for="(_, index) in props.targetDimensions"
             :key="`target-node-${index}`"
             :cx="
-              toPoint(index, clampRatio(props.targetDimensions[index].value), props.targetDimensions.length).x
+              toPoint(
+                index,
+                clampRatio(props.targetDimensions[index].value),
+                props.targetDimensions.length,
+              ).x
             "
             :cy="
-              toPoint(index, clampRatio(props.targetDimensions[index].value), props.targetDimensions.length).y
+              toPoint(
+                index,
+                clampRatio(props.targetDimensions[index].value),
+                props.targetDimensions.length,
+              ).y
             "
             r="3"
             fill="none"
@@ -432,7 +446,11 @@ const viewBox = computed(() => {
               :fill="scoreColor"
               font-weight="800"
             >
-              {{ (viewMode === 'to-be' ? targetScoreByKey[axis.key] : axis.score) ?? axis.score }}/10
+              {{
+                (viewMode === 'to-be'
+                  ? targetScoreByKey[axis.key]
+                  : axis.score) ?? axis.score
+              }}/10
             </tspan>
           </text>
         </g>
