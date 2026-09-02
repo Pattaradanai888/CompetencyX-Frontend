@@ -237,6 +237,8 @@ export interface TrackHighlight {
   label: string
   description: string
   average: number
+  /** How many assessed dimensions the average is over; a track with none is dropped. */
+  dimensionCount: number
   strongest: string
 }
 

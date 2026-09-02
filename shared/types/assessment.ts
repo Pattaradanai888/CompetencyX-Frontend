@@ -257,10 +257,17 @@ export type TopicAssessmentState = 'held' | 'assessed_gap' | 'unassessed'
 export interface SkillAssessmentTopicEntry {
   topic_slug: string
   topic_title: string
+  /** The unit's Canonical Thai Wording, when the set carries one. */
+  topic_title_th?: string
   state: TopicAssessmentState
   mastery: number | null
   reason?: string
+  /** The same reason in Thai; the prerequisite names behind it live server-side. */
+  reason_th?: string
   statement?: string
+  statement_th?: string
+  /** True only when this unit is held because the account marked it. */
+  held_by_mark?: boolean
 }
 
 export interface SkillAssessmentScaleOption {
@@ -276,6 +283,7 @@ export interface SkillAssessmentCatalogDimension {
   low_score_action: string
   translations?: {
     th?: {
+      label?: string
       low_score_action?: string
     }
   }

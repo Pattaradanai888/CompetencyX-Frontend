@@ -4,7 +4,10 @@ import type { RadarDimension } from '~/utils/roadmaps'
 const props = defineProps<{
   dimensions: RadarDimension[]
   targetDimensions?: RadarDimension[]
+  isThai?: boolean
 }>()
+
+const t = usePageI18n('roadmaps', () => props.isThai === true)
 
 const viewMode = ref<'as-is' | 'both' | 'to-be'>('both')
 
@@ -38,15 +41,69 @@ function toPoint(index: number, ratio: number, total: number) {
   }
 }
 
-function splitLabel(label: string) {
-  const words = label.split(' ')
+// A crowded radar has to give its labels more room: fifteen axes leave about
+// 24 degrees between neighbours, so the same wide three-line labels that read
+// fine on eight axes collide. Narrower lines, smaller type and a wider label
+// ring keep them apart.
+const isCrowded = computed(() => props.dimensions.length > 10)
+const labelRadiusRatio = computed(() => (isCrowded.value ? 1.42 : 1.18))
+const labelFontSize = computed(() => (isCrowded.value ? 9 : 11))
+const labelLineHeight = computed(() => (isCrowded.value ? 10 : 13))
+const maxLabelLineChars = computed(() => (isCrowded.value ? 13 : 16))
+
+// Thai runs carry no spaces and roadmap titles bundle long parenthesised
+// phrases, so a token can be far wider than the line budget and shove its
+// label into the neighbouring axis. Break such a token after punctuation
+// where it has any, and only cut mid-token as the last resort a Thai run
+// leaves open -- cutting an English word in half reads worse than a line
+// that runs slightly wide.
+const TOKEN_BREAK_AFTER = /[-–—/,)]/
+const OVERLONG_FACTOR = 1.4
+
+function splitLongToken(word: string, maxChars: number): string[] {
+  const tolerated = Math.round(maxChars * OVERLONG_FACTOR)
+  if (word.length <= tolerated) {
+    return [word]
+  }
+
+  const minPiece = Math.ceil(maxChars * 0.6)
+  const pieces: string[] = []
+  let buffer = ''
+  for (const character of word) {
+    buffer += character
+    if (TOKEN_BREAK_AFTER.test(character) && buffer.length >= minPiece) {
+      pieces.push(buffer)
+      buffer = ''
+    }
+  }
+  if (buffer) {
+    pieces.push(buffer)
+  }
+
+  const broken: string[] = []
+  for (const piece of pieces) {
+    if (piece.length <= tolerated) {
+      broken.push(piece)
+      continue
+    }
+    for (let start = 0; start < piece.length; start += maxChars) {
+      broken.push(piece.slice(start, start + maxChars))
+    }
+  }
+  return broken
+}
+
+function splitLabel(label: string, maxChars: number) {
+  const words = label
+    .split(' ')
+    .flatMap((word) => splitLongToken(word, maxChars))
   const lines: string[] = []
   let currentLine = ''
 
   for (const word of words) {
     const nextLine = currentLine ? `${currentLine} ${word}` : word
 
-    if (nextLine.length > 16 && currentLine) {
+    if (nextLine.length > maxChars && currentLine) {
       lines.push(currentLine)
       currentLine = word
     } else {
@@ -100,7 +157,7 @@ const axes = computed(() => {
   const total = props.dimensions.length || 1
   return props.dimensions.map((item, index) => {
     const edge = toPoint(index, 1, total)
-    const labelAnchor = toPoint(index, 1.18, total)
+    const labelAnchor = toPoint(index, labelRadiusRatio.value, total)
     const currentValue = clampRatio(item.value)
     const node = toPoint(index, currentValue, total)
     const scoreAnchor = toPoint(
@@ -112,7 +169,7 @@ const axes = computed(() => {
       ...item,
       edge,
       labelAnchor,
-      labelLines: splitLabel(item.label),
+      labelLines: splitLabel(item.label, maxLabelLineChars.value),
       node,
       scoreAnchor,
       score: formatCapabilityScore(item.value),
@@ -141,6 +198,14 @@ const targetAxes = computed(() => {
   })
 })
 
+const targetScoreByKey = computed<Record<string, number>>(() => {
+  const scores: Record<string, number> = {}
+  for (const axis of targetAxes.value) {
+    scores[axis.key] = axis.score
+  }
+  return scores
+})
+
 const scoreColor = computed(() =>
   viewMode.value === 'to-be' ? 'var(--color-accent)' : 'var(--color-blueprint)',
 )
@@ -148,9 +213,13 @@ const scoreColor = computed(() =>
 const hasDimensions = computed(() => props.dimensions.length > 0)
 
 const viewBox = computed(() => {
+  // Labels sit outside the outer ring and are anchored outward, so the box
+  // carries horizontal padding for the longest one; without it the left and
+  // right axis names are cropped at the edge.
   const inset = 20
   const vbSize = size - inset * 2
-  return `${inset} ${inset} ${vbSize} ${vbSize}`
+  const horizontalPad = isCrowded.value ? 104 : 40
+  return `${inset - horizontalPad} ${inset} ${vbSize + horizontalPad * 2} ${vbSize}`
 })
 </script>
 
@@ -162,9 +231,9 @@ const viewBox = computed(() => {
       <p
         class="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft"
       >
-        Capability scale
+        {{ t.capabilityScale }}
       </p>
-      <p class="text-xs font-semibold text-ink">1 low / 10 high</p>
+      <p class="text-xs font-semibold text-ink">{{ t.capabilityScaleRange }}</p>
     </div>
     <div
       class="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-border-subtle bg-surface-card px-3 py-2"
@@ -186,16 +255,16 @@ const viewBox = computed(() => {
       <div
         class="mx-auto mb-4 flex w-full max-w-[30rem] items-center justify-between gap-3 rounded-full border border-border-subtle bg-surface-elevated px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-ink-soft"
       >
-        <span>Skill assessment live blend</span>
+        <span>{{ t.liveBlend }}</span>
         <span class="rounded-full bg-accent/14 px-2 py-1 text-accent">
-          {{ axes.length }} dimensions
+          {{ axes.length }} {{ t.dimensionsCount }}
         </span>
       </div>
       <svg
         :viewBox="viewBox"
         class="mx-auto h-auto w-full max-w-[36rem] md:max-w-[38rem]"
         role="img"
-        aria-label="Roadmaps PSP and SDLC skill spider chart"
+        :aria-label="t.capabilityMap"
       >
         <foreignObject
           v-if="props.targetDimensions?.length"
@@ -212,21 +281,21 @@ const viewBox = computed(() => {
               :class="viewMode === 'as-is' ? 'bg-accent/12 text-accent' : 'text-ink-soft hover:text-ink'"
               @click="viewMode = 'as-is'"
             >
-              As-Is
+              {{ t.asIs }}
             </button>
             <button
               class="rounded-xl px-3 py-1.5 transition-colors"
               :class="viewMode === 'both' ? 'bg-accent/12 text-accent' : 'text-ink-soft hover:text-ink'"
               @click="viewMode = 'both'"
             >
-              Both
+              {{ t.viewBoth }}
             </button>
             <button
               class="rounded-xl px-3 py-1.5 transition-colors"
               :class="viewMode === 'to-be' ? 'bg-accent/12 text-accent' : 'text-ink-soft hover:text-ink'"
               @click="viewMode = 'to-be'"
             >
-              To-Be
+              {{ t.toBe }}
             </button>
           </div>
         </foreignObject>
@@ -308,7 +377,13 @@ const viewBox = computed(() => {
           />
         </template>
 
-        <g>
+        <!--
+          On a crowded radar the per-vertex scores land on top of each other and
+          on the plot itself, so they move into the label ring instead, where
+          the axis names are already spaced apart. Nothing is dropped: each axis
+          still shows its own number, just in one place per axis.
+        -->
+        <g v-if="!isCrowded">
           <text
             v-for="axis in viewMode === 'to-be' ? targetAxes : axes"
             :key="`score-${axis.key}`"
@@ -332,7 +407,7 @@ const viewBox = computed(() => {
             :y="axis.labelAnchor.y"
             :text-anchor="axis.textAnchor"
             dominant-baseline="middle"
-            font-size="11"
+            :font-size="labelFontSize"
             fill="var(--chart-label)"
             font-weight="700"
           >
@@ -340,9 +415,24 @@ const viewBox = computed(() => {
               v-for="(line, lineIndex) in axis.labelLines"
               :key="`${axis.key}-line-${lineIndex}`"
               :x="axis.labelAnchor.x"
-              :dy="lineIndex === 0 ? 0 : 13"
+              :dy="
+                lineIndex === 0
+                  ? (-(axis.labelLines.length - (isCrowded ? 0 : 1)) *
+                      labelLineHeight) /
+                    2
+                  : labelLineHeight
+              "
             >
               {{ line }}
+            </tspan>
+            <tspan
+              v-if="isCrowded"
+              :x="axis.labelAnchor.x"
+              :dy="labelLineHeight"
+              :fill="scoreColor"
+              font-weight="800"
+            >
+              {{ (viewMode === 'to-be' ? targetScoreByKey[axis.key] : axis.score) ?? axis.score }}/10
             </tspan>
           </text>
         </g>
@@ -352,7 +442,7 @@ const viewBox = computed(() => {
       v-else
       class="rounded-md border border-border-subtle bg-surface-card p-4 text-sm leading-6 text-ink-soft"
     >
-      Roadmap chart data is not available yet.
+      {{ t.chartUnavailable }}
     </p>
   </div>
 </template>

@@ -43,20 +43,26 @@ export function getRoadmapSlug(roleSlug: string): string {
 
 const contentCache = new Map<string, ResourceLink[]>()
 
-let resourcesJson: Record<string, Record<string, ResourceLink[]>> | null = null
+/**
+ * The in-flight request, not its result: every topic on the page asks for the
+ * index in the same tick, so caching only the resolved value still let all of
+ * them start their own fetch -- a hundred-odd identical requests for one static
+ * file on every roadmap render.
+ */
+let resourcesJsonRequest: Promise<Record<
+  string,
+  Record<string, ResourceLink[]>
+> | null> | null = null
 
-async function loadResourcesJson() {
-  if (resourcesJson) return resourcesJson
-  try {
-    const res = await fetch('/data/roadmap-resources.json')
-    if (res.ok) {
-      resourcesJson = await res.json()
-    }
-  } catch {
-    // The index ships with the app; a failure here means the page was served
-    // from a broken build, and topics simply render without resource links.
-  }
-  return resourcesJson
+function loadResourcesJson() {
+  resourcesJsonRequest ??= fetch('/data/roadmap-resources.json')
+    .then((res) => (res.ok ? res.json() : null))
+    .catch(() => {
+      // The index ships with the app; a failure here means the page was served
+      // from a broken build, and topics simply render without resource links.
+      return null
+    })
+  return resourcesJsonRequest
 }
 
 /**

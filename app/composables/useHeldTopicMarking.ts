@@ -31,12 +31,19 @@ export function useHeldTopicMarking(
   const canMarkHeld = ref(import.meta.client ? getToken() !== null : false)
   const busyTopicKey = ref<string | null>(null)
 
-  /** Every unit this account says it can already do, newest last. */
-  const heldEntries = computed<SkillAssessmentTopicEntry[]>(() =>
-    (liveSkillState.value.topic_states ?? []).filter(
-      (entry) => entry.state === 'held',
-    ),
-  )
+  /**
+   * Only what this account actually marked, because each row carries its undo.
+   * A unit held because the respondent rated it highly has no mark to take
+   * back, so listing it here would offer a control that does nothing.
+   */
+  const heldEntries = computed<SkillAssessmentTopicEntry[]>(() => {
+    if (!canMarkHeld.value) {
+      return []
+    }
+    return (liveSkillState.value.topic_states ?? []).filter(
+      (entry) => entry.state === 'held' && entry.held_by_mark === true,
+    )
+  })
 
   function applySkillState(updated: SkillAssessmentSessionState) {
     liveSkillState.value = { ...liveSkillState.value, ...updated }

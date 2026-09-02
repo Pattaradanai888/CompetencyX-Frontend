@@ -243,6 +243,27 @@ const answerScaleMax = answerScaleValues.length
 const skillAssessmentAnswers = ref<Record<string, number>>({
   ...(skillAssessmentState?.answers ?? {}),
 })
+
+/**
+ * The snapshot above is taken once, while the assessment is still unanswered.
+ * `refresh()` replaces the fetched data after the assessment is submitted, so
+ * everything derived from the snapshot has to follow the live copy -- without
+ * this the finished page renders the suggestions, the states and the readiness
+ * computed from an empty answer set, which reports every unit as Unassessed
+ * and hides the To-Be comparison outright.
+ */
+watch(
+  () => _skillAssessmentData.value?.skillAssessmentState,
+  (state) => {
+    if (!state) {
+      return
+    }
+    liveSkillState.value = state
+    skillAssessmentAnswers.value = { ...(state.answers ?? {}) }
+    isSkillAssessmentComplete.value = state.completed
+  },
+)
+
 const currentQuestionIndex = ref(0)
 const isSavingSkillAssessment = ref(false)
 const isAutoAdvancing = ref(false)
@@ -285,6 +306,7 @@ const { blendedDimensions, pickNextQuestionWithRl } = useSkillAssessmentQuestion
   computed(() => answerScaleMax),
   baseDimensions,
   catalogByKey,
+  isThai,
 )
 
 function setCurrentQuestionById(questionId: string | null) {
@@ -384,30 +406,65 @@ if (import.meta.client) {
 
 const STRENGTH_THRESHOLD = 0.7
 const GAP_THRESHOLD = 0.5
+const MAX_STRENGTH_CARDS = 4
 
-const recalculatedStrengths = computed(() => {
-  const above = sortedDimensionsDesc.value.filter(
-    (d) => d.value >= STRENGTH_THRESHOLD,
-  )
-  if (above.length > 0) return above.map((item) => item.label)
-  return sortedDimensionsDesc.value.slice(0, 1).map((item) => item.label)
+/**
+ * The dimensions the assessment actually asked about. A dimension with no
+ * answer carries the 0.5 placeholder `baseDimensions` gives it, which is a
+ * stand-in for "no evidence" rather than a middling score -- counting it would
+ * report a unit nobody was asked about as absent capability (ADR-0003) and
+ * would drag the readiness figure toward 50%.
+ */
+const assessedDimensionKeys = computed(() => {
+  const keys = new Set<string>()
+  for (const question of skillAssessmentQuestions) {
+    if (Number.isFinite(skillAssessmentAnswers.value[question.id])) {
+      keys.add(question.dimensionKey)
+    }
+  }
+  return keys
 })
 
+const assessedDimensionsDesc = computed(() =>
+  sortedDimensionsDesc.value.filter((dimension) =>
+    assessedDimensionKeys.value.has(dimension.key),
+  ),
+)
+
+/**
+ * One list behind both the strength count and the strength cards, so the
+ * summary cannot say "1 area" while the cards below it list four.
+ */
+const strengthDimensions = computed(() => {
+  if (!assessedDimensionsDesc.value.length) return []
+  const above = assessedDimensionsDesc.value.filter(
+    (d) => d.value >= STRENGTH_THRESHOLD,
+  )
+  const selected = above.length ? above : assessedDimensionsDesc.value.slice(0, 1)
+  return selected.slice(0, MAX_STRENGTH_CARDS)
+})
+
+const recalculatedStrengths = computed(() =>
+  strengthDimensions.value.map((item) => item.label),
+)
+
 const recalculatedGrowthAreas = computed(() => {
-  const below = sortedDimensionsDesc.value.filter(
+  if (!assessedDimensionsDesc.value.length) return []
+  const below = assessedDimensionsDesc.value.filter(
     (d) => d.value < GAP_THRESHOLD,
   )
   if (below.length > 0) return below.map((item) => item.label)
-  return sortedDimensionsDesc.value.slice(-1).map((item) => item.label)
+  return assessedDimensionsDesc.value.slice(-1).map((item) => item.label)
 })
 
 const overallCapabilityScore = computed(() => {
-  if (!blendedDimensions.value.length) return 0
-  const total = blendedDimensions.value.reduce(
+  const scored = assessedDimensionsDesc.value
+  if (!scored.length) return 0
+  const total = scored.reduce(
     (sum: number, dimension: RadarDimension) => sum + dimension.value,
     0,
   )
-  return Math.round((total / blendedDimensions.value.length) * 100)
+  return Math.round((total / scored.length) * 100)
 })
 
 const skillAssessmentProgressPercent = computed(() => {
@@ -440,8 +497,8 @@ const selectedScaleOption = computed(() => {
 
 const skillAssessmentGuidanceTitle = computed(() => {
   return preferredRoleName.value
-    ? `${preferredRoleName.value} track`
-    : 'Skill calibration'
+    ? t.value.roleTrack.replace('{role}', preferredRoleName.value)
+    : t.value.skillCalibration
 })
 
 const skillAssessmentProgressSummary = computed(() => {
@@ -454,7 +511,7 @@ const skillAssessmentProgressSummary = computed(() => {
     ? t.value.saving
     : t.value.inProgress
 
-  return `Q${answeredPromptCount.value} ${t.value.answered} • ${calibrationState} • ${progressState}`
+  return `${answeredPromptCount.value} ${t.value.answered} • ${calibrationState} • ${progressState}`
 })
 
 const skillAssessmentMicrocopy = computed(() => {
@@ -671,7 +728,8 @@ const heldDisplayTopicIds = computed<number[]>(() => {
 const suggestedPriorityTopics = computed(() =>
   suggestedTopics.value.map((entry) => ({
     topic_slug: entry.topic_slug,
-    topic_title: entry.topic_title,
+    topic_title:
+      (isThai.value && entry.topic_title_th) || entry.topic_title,
   })),
 )
 
@@ -768,43 +826,51 @@ const trackHighlights = computed(() => {
     },
   ] as const
 
-  return tracks.map((track) => {
-    const dimensions = blendedDimensions.value.filter(
-      (dimension) => dimension.track === track.key,
-    )
-    const average = dimensions.length
-      ? Math.round(
-          (dimensions.reduce(
-            (sum: number, dimension: RadarDimension) => sum + dimension.value,
-            0,
-          ) /
-            dimensions.length) *
-            100,
-        )
-      : 0
+  // A track with nothing assessed in it has no percentage to report. The
+  // topic-anchored assessment files every unit under SDLC, so rendering an
+  // empty PSP card would print a hard 0% next to "not enough signal" as if
+  // the respondent had scored zero on it.
+  return tracks
+    .map((track) => {
+      const dimensions = assessedDimensionsDesc.value.filter(
+        (dimension) => dimension.track === track.key,
+      )
+      const average = dimensions.length
+        ? Math.round(
+            (dimensions.reduce(
+              (sum: number, dimension: RadarDimension) => sum + dimension.value,
+              0,
+            ) /
+              dimensions.length) *
+              100,
+          )
+        : 0
 
-    return {
-      ...track,
-      average,
-      strongest:
-        [...dimensions].sort((left, right) => right.value - left.value)[0]
-          ?.label ??
-        (isThai.value ? 'สัญญาณยังไม่เพียงพอ' : 'Not enough signal yet'),
-    }
-  })
+      return {
+        ...track,
+        average,
+        dimensionCount: dimensions.length,
+        strongest: dimensions[0]?.label ?? '',
+      }
+    })
+    .filter((track) => track.dimensionCount > 0)
 })
 
+/**
+ * The strength cards are the strength list: same dimensions, same count. The
+ * blurb describes what the score actually is -- a dimension only reaches the
+ * card list as the relatively strongest when nothing cleared the threshold,
+ * and calling that "a strength to maintain" would overstate it.
+ */
 const strongestDimensionCards = computed(() =>
-  sortedDimensionsDesc.value.slice(0, 4).map((dimension) => {
-    const cat = catalogByKey.value.get(dimension.key)
-    return {
-      ...dimension,
-      percent: Math.round(dimension.value * 100),
-      description: isThai.value
-        ? (cat?.translations?.th?.low_score_action ?? 'คงไว้ซึ่งจุดแข็ง')
-        : (cat?.low_score_action ?? 'Consistent strength'),
-    }
-  }),
+  strengthDimensions.value.map((dimension) => ({
+    ...dimension,
+    percent: Math.round(dimension.value * 100),
+    description:
+      dimension.value >= STRENGTH_THRESHOLD
+        ? t.value.strengthHold
+        : t.value.relativeStrength,
+  })),
 )
 
 const personalityFitRaw = computed(() => {
@@ -837,10 +903,10 @@ async function submitSkillAssessment() {
     await refresh()
   } catch (error) {
     toast.add({
-      title: 'Could not save Skill Assessment',
+      title: t.value.saveErrorTitle,
       description:
         error instanceof Error && error.message === 'Save timeout'
-          ? 'Saving took too long. Please try again.'
+          ? t.value.saveTimeoutMessage
           : (getErrorMessage(error as ApiError) ?? undefined),
       color: 'error',
     })
@@ -905,9 +971,9 @@ onBeforeUnmount(() => {
 })
 
 useSeoMeta({
-  title: computed(() =>
-    isThai.value ? 'CompetencyX | แผนเส้นทางพัฒนา' : 'CompetencyX | Roadmaps',
-  ),
+  // `app.vue` appends "| CompetencyX" through its titleTemplate, so the brand
+  // is left off here rather than printed at both ends of the tab title.
+  title: computed(() => (isThai.value ? 'แผนเส้นทางพัฒนา' : 'Roadmaps')),
   description: computed(() =>
     isThai.value
       ? 'การวิเคราะห์ความสามารถด้าน PSP และ SDLC พร้อมแผนเส้นทางเฉพาะบุคคลจากคำตอบของแบบสำรวจแรก'
@@ -953,13 +1019,13 @@ useSeoMeta({
           v-if="preferredRoleName"
           class="rounded-full border border-border-subtle bg-surface-card px-3 py-1 text-xs font-semibold uppercase tracking-[0.06em] text-ink"
         >
-          Known role: {{ preferredRoleName }}
+          {{ t.knownRole }}: {{ preferredRoleName }}
         </span>
         <span
           v-if="bestFitRoleName"
           class="rounded-full border border-accent-soft bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.06em] text-accent"
         >
-          Discovery result: {{ bestFitRoleName }}
+          {{ t.discoveryResult }}: {{ bestFitRoleName }}
         </span>
       </div>
     </section>
@@ -976,6 +1042,7 @@ useSeoMeta({
           :progress-percent="skillAssessmentProgressPercent"
           :prompt-context="skillAssessmentPromptContext"
           :preferred-role-name="preferredRoleName"
+          :is-thai="isThai"
         />
       </aside>
 
@@ -1027,7 +1094,6 @@ useSeoMeta({
       <RoadmapFitProfileSection
         :overall-capability-score="overallCapabilityScore"
         :track-highlights="trackHighlights"
-        :strongest-dimension-cards="strongestDimensionCards"
         :top-personality-pillars="topPersonalityPillars"
         :personality-fit-raw="personalityFitRaw"
         :personality-fit-narrative="personalityFitNarrative"

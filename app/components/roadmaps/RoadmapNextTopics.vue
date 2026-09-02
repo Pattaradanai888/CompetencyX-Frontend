@@ -30,6 +30,28 @@ function stateLabel(state: SkillAssessmentTopicEntry['state']): string {
   return t.value.stateAssessedGap
 }
 
+/**
+ * The unit's name and the sentence explaining why it is suggested both come
+ * from the API. A Thai session reads the Canonical Thai Wording and the Thai
+ * reason; the English text is the fallback for a set with no Thai wording, not
+ * the default.
+ */
+function topicTitle(topic: SkillAssessmentTopicEntry): string {
+  return (props.isThai && topic.topic_title_th) || topic.topic_title
+}
+
+function topicReason(topic: SkillAssessmentTopicEntry): string | undefined {
+  return (props.isThai && topic.reason_th) || topic.reason
+}
+
+function topicStatement(topic: SkillAssessmentTopicEntry): string {
+  return (
+    (props.isThai && topic.statement_th) ||
+    topic.statement ||
+    t.value.heldStatement
+  )
+}
+
 function stateBadgeClass(state: SkillAssessmentTopicEntry['state']): string {
   if (state === 'unassessed') {
     // Neutral on purpose: nobody checked this topic, so it must not read as
@@ -71,7 +93,7 @@ function stateBadgeClass(state: SkillAssessmentTopicEntry['state']): string {
           <div class="min-w-0">
             <p class="eyebrow">{{ index + 1 }}</p>
             <h3 class="mt-1 text-xl font-bold text-ink">
-              {{ topic.topic_title }}
+              {{ topicTitle(topic) }}
             </h3>
           </div>
           <span
@@ -83,10 +105,10 @@ function stateBadgeClass(state: SkillAssessmentTopicEntry['state']): string {
         </div>
 
         <p
-          v-if="topic.reason"
+          v-if="topicReason(topic)"
           class="mt-3 max-w-2xl text-sm leading-6 text-ink-soft"
         >
-          {{ topic.reason }}
+          {{ topicReason(topic) }}
         </p>
 
         <div v-if="canMark && topic.state !== 'held'" class="mt-4">
@@ -117,8 +139,8 @@ function stateBadgeClass(state: SkillAssessmentTopicEntry['state']): string {
         class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-subtle bg-surface-card px-3 py-2"
       >
         <p class="text-xs leading-6 text-ink-soft">
-          <span class="font-semibold text-ink">{{ entry.topic_title }}</span>
-          — {{ entry.statement ?? t.heldStatement }}
+          <span class="font-semibold text-ink">{{ topicTitle(entry) }}</span>
+          — {{ topicStatement(entry) }}
         </p>
         <button
           type="button"

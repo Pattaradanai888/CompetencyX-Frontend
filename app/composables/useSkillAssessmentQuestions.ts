@@ -166,6 +166,7 @@ export function useSkillAssessmentQuestions(
   answerScaleMax: Ref<number>,
   baseDimensions: Ref<RadarDimension[]>,
   catalogByKey: Ref<Map<string, SkillAssessmentCatalogDimension>>,
+  isThai: Ref<boolean>,
 ) {
   const { getSkillAssessmentNextQuestion } = useSkillAssessmentApiClient()
 
@@ -197,9 +198,15 @@ export function useSkillAssessmentQuestions(
       const base = baseByKey.get(dimension.key) ?? dimension
       const catalogDimension = catalogByKey.value.get(dimension.key)
 
+      // An Assessable Topic Set is named by its Canonical Thai Wording in a
+      // Thai session; the English label is the fallback, not the default.
+      const localizedLabel = isThai.value
+        ? (catalogDimension?.translations?.th?.label ?? catalogDimension?.label)
+        : catalogDimension?.label
+
       return {
         ...base,
-        label: catalogDimension?.label ?? base.label,
+        label: localizedLabel ?? base.label,
         track: catalogDimension?.track ?? base.track,
         value: capabilityValue,
       }

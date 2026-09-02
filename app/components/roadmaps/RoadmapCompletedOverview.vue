@@ -153,7 +153,10 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
                   :style="{ width: `${overallCapabilityScore}%` }"
                 />
               </div>
-              <p class="mt-2 text-xs leading-5 text-ink-soft">
+              <p
+                v-if="recalculatedGrowthAreas.length"
+                class="mt-2 text-xs leading-5 text-ink-soft"
+              >
                 {{ t.topGaps }}: {{ recalculatedGrowthAreas.join(' • ') }}
               </p>
             </div>
@@ -210,11 +213,20 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
                 {{ isThai ? `เป้าหมาย ${targetScore}% เป็นค่ามาตรฐานของบทบาทนี้ — ยิ่งคะแนนสูงหมายความว่าคุณมีความรู้และทักษะที่สอดคล้องกับบทบาทมากขึ้น ไม่ต้องกังวลถ้ายังไม่ถึง คุณสามารถพัฒนาได้จากแผนการเรียนรู้ด้านล่าง` : `A ${targetScore}% target is the readiness benchmark for this role. Higher scores mean your knowledge better aligns with what the role typically requires. Do not worry if you are below it — the learning plan below will help you close the gap.` }}
               </p>
 
-              <p class="mt-3 text-xs leading-5 text-ink-soft">
-                {{ displayTopics.length }} {{ t.gapTopicsCount }}
+              <!--
+                The suggestions, not the roadmap: `displayTopics` is the whole
+                imported graph, which reads as "116 topics to focus on next"
+                and only lands after the client fetches it, so the server and
+                the browser rendered different numbers here.
+              -->
+              <p
+                v-if="priorityTopics.length"
+                class="mt-3 text-xs leading-5 text-ink-soft"
+              >
+                {{ priorityTopics.length }} {{ t.gapTopicsCount }}
               </p>
               <div
-                v-if="displayTopics.length"
+                v-if="priorityTopics.length"
                 class="mt-1 flex flex-wrap gap-1.5"
               >
                 <button
@@ -261,6 +273,7 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
             <SkillSpiderChart
               :dimensions="blendedDimensions"
               :target-dimensions="targetPerDimension"
+              :is-thai="isThai"
             />
           </div>
         </article>

@@ -23,6 +23,7 @@ const {
   getSkillAssessmentCatalogMock,
   getSkillAssessmentStateMock,
   getRoleRoadmapMock,
+  saveSkillAssessmentStateMock,
   markHeldTopicMock,
   unmarkHeldTopicMock,
 } = vi.hoisted(() => ({
@@ -32,6 +33,7 @@ const {
   getSkillAssessmentCatalogMock: vi.fn(),
   getSkillAssessmentStateMock: vi.fn(),
   getRoleRoadmapMock: vi.fn(),
+  saveSkillAssessmentStateMock: vi.fn(),
   markHeldTopicMock: vi.fn(),
   unmarkHeldTopicMock: vi.fn(),
 }))
@@ -61,7 +63,7 @@ vi.mock('~/composables/useSkillAssessmentApiClient', () => ({
       next_question: null,
     }),
     getSkillAssessmentState: getSkillAssessmentStateMock,
-    saveSkillAssessmentState: vi.fn(),
+    saveSkillAssessmentState: saveSkillAssessmentStateMock,
     markHeldTopic: markHeldTopicMock,
     unmarkHeldTopic: unmarkHeldTopicMock,
   }),
@@ -306,12 +308,57 @@ describe('roadmaps page', () => {
     getSkillAssessmentCatalogMock.mockResolvedValue(catalogPayload)
     getSkillAssessmentStateMock.mockResolvedValue(skillStatePayload)
     getRoleRoadmapMock.mockResolvedValue(roadmapPayload)
+    saveSkillAssessmentStateMock.mockImplementation(async () => clonedSkillState())
     markHeldTopicMock.mockImplementation(async () =>
       clonedSkillState(),
     )
     unmarkHeldTopicMock.mockImplementation(async () =>
       clonedSkillState(),
     )
+  })
+
+  it('reads the state fetched after submitting, not the one captured on load', async () => {
+    // The page fetches the session state once at setup, while the assessment
+    // is still unanswered. Submitting refetches it; if the finished screen
+    // kept reading the first snapshot it would report every unit as
+    // Unassessed and drop the readiness comparison entirely.
+    const unansweredState = {
+      completed: false,
+      answers: {},
+      completed_at: null,
+      topic_states: [],
+      recommended_topics: [],
+      next_topics: [],
+    }
+    getSkillAssessmentStateMock
+      .mockResolvedValueOnce(unansweredState)
+      .mockResolvedValue(clonedSkillState())
+    getSkillAssessmentCatalogMock.mockResolvedValue({
+      ...catalogPayload,
+      questions: [
+        {
+          id: 'backend-developer--databases',
+          prompt: 'I could work on "Data storage" in a real project without help.',
+          dimension_key: 'sdlc-design',
+          display_order: 1,
+        },
+      ],
+    })
+
+    const wrapper = await mountSuspended(RoadmapsPage)
+    expect(wrapper.findAll('[data-testid="next-topic-item"]').length).toBe(0)
+
+    const options = wrapper.findAll('.skill-assessment-scale__option')
+    expect(options.length).toBeGreaterThan(0)
+    await options[0]!.trigger('click')
+
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    await flushPromises()
+    await flushPromises()
+
+    expect(saveSkillAssessmentStateMock).toHaveBeenCalled()
+    expect(wrapper.findAll('[data-testid="next-topic-item"]').length).toBe(3)
+    expect(wrapper.text()).toContain('Data storage')
   })
 
   it('renders the segmented completed roadmap dashboard', async () => {
@@ -393,6 +440,8 @@ describe('roadmaps page', () => {
             state: 'held',
             mastery: 1.0,
             statement: 'You said you can already work on "Caching".',
+            // The API flags a unit held by a mark, so only that one offers undo.
+            held_by_mark: true,
           }
         : entry,
     )
@@ -442,6 +491,8 @@ describe('roadmaps page', () => {
             state: 'held',
             mastery: 1.0,
             statement: 'You said you can already work on "Caching".',
+            // The API flags a unit held by a mark, so only that one offers undo.
+            held_by_mark: true,
           }
         : entry,
     )
