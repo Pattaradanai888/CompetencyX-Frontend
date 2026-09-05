@@ -5,6 +5,10 @@ import { useCatalogApi } from '~/composables/useCatalogApi'
 import { useLocale } from '~/composables/useLocale'
 import { useSessionCreate } from '~/composables/useSessionCreate'
 import { getRoleMeta } from '~/data/roleMeta'
+import {
+  getRoleDisplayDescription,
+  getRoleDisplayName,
+} from '~/utils/assessment'
 import { PREFERRED_ROLE_KEY } from '~/utils/constants'
 import type { ApiError, RoadmapTopic, Role } from '~~/shared/types/assessment'
 
@@ -120,24 +124,37 @@ watch(
   { flush: 'post' },
 )
 
+const metaLocale = computed(() => (isThai.value ? 'th' : 'en'))
+
+function searchableMetaText(slug: string, locale: 'en' | 'th'): string[] {
+  const meta = getRoleMeta(slug, locale)
+  return [
+    meta.domain,
+    ...meta.careerAreas,
+    ...meta.workStyle,
+    ...meta.environment,
+    ...meta.experience,
+    ...meta.skills,
+    ...meta.interests,
+    ...meta.responsibilities,
+  ]
+}
+
 const filteredRoles = computed(() => {
   let result = roles.value
 
   const query = searchQuery.value.toLowerCase().trim()
   if (query) {
     result = result.filter((role) => {
-      const meta = getRoleMeta(role.slug)
+      // Search the English metadata and, in a Thai session, the Thai text the
+      // respondent actually sees.
       const searchable = [
         role.name,
         role.description ?? '',
-        meta.domain,
-        ...meta.careerAreas,
-        ...meta.workStyle,
-        ...meta.environment,
-        ...meta.experience,
-        ...meta.skills,
-        ...meta.interests,
-        ...meta.responsibilities,
+        getRoleDisplayName(role, isThai.value),
+        getRoleDisplayDescription(role, isThai.value),
+        ...searchableMetaText(role.slug, 'en'),
+        ...(isThai.value ? searchableMetaText(role.slug, 'th') : []),
       ]
         .join(' ')
         .toLowerCase()
@@ -164,10 +181,14 @@ const resultSummary = computed(() => {
   return `Showing ${filteredRoles.value.length} of ${roles.value.length} roles.`
 })
 
-const selectedMeta = computed(() => getRoleMeta(selectedRole.value?.slug))
+const selectedMeta = computed(() =>
+  getRoleMeta(selectedRole.value?.slug, metaLocale.value),
+)
 const selectedRoleTopics = computed(() => topics.value.slice(0, 6))
 const selectedRoleName = computed(
-  () => selectedRole.value?.name ?? t.value.choosePrompt,
+  () =>
+    getRoleDisplayName(selectedRole.value, isThai.value) ||
+    t.value.choosePrompt,
 )
 
 const startButtonLabel = computed(() => {
