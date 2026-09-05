@@ -63,7 +63,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-          python-version-file: backend/.python-version
+          # uv sync installs the interpreter pinned in backend/.python-version.
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -83,7 +83,10 @@ jobs:
           uv sync
           uv run python manage.py migrate --noinput
           uv run python manage.py sync_content
-          nohup uv run gunicorn config.wsgi:application \
+          # Start gunicorn from the venv, not through `uv run`: a resident uv
+          # process holds the uv cache lock and the action's post-step cache
+          # prune times out waiting for it.
+          nohup .venv/bin/gunicorn config.wsgi:application \
             --bind "127.0.0.1:${BACKEND_PORT}" --workers 2 \
             --access-logfile backend-access.log --error-logfile backend-error.log \
             > backend-stdout.log 2>&1 &
