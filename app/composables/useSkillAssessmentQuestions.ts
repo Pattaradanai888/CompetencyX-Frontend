@@ -27,13 +27,6 @@ export function buildSkillAssessmentQuestions(
   }))
 }
 
-export function getUnansweredQuestions(
-  questions: SkillAssessmentQuestion[],
-  answers: Record<string, number>,
-): SkillAssessmentQuestion[] {
-  return questions.filter((question) => !Number.isFinite(answers[question.id]))
-}
-
 export interface NextQuestionDecision {
   /** The item to ask next, or null when the backend says the assessment should stop. */
   question: SkillAssessmentQuestion | null
@@ -60,12 +53,18 @@ export function useSkillAssessmentQuestions(
       sessionId.value,
       skillAssessmentAnswers.value,
     )
-    const nextQuestionId = response.next_question?.id
-    const question = nextQuestionId
-      ? (skillAssessmentQuestions.value.find(
-          (candidate) => candidate.id === nextQuestionId,
-        ) ?? null)
-      : null
+    const nextQuestionId = response.next_question?.id ?? null
+    if (nextQuestionId === null) {
+      return { question: null, progress: response.progress ?? null }
+    }
+    const question = skillAssessmentQuestions.value.find(
+      (candidate) => candidate.id === nextQuestionId,
+    )
+    // An item the catalog does not carry is a contract break, not the stop
+    // signal: treating it as null would submit the assessment early.
+    if (!question) {
+      throw new Error(`Unknown Skill Assessment item: ${nextQuestionId}`)
+    }
     return { question, progress: response.progress ?? null }
   }
 

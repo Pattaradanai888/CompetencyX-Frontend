@@ -58,7 +58,9 @@ function getResourceTypeLabel(type: ResourceLink['type']): string {
 }
 
 function searchUrl(topic: RoadmapTopic, engine: 'google' | 'youtube'): string {
-  const q = encodeURIComponent(`${topic.title} ${props.roleTitle ?? ''} tutorial`.trim())
+  const q = encodeURIComponent(
+    `${topic.title} ${props.roleTitle ?? ''} tutorial`.trim(),
+  )
   if (engine === 'youtube') {
     return `https://www.youtube.com/results?search_query=${q}`
   }
@@ -94,7 +96,11 @@ function searchUrl(topic: RoadmapTopic, engine: 'google' | 'youtube'): string {
           {{ index + 1 }}
         </div>
 
-        <article :id="'topic-' + topic.id" class="paper-panel ml-5 md:ml-14">
+        <article
+          :id="'topic-' + topic.id"
+          data-testid="roadmap-topic"
+          class="paper-panel ml-5 md:ml-14"
+        >
           <div class="grid gap-5 p-6 md:grid-cols-[minmax(0,1fr)_auto] md:p-8">
             <div class="max-w-3xl">
               <div class="flex flex-wrap items-center gap-2">
@@ -161,10 +167,7 @@ function searchUrl(topic: RoadmapTopic, engine: 'google' | 'youtube'): string {
               </a>
             </div>
           </div>
-          <div
-            v-else
-            class="border-t border-border-subtle px-6 py-4 md:px-8"
-          >
+          <div v-else class="border-t border-border-subtle px-6 py-4 md:px-8">
             <p
               class="text-[11px] font-bold uppercase tracking-[0.08em] text-ink-soft"
             >
@@ -177,7 +180,7 @@ function searchUrl(topic: RoadmapTopic, engine: 'google' | 'youtube'): string {
                 rel="noopener noreferrer"
                 class="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border-subtle bg-surface-card/50 px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-accent/30 hover:text-accent"
               >
-                <span class="text-nowrap">🔍 Search {{ topic.title }}</span>
+                <span class="text-nowrap">🔍 {{ t.searchWeb }}</span>
               </a>
               <a
                 :href="searchUrl(topic, 'youtube')"
@@ -185,7 +188,7 @@ function searchUrl(topic: RoadmapTopic, engine: 'google' | 'youtube'): string {
                 rel="noopener noreferrer"
                 class="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border-subtle bg-surface-card/50 px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-accent/30 hover:text-accent"
               >
-                ▶ YouTube
+                ▶ {{ t.watchOnYouTube }}
               </a>
             </div>
           </div>

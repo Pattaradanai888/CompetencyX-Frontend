@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import SkillSpiderChart from '~/components/results/SkillSpiderChart.vue'
 import type { RadarDimension, DimensionCard } from '~/utils/roadmaps'
-import type { RoadmapTopic } from '~~/shared/types/assessment'
 
 const props = defineProps<{
   roleTitle: string
@@ -13,10 +12,10 @@ const props = defineProps<{
   targetByDimension?: Record<string, number>
   isAtTarget: boolean
   capabilityGap: number | null
-  displayTopics: RoadmapTopic[]
   /** The suggested topics, so the chips jump to the live suggestions. */
   priorityTopics: { topic_slug: string; topic_title: string }[]
-  blendedDimensions: RadarDimension[]
+  /** One axis per rated set; unassessed sets are not plotted. */
+  dimensions: RadarDimension[]
   strongestDimensionCards: DimensionCard[]
   hasRoleAnswers: boolean
   isThai: boolean
@@ -44,7 +43,7 @@ function scrollToTopic(topicSlug: string) {
  * closes on the current shape instead of a made-up constant.
  */
 const targetPerDimension = computed<RadarDimension[]>(() =>
-  props.blendedDimensions.map((d) => ({
+  props.dimensions.map((d) => ({
     ...d,
     value:
       props.targetByDimension?.[d.key] ??
@@ -62,9 +61,7 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
       {{ t.assessmentComplete }}
     </div>
 
-    <h2
-      class="mt-6 font-display text-4xl leading-tight text-ink md:text-6xl"
-    >
+    <h2 class="mt-6 font-display text-4xl leading-tight text-ink md:text-6xl">
       {{ roleTitle }} {{ t.readinessOrganized }}
     </h2>
     <p class="mt-5 text-sm leading-8 text-ink-soft md:text-base">
@@ -93,27 +90,41 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
                 </div>
               </div>
               <p class="mt-3 text-xs leading-6 text-ink-soft">
-                {{ isThai ? 'คะแนนความพร้อมโดยประมาณจากคำตอบของคุณ — ยิ่งสูงยิ่งบ่งบอกว่าคุณมีพื้นฐานที่สอดคล้องกับบทบาทนี้มาก' : 'Estimated readiness from all your answers — higher means your existing knowledge already aligns more closely with this role.' }}
+                {{
+                  isThai
+                    ? 'คะแนนความพร้อมโดยประมาณจากคำตอบของคุณ — ยิ่งสูงยิ่งบ่งบอกว่าคุณมีพื้นฐานที่สอดคล้องกับบทบาทนี้มาก'
+                    : 'Estimated readiness from all your answers — higher means your existing knowledge already aligns more closely with this role.'
+                }}
               </p>
               <div class="mt-4 space-y-2">
                 <div class="flex items-center justify-between">
-                  <span class="text-[11px] font-semibold text-ink-soft">{{ isThai ? 'จุดแข็ง' : 'Strengths' }}</span>
-                  <span class="text-xs font-bold text-green-600">{{ recalculatedStrengths.length }} {{ isThai ? 'ด้าน' : 'areas' }}</span>
+                  <span class="text-[11px] font-semibold text-ink-soft">{{
+                    isThai ? 'จุดแข็ง' : 'Strengths'
+                  }}</span>
+                  <span class="text-xs font-bold text-green-600"
+                    >{{ recalculatedStrengths.length }}
+                    {{ isThai ? 'ด้าน' : 'areas' }}</span
+                  >
                 </div>
                 <div
                   class="flex cursor-pointer items-center justify-between"
                   @click="scrollToGapInsight"
                 >
-                  <span class="text-[11px] font-semibold text-ink-soft">{{ isThai ? 'ช่องว่างที่ต้องพัฒนา' : 'Gaps to close' }}</span>
-                  <span class="text-xs font-bold text-accent underline decoration-accent/30 underline-offset-2">
-                    {{ recalculatedGrowthAreas.length }} {{ isThai ? 'ด้าน' : 'areas' }}
+                  <span class="text-[11px] font-semibold text-ink-soft">{{
+                    isThai ? 'ช่องว่างที่ต้องพัฒนา' : 'Gaps to close'
+                  }}</span>
+                  <span
+                    class="text-xs font-bold text-accent underline decoration-accent/30 underline-offset-2"
+                  >
+                    {{ recalculatedGrowthAreas.length }}
+                    {{ isThai ? 'ด้าน' : 'areas' }}
                   </span>
                 </div>
               </div>
-          </div>
-        </article>
-      </div>
-      <article id="role-gap-insight" class="paper-panel p-5 min-h-[420px]">
+            </div>
+          </article>
+        </div>
+        <article id="role-gap-insight" class="paper-panel p-5 min-h-[420px]">
           <p class="eyebrow">{{ t.roleGapInsight }}</p>
           <h3 class="mt-2 text-xl font-bold text-ink">
             {{ roleTitle }}
@@ -124,7 +135,11 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
           <p
             class="mt-2 rounded-lg border border-blueprint/15 bg-blueprint/5 px-3 py-2 text-[11px] leading-6 text-blueprint/80"
           >
-            {{ isThai ? 'คิดง่าย ๆ: "ปัจจุบัน" คือสิ่งที่คุณรู้อยู่แล้ว "เป้าหมาย" คือสิ่งที่บทบาทนี้ต้องการ — ยิ่งช่องว่างน้อยเท่าไหร่ ยิ่งหมายความว่าคุณพร้อมมากขึ้น' : 'Think of it simply: "As-Is" is what you already know; "To-Be" is what this role looks for. The smaller the gap, the more ready you are.' }}
+            {{
+              isThai
+                ? 'คิดง่าย ๆ: "ปัจจุบัน" คือสิ่งที่คุณรู้อยู่แล้ว "เป้าหมาย" คือสิ่งที่บทบาทนี้ต้องการ — ยิ่งช่องว่างน้อยเท่าไหร่ ยิ่งหมายความว่าคุณพร้อมมากขึ้น'
+                : 'Think of it simply: "As-Is" is what you already know; "To-Be" is what this role looks for. The smaller the gap, the more ready you are.'
+            }}
           </p>
 
           <div class="mt-4 grid gap-3">
@@ -198,11 +213,7 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
                   class="text-sm font-bold"
                   :class="isAtTarget ? 'text-green-600' : 'text-ink'"
                 >
-                  {{
-                    isAtTarget
-                      ? t.gapClosed
-                      : `${capabilityGap}%`
-                  }}
+                  {{ isAtTarget ? t.gapClosed : `${capabilityGap}%` }}
                 </p>
               </div>
 
@@ -210,14 +221,18 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
                 v-if="!isAtTarget"
                 class="mt-2 text-[11px] leading-5 text-ink-soft/70"
               >
-                {{ isThai ? `เป้าหมาย ${targetScore}% เป็นค่ามาตรฐานของบทบาทนี้ — ยิ่งคะแนนสูงหมายความว่าคุณมีความรู้และทักษะที่สอดคล้องกับบทบาทมากขึ้น ไม่ต้องกังวลถ้ายังไม่ถึง คุณสามารถพัฒนาได้จากแผนการเรียนรู้ด้านล่าง` : `A ${targetScore}% target is the readiness benchmark for this role. Higher scores mean your knowledge better aligns with what the role typically requires. Do not worry if you are below it — the learning plan below will help you close the gap.` }}
+                {{
+                  isThai
+                    ? `เป้าหมาย ${targetScore}% เป็นค่ามาตรฐานของบทบาทนี้ — ยิ่งคะแนนสูงหมายความว่าคุณมีความรู้และทักษะที่สอดคล้องกับบทบาทมากขึ้น ไม่ต้องกังวลถ้ายังไม่ถึง คุณสามารถพัฒนาได้จากแผนการเรียนรู้ด้านล่าง`
+                    : `A ${targetScore}% target is the readiness benchmark for this role. Higher scores mean your knowledge better aligns with what the role typically requires. Do not worry if you are below it — the learning plan below will help you close the gap.`
+                }}
               </p>
 
               <!--
-                The suggestions, not the roadmap: `displayTopics` is the whole
-                imported graph, which reads as "116 topics to focus on next"
-                and only lands after the client fetches it, so the server and
-                the browser rendered different numbers here.
+                The suggestions, not the roadmap: the imported graph reads as
+                "116 topics to focus on next" and only lands after the client
+                fetches it, so the server and the browser would render
+                different numbers here.
               -->
               <p
                 v-if="priorityTopics.length"
@@ -269,9 +284,9 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
           <p class="mt-2 text-xs leading-6 text-ink-soft">
             {{ t.mapCopy }}
           </p>
-          <div class="mt-4">
+          <div class="mt-4" data-testid="readiness-radar">
             <SkillSpiderChart
-              :dimensions="blendedDimensions"
+              :dimensions="dimensions"
               :target-dimensions="targetPerDimension"
               :is-thai="isThai"
             />
@@ -279,7 +294,7 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
         </article>
 
         <!-- Strength distribution — compact, below spider chart -->
-        <article class="paper-panel p-5">
+        <article class="paper-panel p-5" data-testid="strength-cards">
           <div class="flex items-center justify-between gap-4">
             <div>
               <p class="eyebrow">{{ t.strengthDistribution }}</p>
@@ -291,7 +306,8 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
               </p>
             </div>
             <p class="data-value text-xs font-bold text-accent">
-              {{ strongestDimensionCards.length }} {{ isThai ? 'ด้าน' : 'areas' }}
+              {{ strongestDimensionCards.length }}
+              {{ isThai ? 'ด้าน' : 'areas' }}
             </p>
           </div>
           <div class="mt-4 grid gap-3">
@@ -315,7 +331,9 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
                     :style="{ width: `${dim.percent}%` }"
                   />
                 </div>
-                <span class="w-7 text-right text-[11px] font-bold text-ink">{{ dim.percent }}%</span>
+                <span class="w-7 text-right text-[11px] font-bold text-ink"
+                  >{{ dim.percent }}%</span
+                >
               </div>
             </div>
           </div>

@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { motion } from 'motion-v'
-import { sortRankedRolesDescending } from '~/utils/assessment'
+import {
+  getRoleDisplayDescription,
+  getRoleDisplayName,
+  getSupportingPillars,
+  sortRankedRolesDescending,
+} from '~/utils/assessment'
 import { useAssessmentResults } from '~/composables/useAssessmentResults'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
 import { useLocale } from '~/composables/useLocale'
@@ -78,7 +83,13 @@ const primaryRole = computed(
       id: 0,
       slug: primaryRankedRole.value?.slug ?? 'recommended-role',
       name: primaryRankedRole.value?.name ?? t.value.fallbackRole,
+      name_th: primaryRankedRole.value?.name_th,
     } satisfies Role),
+)
+
+const primaryRoleName = computed(
+  () =>
+    getRoleDisplayName(primaryRole.value, isThai.value) || t.value.fallbackRole,
 )
 
 const selectedRole = ref<RankedRoleInsight | Role | null>(null)
@@ -95,7 +106,8 @@ watch(
 
 const selectedRoleName = computed(
   () =>
-    selectedRole.value?.name ?? primaryRole.value?.name ?? t.value.selectedRole,
+    getRoleDisplayName(selectedRole.value ?? primaryRole.value, isThai.value) ||
+    t.value.selectedRole,
 )
 
 function getRoleDescription(role: RankedRoleInsight | Role | null): string {
@@ -103,16 +115,28 @@ function getRoleDescription(role: RankedRoleInsight | Role | null): string {
     return t.value.fallbackDescription
   }
 
-  if ('description' in role && role.description) {
-    return role.description
+  if ('description' in role) {
+    const description = getRoleDisplayDescription(role, isThai.value)
+    if (description) return description
   }
 
-  if ('top_supporting_pillars' in role && role.top_supporting_pillars.length) {
-    return `${t.value.strongestSignals}: ${role.top_supporting_pillars.join(', ')}.`
+  if ('top_supporting_pillars' in role) {
+    const pillars = getSupportingPillars(role, isThai.value)
+    if (pillars.length) {
+      return `${t.value.strongestSignals}: ${pillars.join(', ')}.`
+    }
   }
 
   return t.value.closeFitDescription
 }
+
+// The primary role's own description comes first; the ranked insight only
+// carries the strongest-signal pillars, which are the fallback.
+const primaryRoleDescription = computed(
+  () =>
+    getRoleDisplayDescription(primaryRole.value, isThai.value) ||
+    getRoleDescription(primaryRankedRole.value ?? primaryRole.value),
+)
 
 async function handleContinue() {
   const role = selectedRole.value
@@ -181,10 +205,10 @@ onMounted(async () => {
             id="results-title"
             class="mx-auto mt-8 max-w-4xl font-display text-4xl font-semibold leading-tight text-ink md:text-6xl"
           >
-            {{ primaryRole.name }} {{ t.titleSuffix }}
+            {{ primaryRoleName }} {{ t.titleSuffix }}
           </h1>
           <p class="mx-auto mt-5 max-w-2xl text-base leading-8 text-ink-soft">
-            {{ getRoleDescription(primaryRankedRole || primaryRole) }}
+            {{ primaryRoleDescription }}
           </p>
         </div>
 
@@ -208,10 +232,10 @@ onMounted(async () => {
               </div>
               <p class="eyebrow">{{ t.primaryRole }}</p>
               <h2 class="mt-3 text-2xl font-bold text-ink">
-                {{ primaryRole.name }}
+                {{ primaryRoleName }}
               </h2>
               <p class="mt-3 text-sm leading-7 text-ink-soft">
-                {{ getRoleDescription(primaryRankedRole || primaryRole) }}
+                {{ primaryRoleDescription }}
               </p>
             </div>
             <div class="mt-6">
@@ -227,7 +251,7 @@ onMounted(async () => {
                 <p class="mt-2 text-sm leading-6 text-ink-soft">
                   {{ t.skillAssessmentWillStartWith }}
                   <span class="font-semibold text-ink">{{
-                    primaryRole.name
+                    primaryRoleName
                   }}</span
                   >.
                 </p>
@@ -263,7 +287,9 @@ onMounted(async () => {
                 ✓
               </div>
               <p class="eyebrow">{{ t.closeFit }} {{ index + 1 }}</p>
-              <h2 class="mt-3 text-2xl font-bold text-ink">{{ role.name }}</h2>
+              <h2 class="mt-3 text-2xl font-bold text-ink">
+                {{ getRoleDisplayName(role, isThai) }}
+              </h2>
               <p class="mt-3 text-sm leading-7 text-ink-soft">
                 {{ getRoleDescription(role) }}
               </p>
@@ -280,7 +306,9 @@ onMounted(async () => {
                 </p>
                 <p class="mt-2 text-sm leading-6 text-ink-soft">
                   {{ t.skillAssessmentWillStartWith }}
-                  <span class="font-semibold text-ink">{{ role.name }}</span
+                  <span class="font-semibold text-ink">{{
+                    getRoleDisplayName(role, isThai)
+                  }}</span
                   >.
                 </p>
               </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { getErrorMessage } from '~/utils/api'
+import { getRoleDisplayDescription } from '~/utils/assessment'
 import type { Role, RoadmapTopic, ApiError } from '~~/shared/types/assessment'
 import type { RoleExplorerMeta } from '~/data/roleMeta'
 
@@ -38,7 +39,11 @@ const emit = defineEmits<{
     <!-- Scrollable Body content -->
     <div class="role-details-body">
       <p class="text-base leading-relaxed text-ink-soft/90">
-        {{ selectedRole ? selectedRole.description || '' : t.choosePrompt }}
+        {{
+          selectedRole
+            ? getRoleDisplayDescription(selectedRole, isThai)
+            : t.choosePrompt
+        }}
       </p>
 
       <div v-if="selectedRole" class="space-y-6">

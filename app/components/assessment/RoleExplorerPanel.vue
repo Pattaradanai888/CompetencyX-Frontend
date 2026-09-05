@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { getRoleMeta } from '~/data/roleMeta'
+import type { RoleExplorerMeta } from '~/data/roleMeta'
+import {
+  getRoleDisplayDescription,
+  getRoleDisplayName,
+} from '~/utils/assessment'
 import type { Role, RoadmapTopic } from '~~/shared/types/assessment'
 
-defineProps<{
+const props = defineProps<{
   rolesPending: boolean
   filteredRoles: Role[]
   preferredRoleSlug: string | null
@@ -23,6 +28,21 @@ const emit = defineEmits<{
 }>()
 
 const searchQuery = defineModel<string>('searchQuery', { default: '' })
+
+// One metadata lookup per role per render, in the language on screen.
+const metaBySlug = computed(() => {
+  const locale = props.isThai ? 'th' : 'en'
+  return new Map(
+    props.filteredRoles.map((role) => [
+      role.slug,
+      getRoleMeta(role.slug, locale),
+    ]),
+  )
+})
+
+function metaFor(role: Role): RoleExplorerMeta {
+  return metaBySlug.value.get(role.slug) ?? getRoleMeta(role.slug)
+}
 </script>
 
 <template>
@@ -100,19 +120,23 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
               ? 'border-accent bg-accent-soft/20 shadow-[0_16px_34px_rgba(234,112,31,0.14)]'
               : ''
           "
-          :aria-label="isThai ? `เลือก ${role.name}` : `Select ${role.name}`"
+          :aria-label="
+            isThai
+              ? `เลือก ${getRoleDisplayName(role, true)}`
+              : `Select ${role.name}`
+          "
           :aria-pressed="role.slug === preferredRoleSlug ? 'true' : 'false'"
           @click="emit('select-role', role.slug)"
         >
           <div class="flex items-start justify-between gap-2 w-full">
             <div class="min-w-0 flex-1">
               <p class="font-bold text-ink text-sm leading-tight">
-                {{ role.name }}
+                {{ getRoleDisplayName(role, isThai) }}
               </p>
               <p
                 class="mt-1 text-xs text-ink-soft line-clamp-2 leading-relaxed"
               >
-                {{ role.description }}
+                {{ getRoleDisplayDescription(role, isThai) }}
               </p>
             </div>
             <span
@@ -140,10 +164,10 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
           <div class="space-y-4">
             <div>
               <h3 class="font-display text-lg font-bold text-ink">
-                {{ role.name }}
+                {{ getRoleDisplayName(role, isThai) }}
               </h3>
               <p class="mt-1.5 text-xs text-ink-soft leading-relaxed">
-                {{ role.description || '' }}
+                {{ getRoleDisplayDescription(role, isThai) }}
               </p>
             </div>
 
@@ -155,7 +179,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
               </h4>
               <ul class="role-details-list mt-1.5">
                 <li
-                  v-for="resp in getRoleMeta(role.slug).responsibilities"
+                  v-for="resp in metaFor(role).responsibilities"
                   :key="resp"
                   class="role-details-list-item text-xs"
                 >
@@ -172,7 +196,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
               </h4>
               <div class="role-details-tags mt-1.5">
                 <span
-                  v-for="skill in getRoleMeta(role.slug).skills"
+                  v-for="skill in metaFor(role).skills"
                   :key="skill"
                   class="role-details-tag text-[0.7rem] px-2 py-0.5"
                 >
@@ -215,12 +239,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
             </div>
 
             <div class="grid grid-cols-2 gap-3 mt-2">
-              <div
-                v-if="
-                  getRoleMeta(role.slug).workStyle &&
-                  getRoleMeta(role.slug).workStyle.length
-                "
-              >
+              <div v-if="metaFor(role).workStyle.length">
                 <h5
                   class="text-[0.6rem] font-bold uppercase tracking-wider text-ink-soft"
                 >
@@ -228,7 +247,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
                 </h5>
                 <div class="flex flex-wrap gap-1 mt-1">
                   <span
-                    v-for="style in getRoleMeta(role.slug).workStyle"
+                    v-for="style in metaFor(role).workStyle"
                     :key="style"
                     class="bg-surface-elevated text-ink-soft text-[0.65rem] px-1.5 py-0.5 rounded border border-border-subtle"
                   >
@@ -237,12 +256,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
                 </div>
               </div>
 
-              <div
-                v-if="
-                  getRoleMeta(role.slug).interests &&
-                  getRoleMeta(role.slug).interests.length
-                "
-              >
+              <div v-if="metaFor(role).interests.length">
                 <h5
                   class="text-[0.6rem] font-bold uppercase tracking-wider text-ink-soft"
                 >
@@ -250,7 +264,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
                 </h5>
                 <div class="flex flex-wrap gap-1 mt-1">
                   <span
-                    v-for="interest in getRoleMeta(role.slug).interests"
+                    v-for="interest in metaFor(role).interests"
                     :key="interest"
                     class="bg-surface-elevated text-ink-soft text-[0.65rem] px-1.5 py-0.5 rounded border border-border-subtle"
                   >
@@ -259,12 +273,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
                 </div>
               </div>
 
-              <div
-                v-if="
-                  getRoleMeta(role.slug).careerAreas &&
-                  getRoleMeta(role.slug).careerAreas.length
-                "
-              >
+              <div v-if="metaFor(role).careerAreas.length">
                 <h5
                   class="text-[0.6rem] font-bold uppercase tracking-wider text-ink-soft"
                 >
@@ -272,7 +281,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
                 </h5>
                 <div class="flex flex-wrap gap-1 mt-1">
                   <span
-                    v-for="area in getRoleMeta(role.slug).careerAreas"
+                    v-for="area in metaFor(role).careerAreas"
                     :key="area"
                     class="bg-surface-elevated text-ink-soft text-[0.65rem] px-1.5 py-0.5 rounded border border-border-subtle"
                   >
@@ -281,12 +290,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
                 </div>
               </div>
 
-              <div
-                v-if="
-                  getRoleMeta(role.slug).environment &&
-                  getRoleMeta(role.slug).environment.length
-                "
-              >
+              <div v-if="metaFor(role).environment.length">
                 <h5
                   class="text-[0.6rem] font-bold uppercase tracking-wider text-ink-soft"
                 >
@@ -294,7 +298,7 @@ const searchQuery = defineModel<string>('searchQuery', { default: '' })
                 </h5>
                 <div class="flex flex-wrap gap-1 mt-1">
                   <span
-                    v-for="env in getRoleMeta(role.slug).environment"
+                    v-for="env in metaFor(role).environment"
                     :key="env"
                     class="bg-surface-elevated text-ink-soft text-[0.65rem] px-1.5 py-0.5 rounded border border-border-subtle"
                   >

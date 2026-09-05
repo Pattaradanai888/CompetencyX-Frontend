@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import {
   getAlignmentLabel,
   getQuestionStageLabel,
+  getRoleDisplayName,
   getRoleResolutionLabel,
   getTotalAnswered,
 } from '~/utils/assessment'
@@ -155,7 +156,7 @@ const isThai = computed(() => props.session.language === 'th')
             {{ isThai ? 'ตำแหน่งเป้าหมาย:' : 'Preferred role:' }}
             <span class="font-semibold text-ink">
               {{
-                session.preferred_role?.name ||
+                getRoleDisplayName(session.preferred_role, isThai) ||
                 (isThai ? 'ยังไม่ได้ระบุ' : 'Undeclared')
               }}
             </span>
@@ -164,7 +165,7 @@ const isThai = computed(() => props.session.language === 'th')
             {{ isThai ? 'ตำแหน่งที่เหมาะสม:' : 'Best fit:' }}
             <span class="font-semibold text-ink">
               {{
-                session.best_fit_role?.name ||
+                getRoleDisplayName(session.best_fit_role, isThai) ||
                 (isThai
                   ? 'กำลังประมวลผลจากคำตอบ'
                   : 'Emerging from your answers')

@@ -35,9 +35,13 @@ function getScaleLabel(option: SkillAssessmentScaleOption): string {
 <template>
   <section class="skill-assessment-panel">
     <div class="skill-assessment-panel__chips">
-      <span class="skill-assessment-panel__eyebrow">Skill assessment</span>
-      <span class="skill-assessment-panel__chip skill-assessment-panel__chip--soft">
-        Agreement scale
+      <span class="skill-assessment-panel__eyebrow">{{
+        t.skillAssessmentChip
+      }}</span>
+      <span
+        class="skill-assessment-panel__chip skill-assessment-panel__chip--soft"
+      >
+        {{ t.agreementScaleChip }}
       </span>
     </div>
 
@@ -59,7 +63,10 @@ function getScaleLabel(option: SkillAssessmentScaleOption): string {
           </h2>
         </div>
 
-        <fieldset class="skill-assessment-scale" :disabled="isSaving || isAutoAdvancing">
+        <fieldset
+          class="skill-assessment-scale"
+          :disabled="isSaving || isAutoAdvancing"
+        >
           <legend class="sr-only">
             {{
               isThai
@@ -121,7 +128,10 @@ function getScaleLabel(option: SkillAssessmentScaleOption): string {
       </div>
     </motion.div>
 
-    <div v-else class="skill-assessment-question-card skill-assessment-question-card--empty">
+    <div
+      v-else
+      class="skill-assessment-question-card skill-assessment-question-card--empty"
+    >
       <p class="skill-assessment-question-card__prompt-label">
         {{ t.preparingPrompt }}
       </p>

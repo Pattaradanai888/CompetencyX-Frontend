@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   formatConfidencePercent,
   getAlignmentLabel,
+  getPillarLabel,
   getQuestionTypeLabel,
+  getRoleDisplayDescription,
+  getRoleDisplayName,
+  getSupportingPillars,
   isSessionComplete,
 } from '../../app/utils/assessment'
 import type {
@@ -71,7 +75,6 @@ describe('assessment utils', () => {
       role_resolution_status: 'resolved',
       pillar_profile: [],
       ranked_roles: [],
-      preferred_role_gap_topics: [],
     }
 
     expect(isSessionComplete(result)).toBe(true)
@@ -84,4 +87,81 @@ describe('assessment utils', () => {
     expect(formatConfidencePercent(0.784)).toBe('78%')
   })
 
+  describe('role and pillar display helpers', () => {
+    const role = {
+      name: 'Backend Engineer',
+      name_th: 'วิศวกรฝั่งเซิร์ฟเวอร์',
+      description: 'Builds services.',
+      description_th: 'สร้างบริการฝั่งเซิร์ฟเวอร์',
+    }
+    const englishOnlyRole = {
+      name: 'Backend Engineer',
+      description: 'Builds services.',
+    }
+
+    it('reads the Thai role name in a Thai session and English otherwise', () => {
+      expect(getRoleDisplayName(role, true)).toBe('วิศวกรฝั่งเซิร์ฟเวอร์')
+      expect(getRoleDisplayName(role, false)).toBe('Backend Engineer')
+      expect(getRoleDisplayName(englishOnlyRole, true)).toBe('Backend Engineer')
+      expect(getRoleDisplayName({ ...role, name_th: '' }, true)).toBe(
+        'Backend Engineer',
+      )
+      expect(getRoleDisplayName(null, true)).toBe('')
+      expect(getRoleDisplayName(undefined, false)).toBe('')
+    })
+
+    it('reads the Thai role description with an English fallback', () => {
+      expect(getRoleDisplayDescription(role, true)).toBe(
+        'สร้างบริการฝั่งเซิร์ฟเวอร์',
+      )
+      expect(getRoleDisplayDescription(role, false)).toBe('Builds services.')
+      expect(getRoleDisplayDescription(englishOnlyRole, true)).toBe(
+        'Builds services.',
+      )
+      expect(getRoleDisplayDescription({ name: 'No copy' }, true)).toBe('')
+      expect(getRoleDisplayDescription(null, true)).toBe('')
+    })
+
+    it('reads the Thai pillar label with an English fallback', () => {
+      const pillar = { label: 'Systems Design', label_th: 'การออกแบบระบบ' }
+      expect(getPillarLabel(pillar, true)).toBe('การออกแบบระบบ')
+      expect(getPillarLabel(pillar, false)).toBe('Systems Design')
+      expect(getPillarLabel({ label: 'Systems Design' }, true)).toBe(
+        'Systems Design',
+      )
+      expect(
+        getPillarLabel({ label: 'Systems Design', label_th: '' }, true),
+      ).toBe('Systems Design')
+    })
+
+    it('reads the Thai supporting pillars only when the backend carries them', () => {
+      const ranked = {
+        top_supporting_pillars: ['Systems Design', 'Reliability'],
+        top_supporting_pillars_th: ['การออกแบบระบบ', 'ความน่าเชื่อถือ'],
+      }
+      expect(getSupportingPillars(ranked, true)).toEqual([
+        'การออกแบบระบบ',
+        'ความน่าเชื่อถือ',
+      ])
+      expect(getSupportingPillars(ranked, false)).toEqual([
+        'Systems Design',
+        'Reliability',
+      ])
+      expect(
+        getSupportingPillars(
+          { top_supporting_pillars: ['Systems Design'] },
+          true,
+        ),
+      ).toEqual(['Systems Design'])
+      expect(
+        getSupportingPillars(
+          {
+            top_supporting_pillars: ['Systems Design'],
+            top_supporting_pillars_th: [],
+          },
+          true,
+        ),
+      ).toEqual(['Systems Design'])
+    })
+  })
 })

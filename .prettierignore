@@ -7,4 +7,6 @@ coverage
 dist
 node_modules
 pnpm-lock.yaml
+# Snapshots copied verbatim from the backend repo; formatting them here would make them drift.
 openapi.json
+frontend-integration.md

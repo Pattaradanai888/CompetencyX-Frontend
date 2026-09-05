@@ -5,6 +5,10 @@ import { useCatalogApi } from '~/composables/useCatalogApi'
 import { useLocale } from '~/composables/useLocale'
 import { useSessionCreate } from '~/composables/useSessionCreate'
 import { getRoleMeta } from '~/data/roleMeta'
+import {
+  getRoleDisplayDescription,
+  getRoleDisplayName,
+} from '~/utils/assessment'
 import { PREFERRED_ROLE_KEY } from '~/utils/constants'
 import type { ApiError, RoadmapTopic, Role } from '~~/shared/types/assessment'
 
@@ -52,7 +56,9 @@ const { data: roles, pending: rolesPending } = await useAsyncData(
  * learning path instead of the handful of curated catalog topics. Falls back
  * to the curated topics for a role with no imported snapshot.
  */
-async function loadRolePreviewTopics(roleSlug: string): Promise<RoadmapTopic[]> {
+async function loadRolePreviewTopics(
+  roleSlug: string,
+): Promise<RoadmapTopic[]> {
   try {
     const roadmap = await getRoleRoadmap(roleSlug)
     // Top-level topics read as a curriculum outline; subtopics are often
@@ -60,7 +66,9 @@ async function loadRolePreviewTopics(roleSlug: string): Promise<RoadmapTopic[]> 
     // preview. Roadmaps too flat to have several top-level topics fall back
     // to the full sequence.
     const MIN_PREVIEW_TOPICS = 3
-    const topLevel = roadmap.external_topics.filter((t) => t.node_type === 'topic')
+    const topLevel = roadmap.external_topics.filter(
+      (t) => t.node_type === 'topic',
+    )
     const preview =
       topLevel.length >= MIN_PREVIEW_TOPICS ? topLevel : roadmap.external_topics
 
@@ -116,24 +124,37 @@ watch(
   { flush: 'post' },
 )
 
+const metaLocale = computed(() => (isThai.value ? 'th' : 'en'))
+
+function searchableMetaText(slug: string, locale: 'en' | 'th'): string[] {
+  const meta = getRoleMeta(slug, locale)
+  return [
+    meta.domain,
+    ...meta.careerAreas,
+    ...meta.workStyle,
+    ...meta.environment,
+    ...meta.experience,
+    ...meta.skills,
+    ...meta.interests,
+    ...meta.responsibilities,
+  ]
+}
+
 const filteredRoles = computed(() => {
   let result = roles.value
 
   const query = searchQuery.value.toLowerCase().trim()
   if (query) {
     result = result.filter((role) => {
-      const meta = getRoleMeta(role.slug)
+      // Search the English metadata and, in a Thai session, the Thai text the
+      // respondent actually sees.
       const searchable = [
         role.name,
         role.description ?? '',
-        meta.domain,
-        ...meta.careerAreas,
-        ...meta.workStyle,
-        ...meta.environment,
-        ...meta.experience,
-        ...meta.skills,
-        ...meta.interests,
-        ...meta.responsibilities,
+        getRoleDisplayName(role, isThai.value),
+        getRoleDisplayDescription(role, isThai.value),
+        ...searchableMetaText(role.slug, 'en'),
+        ...(isThai.value ? searchableMetaText(role.slug, 'th') : []),
       ]
         .join(' ')
         .toLowerCase()
@@ -160,15 +181,21 @@ const resultSummary = computed(() => {
   return `Showing ${filteredRoles.value.length} of ${roles.value.length} roles.`
 })
 
-const selectedMeta = computed(() => getRoleMeta(selectedRole.value?.slug))
+const selectedMeta = computed(() =>
+  getRoleMeta(selectedRole.value?.slug, metaLocale.value),
+)
 const selectedRoleTopics = computed(() => topics.value.slice(0, 6))
 const selectedRoleName = computed(
-  () => selectedRole.value?.name ?? t.value.choosePrompt,
+  () =>
+    getRoleDisplayName(selectedRole.value, isThai.value) ||
+    t.value.choosePrompt,
 )
 
 const startButtonLabel = computed(() => {
   if (isSubmitting.value) return t.value.preparingSession
-  return selectedRole.value ? t.value.startSkillAssessment : t.value.chooseRoleToContinue
+  return selectedRole.value
+    ? t.value.startSkillAssessment
+    : t.value.chooseRoleToContinue
 })
 
 const canStart = computed(
@@ -211,11 +238,7 @@ async function handleStart() {
 }
 
 useSeoMeta({
-  title: computed(() =>
-    isThai.value
-      ? 'เลือกตำแหน่งงาน'
-      : 'Choose role',
-  ),
+  title: computed(() => (isThai.value ? 'เลือกตำแหน่งงาน' : 'Choose role')),
   description: computed(() =>
     isThai.value
       ? 'สำรวจและเลือกตำแหน่งเป้าหมายก่อนเริ่มการประเมินทักษะ'
@@ -228,7 +251,7 @@ useSeoMeta({
   <main id="main-content" class="page-wrap">
     <!-- Onboarding Header -->
     <header class="mt-6 border-b border-border-subtle pb-6">
-      <p class="eyebrow">Onboarding</p>
+      <p class="eyebrow">{{ t.eyebrow }}</p>
       <h1 class="mt-2 font-display text-4xl leading-tight text-ink md:text-5xl">
         {{ t.title }}
       </h1>

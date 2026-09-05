@@ -29,6 +29,11 @@ export default defineConfig({
           include: ['test/nuxt/*.{test,spec}.ts'],
           environment: 'nuxt',
           testTimeout: 20000,
+          // Each file's first mount compiles the page it tests. Five files
+          // doing that at once on a small machine or a CI runner pushes the
+          // first test of each past its timeout; one file at a time is
+          // deterministic and only a little slower.
+          fileParallelism: false,
         },
       }),
     ],

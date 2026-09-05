@@ -1,7 +1,4 @@
-import type {
-  AssessmentHistory,
-  AssessmentResult,
-} from '~~/shared/types/assessment'
+import type { AssessmentResult } from '~~/shared/types/assessment'
 
 export function useAssessmentResults() {
   const { apiFetch } = useApiClient()
@@ -12,14 +9,7 @@ export function useAssessmentResults() {
     )
   }
 
-  async function getHistory(sessionId: string) {
-    return await apiFetch<AssessmentHistory>(
-      `/api/v1/assessment-sessions/${sessionId}/history/`,
-    )
-  }
-
   return {
-    getHistory,
     getResults,
   }
 }

@@ -73,11 +73,11 @@ pnpm test:watch     # โหมด watch
 
 ทุก push ไป `main` และทุก pull request รัน `.github/workflows/ci.yml` แยกเป็น 3 job ขนานกัน
 
-| Job | ทำอะไร |
-| --- | --- |
-| `checks` | `pnpm lint`, `format:check`, `typecheck`, `test:unit`, `test:nuxt`, `build` |
-| `e2e` | checkout repo backend มาด้วย (`Pattaradanai888/CompetencyX-Backend` branch `main`), migrate + `sync_content` บน SQLite, start gunicorn ที่ :8000, build แล้ว start Nuxt ที่ :3000 ชี้ไปที่ backend นั้น, ติดตั้ง Chromium, แล้วรัน `pnpm test:e2e` ด้วย Playwright จริง |
-| `docker` | build image จาก `Dockerfile` โดยไม่ push |
+| Job      | ทำอะไร                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `checks` | `pnpm lint`, `format:check`, `typecheck`, `test:unit`, `test:nuxt`, `build`                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `e2e`    | checkout repo backend มาด้วย (`Pattaradanai888/CompetencyX-Backend` branch `main`), migrate + `sync_content` บน SQLite, start gunicorn ที่ :8000, build แล้ว start Nuxt ที่ :3000 ชี้ไปที่ backend นั้น, ติดตั้ง Chromium, แล้วรัน `pnpm test:e2e` ด้วย Playwright จริง — ครอบคลุม smoke ของ Role Discovery, การทำ Skill Assessment จนจบด้วย role ที่รู้อยู่แล้ว, และการสมัครบัญชีแล้วทำเครื่องหมาย/ยกเลิกหัวข้อที่รู้แล้ว ถ้า step ไหนพัง จะเก็บ screenshot ไว้ใน `test-results/` และอัปโหลดเป็น artifact |
+| `docker` | build image จาก `Dockerfile` โดยไม่ push                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 ตั้งค่าเพิ่มได้ผ่าน repository variables/secrets: `BACKEND_REPOSITORY`, `BACKEND_REF` (เปลี่ยน branch ของ backend ที่ใช้ทดสอบ) และ `BACKEND_REPO_TOKEN` (จำเป็นเฉพาะกรณี repo backend เป็น private)
 
@@ -90,6 +90,15 @@ pnpm test:watch     # โหมด watch
 
 endpoint ที่หน้าเว็บเรียกอยู่ตอนนี้
 
+บัญชีผู้ใช้ (token ที่ได้จะถูกเก็บใน cookie `cx-account-token` และแนบเป็น `Authorization: Token …` ทุก request)
+
+- `POST /api/v1/accounts/register/`
+- `POST /api/v1/accounts/sign-in/`
+- `POST /api/v1/accounts/sign-out/`
+- `GET  /api/v1/accounts/me/`
+
+Catalog และ Role Discovery
+
 - `GET  /api/v1/catalog/roles/`
 - `GET  /api/v1/catalog/roles/{slug}/topics/`
 - `GET  /api/v1/catalog/roles/{slug}/roadmap/`
@@ -97,16 +106,20 @@ endpoint ที่หน้าเว็บเรียกอยู่ตอน�
 - `GET  /api/v1/assessment-sessions/{id}/`
 - `POST /api/v1/assessment-sessions/{id}/answers/`
 - `GET  /api/v1/assessment-sessions/{id}/results/`
-- `GET  /api/v1/assessment-sessions/{id}/history/`
+
+Skill Assessment (backend เป็นผู้ตัดสินว่าถามข้อไหนต่อและหยุดเมื่อไร ตาม ADR-0005; การทำเครื่องหมายว่ารู้หัวข้อแล้วต้องมีบัญชี)
+
 - `GET  /api/v1/assessment-sessions/{id}/skill-assessment/catalog/`
 - `POST /api/v1/assessment-sessions/{id}/skill-assessment/next-question/`
 - `GET|POST /api/v1/assessment-sessions/{id}/skill-assessment/`
+- `POST /api/v1/assessment-sessions/{id}/skill-assessment/held-topics/`
+- `DELETE /api/v1/assessment-sessions/{id}/skill-assessment/held-topics/{topic_key}/`
 
 รายละเอียด payload ดูที่ `frontend-integration.md` และ `openapi.json` ใน repo นี้ (snapshot จาก backend)
 
 ### 4.1 รัน e2e ในเครื่อง
 
-e2e ใน `test/e2e/` ขับเบราว์เซอร์จริง (Playwright) ใส่ FE ที่ต่อกับ BE จริง จึงต้องมีทั้งคู่รันอยู่ก่อน
+e2e ใน `test/e2e/` ขับเบราว์เซอร์จริง (Playwright) ใส่ FE ที่ต่อกับ BE จริง จึงต้องมีทั้งคู่รันอยู่ก่อน ชุดทดสอบจะสร้างเซสชันและบัญชีทดสอบขึ้นใน backend ที่ชี้ไป จึงควรใช้ฐานข้อมูลสำหรับทดสอบ (เช่น `DJANGO_SQLITE_NAME=e2e.sqlite3`) ไม่ใช่ฐานข้อมูลที่ใช้งานจริง
 
 ```powershell
 # terminal 1: backend (ดู README ของ repo backend) ให้อยู่ที่ :8000 และ sync_content แล้ว
@@ -127,14 +140,16 @@ pnpm test:e2e
 
 ## 5. โครงสร้างหน้า
 
-| Route                        | ไฟล์                                      | ทำอะไร                                 |
-| ---------------------------- | ----------------------------------------- | -------------------------------------- |
-| `/`                          | `app/pages/index.vue`                     | หน้าแรก                                |
-| `/assessment/start`          | `app/pages/assessment/start.vue`          | เริ่มทำแบบประเมิน                      |
-| `/assessment/preferred-role` | `app/pages/assessment/preferred-role.vue` | เลือก role ที่อยากไป (Role Aspiration) |
-| `/assessment/{sessionId}`    | `app/pages/assessment/[sessionId].vue`    | ตอบคำถามทีละข้อ                        |
-| `/results/{sessionId}`       | `app/pages/results/[sessionId].vue`       | สรุปผลและ recommendation               |
-| `/roadmaps/{sessionId}`      | `app/pages/roadmaps/[sessionId].vue`      | roadmap ของ role ที่ได้                |
+| Route                        | ไฟล์                                      | ทำอะไร                                               |
+| ---------------------------- | ----------------------------------------- | ---------------------------------------------------- |
+| `/`                          | `app/pages/index.vue`                     | หน้าแรก                                              |
+| `/assessment/start`          | `app/pages/assessment/start.vue`          | เริ่มทำแบบประเมิน                                    |
+| `/assessment/preferred-role` | `app/pages/assessment/preferred-role.vue` | เลือก role ที่อยากไป (Role Aspiration)               |
+| `/assessment/{sessionId}`    | `app/pages/assessment/[sessionId].vue`    | ตอบคำถามทีละข้อ                                      |
+| `/results/{sessionId}`       | `app/pages/results/[sessionId].vue`       | สรุปผลและ recommendation                             |
+| `/roadmaps/{sessionId}`      | `app/pages/roadmaps/[sessionId].vue`      | Skill Assessment แล้วต่อด้วย roadmap ของ role ที่ได้ |
+| `/account/sign-in`           | `app/pages/account/sign-in.vue`           | เข้าสู่ระบบ (รองรับ `?next=` กลับไปหน้าเดิม)         |
+| `/account/register`          | `app/pages/account/register.vue`          | สร้างบัญชี                                           |
 
 โค้ดส่วนอื่น: `app/components/` (แยกตามโดเมน), `app/composables/` (เรียก API + state), `app/utils/` (logic ล้วน), `app/i18n/` (ข้อความ ไทย/อังกฤษ), `test/` (unit / nuxt / e2e)
 

@@ -784,7 +784,7 @@ export function getRoleMeta(
   const meta = (slug && ROLE_META[slug]) || DEFAULT_ROLE_META
   if (locale !== 'th') return meta
   const responsibilities =
-    (slug && ROLE_RESPONSIBILITIES_TH[slug]) ??
+    (slug ? ROLE_RESPONSIBILITIES_TH[slug] : undefined) ??
     (meta === DEFAULT_ROLE_META
       ? DEFAULT_RESPONSIBILITIES_TH
       : meta.responsibilities)
