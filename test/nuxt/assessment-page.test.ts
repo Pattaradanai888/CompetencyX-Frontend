@@ -156,7 +156,7 @@ describe('assessment page', () => {
     sessionState.value = makeSession({
       current_question: {
         ...baseSession.current_question!,
-        stage: 'skill',
+        stage: 'role',
         question_type: 'single_choice',
         prompt: 'Which skill topic do you want to practice next?',
         options: [
@@ -173,7 +173,7 @@ describe('assessment page', () => {
       makeSession({
         current_question: {
           ...baseSession.current_question!,
-          stage: 'skill',
+          stage: 'role',
           question_type: 'single_choice',
           prompt: 'Which skill topic do you want to practice next?',
           options: [

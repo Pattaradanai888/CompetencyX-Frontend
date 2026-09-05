@@ -23,7 +23,9 @@ const isExpanded = ref(false)
       @click="isExpanded = !isExpanded"
     >
       <div class="min-w-0">
-        <p class="skill-assessment-guidance-card__label">{{ t.liveGuidance }}</p>
+        <p class="skill-assessment-guidance-card__label">
+          {{ t.liveGuidance }}
+        </p>
         <h2 class="skill-assessment-guidance-card__title">
           {{ title }}
         </h2>
@@ -84,19 +86,25 @@ const isExpanded = ref(false)
 
         <div class="skill-assessment-guidance-card__facts">
           <div class="skill-assessment-guidance-card__fact">
-            <span class="skill-assessment-guidance-card__fact-label">{{ t.phase }}</span>
+            <span class="skill-assessment-guidance-card__fact-label">{{
+              t.phase
+            }}</span>
             <span class="skill-assessment-guidance-card__fact-value">
               {{ t.phaseSkillAssessment }}
             </span>
           </div>
           <div class="skill-assessment-guidance-card__fact">
-            <span class="skill-assessment-guidance-card__fact-label">{{ t.questionLabel }}</span>
+            <span class="skill-assessment-guidance-card__fact-label">{{
+              t.questionLabel
+            }}</span>
             <span class="skill-assessment-guidance-card__fact-value">
               {{ promptContext }}
             </span>
           </div>
           <div class="skill-assessment-guidance-card__fact">
-            <span class="skill-assessment-guidance-card__fact-label">{{ t.knownRole }}</span>
+            <span class="skill-assessment-guidance-card__fact-label">{{
+              t.knownRole
+            }}</span>
             <span class="skill-assessment-guidance-card__fact-value">
               {{ preferredRoleName || t.openDiscoveryPath }}
             </span>

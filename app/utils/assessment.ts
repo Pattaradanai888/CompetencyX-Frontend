@@ -17,7 +17,11 @@ import type {
  * name when it has one; the English name is the fallback, not the default.
  */
 export function getRoleDisplayName(
-  role: Pick<Role, 'name' | 'name_th'> | Pick<RankedRoleInsight, 'name' | 'name_th'> | null | undefined,
+  role:
+    | Pick<Role, 'name' | 'name_th'>
+    | Pick<RankedRoleInsight, 'name' | 'name_th'>
+    | null
+    | undefined,
   isThai: boolean,
 ): string {
   if (!role) return ''
@@ -40,7 +44,10 @@ export function getPillarLabel(
 }
 
 export function getSupportingPillars(
-  role: Pick<RankedRoleInsight, 'top_supporting_pillars' | 'top_supporting_pillars_th'>,
+  role: Pick<
+    RankedRoleInsight,
+    'top_supporting_pillars' | 'top_supporting_pillars_th'
+  >,
   isThai: boolean,
 ): string[] {
   if (isThai && role.top_supporting_pillars_th?.length) {

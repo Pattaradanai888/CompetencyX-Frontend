@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getTopicEntryTitle } from '~/utils/roadmaps'
 import type { SkillAssessmentTopicEntry } from '~~/shared/types/assessment'
 
 const props = defineProps<{
@@ -37,7 +38,7 @@ function stateLabel(state: SkillAssessmentTopicEntry['state']): string {
  * the default.
  */
 function topicTitle(topic: SkillAssessmentTopicEntry): string {
-  return (props.isThai && topic.topic_title_th) || topic.topic_title
+  return getTopicEntryTitle(topic, props.isThai)
 }
 
 function topicReason(topic: SkillAssessmentTopicEntry): string | undefined {
@@ -73,7 +74,10 @@ function stateBadgeClass(state: SkillAssessmentTopicEntry['state']): string {
   >
     <div class="max-w-3xl">
       <p class="eyebrow">{{ t.nextTopicsEyebrow }}</p>
-      <h2 id="next-topics-title" class="mt-4 font-display text-3xl text-ink md:text-4xl">
+      <h2
+        id="next-topics-title"
+        class="mt-4 font-display text-3xl text-ink md:text-4xl"
+      >
         {{ t.nextTopicsTitle }}
       </h2>
       <p class="mt-3 max-w-2xl text-sm leading-7 text-ink-soft">
@@ -132,7 +136,11 @@ function stateBadgeClass(state: SkillAssessmentTopicEntry['state']): string {
       {{ t.markingRequiresAccount }}
     </p>
 
-    <ul v-if="heldEntries.length" class="mt-4 grid gap-2" data-testid="recently-marked-list">
+    <ul
+      v-if="heldEntries.length"
+      class="mt-4 grid gap-2"
+      data-testid="recently-marked-list"
+    >
       <li
         v-for="entry in heldEntries"
         :key="entry.topic_slug"

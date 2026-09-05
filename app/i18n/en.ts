@@ -363,7 +363,8 @@ export default {
     heldStatement: 'You said you can already work on this',
     markHeld: 'I already know this',
     undoMark: 'Undo mark',
-    markingRequiresAccount: 'Marking a topic as already held requires an account.',
+    markingRequiresAccount:
+      'Marking a topic as already held requires an account.',
     markErrorTitle: 'Could not save the mark',
     knownRole: 'Known role',
     discoveryResult: 'Discovery result',
@@ -380,13 +381,15 @@ export default {
     viewBoth: 'Both',
     chartUnavailable: 'Roadmap chart data is not available yet.',
     liveGuidance: 'Live guidance',
-    guidanceCopy: 'Answer calmly and literally. This pass measures present-day execution strength, not aspiration.',
+    guidanceCopy:
+      'Answer calmly and literally. This pass measures present-day execution strength, not aspiration.',
     assessmentProgress: 'Assessment progress',
     phase: 'Phase',
     phaseSkillAssessment: 'Skill assessment',
     questionLabel: 'Question',
     openDiscoveryPath: 'Open discovery path',
-    roadmapHiddenNote: 'Your roadmap stays hidden until this calibration step is complete.',
+    roadmapHiddenNote:
+      'Your roadmap stays hidden until this calibration step is complete.',
     searchWeb: 'Search the web',
     watchOnYouTube: 'Watch on YouTube',
     skillAssessmentChip: 'Skill assessment',

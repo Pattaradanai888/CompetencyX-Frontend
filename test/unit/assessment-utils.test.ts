@@ -83,5 +83,4 @@ describe('assessment utils', () => {
     expect(getAlignmentLabel('mismatch')).toBe('Stretch path')
     expect(formatConfidencePercent(0.784)).toBe('78%')
   })
-
 })

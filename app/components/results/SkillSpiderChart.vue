@@ -367,20 +367,20 @@ const viewBox = computed(() => {
 
         <template v-if="showToBe">
           <circle
-            v-for="(_, index) in props.targetDimensions"
+            v-for="(target, index) in props.targetDimensions ?? []"
             :key="`target-node-${index}`"
             :cx="
               toPoint(
                 index,
-                clampRatio(props.targetDimensions[index].value),
-                props.targetDimensions.length,
+                clampRatio(target.value),
+                (props.targetDimensions ?? []).length,
               ).x
             "
             :cy="
               toPoint(
                 index,
-                clampRatio(props.targetDimensions[index].value),
-                props.targetDimensions.length,
+                clampRatio(target.value),
+                (props.targetDimensions ?? []).length,
               ).y
             "
             r="3"

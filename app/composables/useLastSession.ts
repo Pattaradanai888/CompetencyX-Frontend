@@ -19,13 +19,19 @@ export function seedLastSessionState(
   skillAssessmentCompleted?: boolean,
 ) {
   if (!session) return
-  useState<AssessmentSession | null>('last-session-snapshot', () => null).value =
-    session
+  useState<AssessmentSession | null>(
+    'last-session-snapshot',
+    () => null,
+  ).value = session
   if (skillAssessmentCompleted !== undefined) {
-    useState<boolean>('last-session-skill-assessment-completed', () => false).value =
-      skillAssessmentCompleted
-    useState<string | null>('last-session-skill-assessment-seeded-id', () => null).value =
-      session.id
+    useState<boolean>(
+      'last-session-skill-assessment-completed',
+      () => false,
+    ).value = skillAssessmentCompleted
+    useState<string | null>(
+      'last-session-skill-assessment-seeded-id',
+      () => null,
+    ).value = session.id
   }
 }
 
@@ -61,7 +67,9 @@ export function useLastSession(
     () => null,
   )
 
-  const isSkillAssessmentComplete = computed(() => skillAssessmentCompleted.value)
+  const isSkillAssessmentComplete = computed(
+    () => skillAssessmentCompleted.value,
+  )
 
   const lastSessionRoute = computed(() => {
     if (!lastSessionId.value) return null
@@ -116,7 +124,8 @@ export function useLastSession(
       if (!hasSkillAssessment) {
         try {
           const skillAssessmentState = await getSkillAssessmentState(sessionId)
-          skillAssessmentCompleted.value = skillAssessmentState.completed === true
+          skillAssessmentCompleted.value =
+            skillAssessmentState.completed === true
         } catch {
           skillAssessmentCompleted.value = false
         }

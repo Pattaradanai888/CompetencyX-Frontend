@@ -52,7 +52,9 @@ const { data: roles, pending: rolesPending } = await useAsyncData(
  * learning path instead of the handful of curated catalog topics. Falls back
  * to the curated topics for a role with no imported snapshot.
  */
-async function loadRolePreviewTopics(roleSlug: string): Promise<RoadmapTopic[]> {
+async function loadRolePreviewTopics(
+  roleSlug: string,
+): Promise<RoadmapTopic[]> {
   try {
     const roadmap = await getRoleRoadmap(roleSlug)
     // Top-level topics read as a curriculum outline; subtopics are often
@@ -60,7 +62,9 @@ async function loadRolePreviewTopics(roleSlug: string): Promise<RoadmapTopic[]> 
     // preview. Roadmaps too flat to have several top-level topics fall back
     // to the full sequence.
     const MIN_PREVIEW_TOPICS = 3
-    const topLevel = roadmap.external_topics.filter((t) => t.node_type === 'topic')
+    const topLevel = roadmap.external_topics.filter(
+      (t) => t.node_type === 'topic',
+    )
     const preview =
       topLevel.length >= MIN_PREVIEW_TOPICS ? topLevel : roadmap.external_topics
 
@@ -168,7 +172,9 @@ const selectedRoleName = computed(
 
 const startButtonLabel = computed(() => {
   if (isSubmitting.value) return t.value.preparingSession
-  return selectedRole.value ? t.value.startSkillAssessment : t.value.chooseRoleToContinue
+  return selectedRole.value
+    ? t.value.startSkillAssessment
+    : t.value.chooseRoleToContinue
 })
 
 const canStart = computed(
@@ -211,11 +217,7 @@ async function handleStart() {
 }
 
 useSeoMeta({
-  title: computed(() =>
-    isThai.value
-      ? 'เลือกตำแหน่งงาน'
-      : 'Choose role',
-  ),
+  title: computed(() => (isThai.value ? 'เลือกตำแหน่งงาน' : 'Choose role')),
   description: computed(() =>
     isThai.value
       ? 'สำรวจและเลือกตำแหน่งเป้าหมายก่อนเริ่มการประเมินทักษะ'
@@ -228,7 +230,7 @@ useSeoMeta({
   <main id="main-content" class="page-wrap">
     <!-- Onboarding Header -->
     <header class="mt-6 border-b border-border-subtle pb-6">
-      <p class="eyebrow">Onboarding</p>
+      <p class="eyebrow">{{ t.eyebrow }}</p>
       <h1 class="mt-2 font-display text-4xl leading-tight text-ink md:text-5xl">
         {{ t.title }}
       </h1>
