@@ -1,14 +1,11 @@
 import type {
-  AnswerHistory,
-  AssessmentHistory,
-  AssessmentResult,
   PillarInsight,
   RadarDimension,
-  RoadmapsEvaluation,
   RoadmapTopic,
+  SkillAssessmentTopicEntry,
 } from '~~/shared/types/assessment'
 
-export type { RadarDimension, RoadmapsEvaluation }
+export type { RadarDimension }
 
 export function clamp(value: number): number {
   return Math.max(0, Math.min(1, value))
@@ -42,204 +39,38 @@ export function getTopicDifficultyLabel(
   return labels.targeted
 }
 
-function average(values: number[]): number {
-  if (!values.length) {
-    return 0
-  }
-
-  return values.reduce((sum, value) => sum + value, 0) / values.length
-}
-
-function normalizeScaleValue(scaleValue: number | null): number | null {
-  if (scaleValue === null || Number.isNaN(scaleValue)) {
-    return null
-  }
-
-  return clamp((scaleValue + 2) / 4)
-}
-
-function matchTopic(answer: AnswerHistory, keywords: string[]) {
-  const topic = (answer.topic_slug ?? '').toLowerCase()
-  return keywords.some((keyword) => topic.includes(keyword))
-}
-
-function getTopicScore(answers: AnswerHistory[], keywords: string[]) {
-  const matchedScores = answers
-    .filter((answer) => matchTopic(answer, keywords))
-    .map((answer) => normalizeScaleValue(answer.scale_value))
-    .filter((score): score is number => score !== null)
-
-  return average(matchedScores)
-}
-
-function pillarScore(pillars: PillarInsight[], key: string) {
-  const pillar = pillars.find((item) => item.key === key)
-  return clamp(pillar?.normalized_score ?? 0)
-}
-
-function summarizeDimensions(dimensions: RadarDimension[]) {
-  const ordered = [...dimensions].sort(
-    (left, right) => right.value - left.value,
-  )
-  const STRENGTH_THRESHOLD = 0.7
-  const GAP_THRESHOLD = 0.5
-  const above = ordered.filter((d) => d.value >= STRENGTH_THRESHOLD)
-  const below = ordered.filter((d) => d.value < GAP_THRESHOLD)
-  const strengths =
-    above.length > 0
-      ? above.map((item) => item.label)
-      : ordered.slice(0, 1).map((item) => item.label)
-  const growthAreas =
-    below.length > 0
-      ? below.map((item) => item.label)
-      : ordered.slice(-1).map((item) => item.label)
-  return { strengths, growthAreas }
-}
-
-function buildPersonalitySignals(
-  result: AssessmentResult,
-  dimensions: RadarDimension[],
-) {
-  const topRole =
-    result.best_fit_role?.name ??
-    result.preferred_role?.name ??
-    'your current target role'
-  const highest = [...dimensions]
-    .sort((left, right) => right.value - left.value)
-    .slice(0, 2)
-    .map((item) => item.label)
-
-  return [
-    `Best-fit trajectory currently aligns with ${topRole}.`,
-    `Strong natural signal in ${highest.join(' and ')}.`,
-    result.role_alignment_status === 'aligned'
-      ? 'Profile indicates stable role confidence and consistency.'
-      : 'Profile suggests exploration mode before locking a final path.',
-  ]
-}
-
-export function buildRoadmapsEvaluation(
-  result: AssessmentResult,
-  history: AssessmentHistory | null,
-): RoadmapsEvaluation {
-  const answers = history?.answers ?? []
-  const pillars = result.pillar_profile ?? []
-
-  const dimensions: RadarDimension[] = [
-    {
-      key: 'psp-planning',
-      label: 'PSP Planning',
-      value: clamp(
-        average([
-          pillarScore(pillars, 'planning_discipline'),
-          getTopicScore(answers, ['planning', 'estimation']),
-        ]),
-      ),
-      track: 'psp',
-    },
-    {
-      key: 'psp-quality',
-      label: 'PSP Quality Discipline',
-      value: clamp(
-        average([
-          pillarScore(pillars, 'quality_focus'),
-          getTopicScore(answers, ['quality', 'defect', 'review']),
-        ]),
-      ),
-      track: 'psp',
-    },
-    {
-      key: 'sdlc-requirements',
-      label: 'Requirements Analysis',
-      value: clamp(
-        average([
-          pillarScore(pillars, 'analysis'),
-          getTopicScore(answers, ['requirement', 'analysis']),
-        ]),
-      ),
-      track: 'sdlc',
-    },
-    {
-      key: 'sdlc-design',
-      label: 'System Design & Architecture',
-      value: clamp(
-        average([
-          pillarScore(pillars, 'architecture'),
-          getTopicScore(answers, ['design', 'architecture']),
-        ]),
-      ),
-      track: 'sdlc',
-    },
-    {
-      key: 'sdlc-development',
-      label: 'Development / Coding',
-      value: clamp(
-        average([
-          pillarScore(pillars, 'implementation'),
-          getTopicScore(answers, ['coding', 'development', 'implementation']),
-        ]),
-      ),
-      track: 'sdlc',
-    },
-    {
-      key: 'sdlc-testing',
-      label: 'Testing & QA',
-      value: clamp(
-        average([
-          pillarScore(pillars, 'testing'),
-          getTopicScore(answers, ['testing', 'qa']),
-        ]),
-      ),
-      track: 'sdlc',
-    },
-    {
-      key: 'sdlc-deployment',
-      label: 'Deployment & Release',
-      value: clamp(
-        average([
-          pillarScore(pillars, 'delivery'),
-          getTopicScore(answers, ['deploy', 'release', 'delivery']),
-        ]),
-      ),
-      track: 'sdlc',
-    },
-    {
-      key: 'sdlc-maintenance',
-      label: 'Maintenance & Support',
-      value: clamp(
-        average([
-          pillarScore(pillars, 'operations'),
-          getTopicScore(answers, ['maintenance', 'support', 'operations']),
-        ]),
-      ),
-      track: 'sdlc',
-    },
-  ]
-
-  const { strengths, growthAreas } = summarizeDimensions(dimensions)
-  const personalitySignals = buildPersonalitySignals(result, dimensions)
-
-  return {
-    dimensions,
-    strengths,
-    growthAreas,
-    personalitySignals,
-  }
-}
-
 export interface DimensionCard extends RadarDimension {
   percent: number
   description: string
 }
 
-export interface TrackHighlight {
-  key: 'psp' | 'sdlc'
-  label: string
-  description: string
-  average: number
-  /** How many assessed dimensions the average is over; a track with none is dropped. */
-  dimensionCount: number
-  strongest: string
+/** The set's name as the respondent reads it: Canonical Thai Wording in a Thai session. */
+export function getTopicEntryTitle(
+  entry: SkillAssessmentTopicEntry,
+  isThai: boolean,
+): string {
+  return (isThai && entry.topic_title_th) || entry.topic_title
+}
+
+/**
+ * One radar axis per *assessed* set. A set nobody rated has no Self-placed
+ * Mastery, and plotting a placeholder for it would show a unit nobody asked
+ * about as a middling score (ADR-0003), so unassessed sets are left off.
+ */
+export function buildRadarDimensions(
+  entries: SkillAssessmentTopicEntry[],
+  isThai: boolean,
+): RadarDimension[] {
+  return entries
+    .filter(
+      (entry): entry is SkillAssessmentTopicEntry & { mastery: number } =>
+        typeof entry.mastery === 'number',
+    )
+    .map((entry) => ({
+      key: entry.topic_slug,
+      label: getTopicEntryTitle(entry, isThai),
+      value: clamp(entry.mastery),
+    }))
 }
 
 export function formatPillarScore(pillar: PillarInsight): string {

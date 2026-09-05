@@ -3,7 +3,8 @@ import AppHeader from '~/components/layout/AppHeader.vue'
 import { useLocale } from '~/composables/useLocale'
 
 const route = useRoute()
-const { currentLanguage } = useLocale()
+const { currentLanguage, isThai } = useLocale()
+const t = usePageI18n('app', isThai)
 
 const headerVariant = computed(() =>
   route.path.startsWith('/assessment/') && route.params.sessionId
@@ -30,7 +31,7 @@ useHead({
 <template>
   <div class="isolate min-h-screen">
     <UApp>
-      <a href="#main-content" class="skip-link">Skip to main content</a>
+      <a href="#main-content" class="skip-link">{{ t.skipToContent }}</a>
       <NuxtRouteAnnouncer />
       <NuxtLoadingIndicator color="var(--color-accent)" />
       <AppHeader :variant="headerVariant" />

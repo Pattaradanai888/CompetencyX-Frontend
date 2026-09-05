@@ -6,7 +6,253 @@
         "description": "Adaptive career-roadmap backend API for assessment sessions, role inference, and next-topic recommendations."
     },
     "paths": {
+        "/api/v1/accounts/me/": {
+            "get": {
+                "operationId": "getCurrentAccount",
+                "summary": "Identify the current respondent",
+                "tags": [
+                    "Accounts"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Account"
+                                }
+                            }
+                        },
+                        "description": "The signed-in respondent."
+                    },
+                    "401": {
+                        "description": "No credential was presented."
+                    }
+                }
+            }
+        },
+        "/api/v1/accounts/register/": {
+            "post": {
+                "operationId": "registerAccount",
+                "summary": "Register an account",
+                "tags": [
+                    "Accounts"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Registration"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Account created; the response carries the credential to hold across requests."
+                    },
+                    "400": {
+                        "description": "Duplicate email or a password that fails validation."
+                    }
+                }
+            }
+        },
+        "/api/v1/accounts/sign-in/": {
+            "post": {
+                "operationId": "signIn",
+                "summary": "Sign in",
+                "tags": [
+                    "Accounts"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SignIn"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Credential for the signed-in respondent."
+                    },
+                    "400": {
+                        "description": "Email or password is incorrect."
+                    }
+                }
+            }
+        },
+        "/api/v1/accounts/sign-out/": {
+            "post": {
+                "operationId": "signOut",
+                "summary": "Sign out",
+                "tags": [
+                    "Accounts"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "The credential no longer authenticates."
+                    },
+                    "401": {
+                        "description": "No credential was presented."
+                    }
+                }
+            }
+        },
         "/api/v1/assessment-sessions/": {
+            "get": {
+                "operationId": "listAssessmentSessions",
+                "summary": "List the sessions the signed-in respondent owns",
+                "tags": [
+                    "Assessment Sessions"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AssessmentSession"
+                                    }
+                                },
+                                "examples": {
+                                    "SessionListResponse": {
+                                        "value": [
+                                            [
+                                                {
+                                                    "id": "2b39d41d-8de9-4b9b-b2ef-2a278b3f3770",
+                                                    "status": "in_progress",
+                                                    "phase": "role_discovery",
+                                                    "language": "en",
+                                                    "best_fit_confidence": 0.0,
+                                                    "preferred_role": {
+                                                        "id": 1,
+                                                        "slug": "backend-engineer",
+                                                        "name": "Backend Engineer",
+                                                        "name_th": "นักพัฒนา Backend",
+                                                        "description": "Builds APIs and backend services.",
+                                                        "description_th": "สร้าง API และ service ฝั่ง backend"
+                                                    },
+                                                    "best_fit_role": null,
+                                                    "profile": {
+                                                        "education_level": "student",
+                                                        "current_stage": "beginner"
+                                                    },
+                                                    "started_at": "2026-04-17T04:00:00Z",
+                                                    "updated_at": "2026-04-17T04:00:00Z",
+                                                    "completed_at": null,
+                                                    "milestones": {
+                                                        "answered_role_questions": 0,
+                                                        "answered_core_role_questions": 0,
+                                                        "answered_tie_break_questions": 0
+                                                    },
+                                                    "role_alignment_status": "unknown",
+                                                    "role_resolution_status": "in_progress",
+                                                    "guidance_summary": "You want to pursue Backend Engineer. Complete the role-discovery profile to compare fit.",
+                                                    "current_question": {
+                                                        "id": 101,
+                                                        "code": "role-likert-build-working-parts",
+                                                        "stage": "role",
+                                                        "question_type": "likert_5",
+                                                        "prompt": "I enjoy turning an idea into a working technical part.",
+                                                        "help_text": "",
+                                                        "role": null,
+                                                        "topic": null,
+                                                        "difficulty": 1,
+                                                        "options": [],
+                                                        "response_scale": [
+                                                            {
+                                                                "key": "strongly_agree",
+                                                                "label": "Strongly agree",
+                                                                "value": 2,
+                                                                "display_order": 1
+                                                            },
+                                                            {
+                                                                "key": "agree",
+                                                                "label": "Agree",
+                                                                "value": 1,
+                                                                "display_order": 2
+                                                            },
+                                                            {
+                                                                "key": "neutral",
+                                                                "label": "Neutral",
+                                                                "value": 0,
+                                                                "display_order": 3
+                                                            },
+                                                            {
+                                                                "key": "disagree",
+                                                                "label": "Disagree",
+                                                                "value": -1,
+                                                                "display_order": 4
+                                                            },
+                                                            {
+                                                                "key": "strongly_disagree",
+                                                                "label": "Strongly disagree",
+                                                                "value": -2,
+                                                                "display_order": 5
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        ],
+                                        "summary": "Session list response"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Sessions owned by the signed-in respondent, most recently started first."
+                    },
+                    "401": {
+                        "description": "Listing sessions requires an account."
+                    }
+                }
+            },
             "post": {
                 "operationId": "createAssessmentSession",
                 "summary": "Create an assessment session",
@@ -23,6 +269,9 @@
                     }
                 },
                 "security": [
+                    {
+                        "tokenAuth": []
+                    },
                     {
                         "cookieAuth": []
                     },
@@ -47,7 +296,9 @@
                                                 "id": 1,
                                                 "slug": "backend-engineer",
                                                 "name": "Backend Engineer",
-                                                "description": "Builds APIs and backend services."
+                                                "name_th": "นักพัฒนา Backend",
+                                                "description": "Builds APIs and backend services.",
+                                                "description_th": "สร้าง API และ service ฝั่ง backend"
                                             },
                                             "best_fit_role": null,
                                             "profile": {
@@ -143,6 +394,9 @@
                 ],
                 "security": [
                     {
+                        "tokenAuth": []
+                    },
+                    {
                         "cookieAuth": []
                     },
                     {}
@@ -191,6 +445,9 @@
                 },
                 "security": [
                     {
+                        "tokenAuth": []
+                    },
+                    {
                         "cookieAuth": []
                     },
                     {}
@@ -214,7 +471,9 @@
                                                 "id": 1,
                                                 "slug": "backend-engineer",
                                                 "name": "Backend Engineer",
-                                                "description": "Builds APIs and backend services."
+                                                "name_th": "นักพัฒนา Backend",
+                                                "description": "Builds APIs and backend services.",
+                                                "description_th": "สร้าง API และ service ฝั่ง backend"
                                             },
                                             "best_fit_role": null,
                                             "profile": {
@@ -313,6 +572,9 @@
                 ],
                 "security": [
                     {
+                        "tokenAuth": []
+                    },
+                    {
                         "cookieAuth": []
                     },
                     {}
@@ -384,6 +646,9 @@
                 ],
                 "security": [
                     {
+                        "tokenAuth": []
+                    },
+                    {
                         "cookieAuth": []
                     },
                     {}
@@ -403,7 +668,9 @@
                                                 "id": 2,
                                                 "slug": "backend-engineer",
                                                 "name": "Backend Engineer",
-                                                "description": "Builds APIs, data flows, and server-side application logic."
+                                                "name_th": "นักพัฒนา Backend",
+                                                "description": "Builds APIs, data flows, and server-side application logic.",
+                                                "description_th": "สร้าง API, data flow และ logic ของแอปพลิเคชันฝั่งเซิร์ฟเวอร์"
                                             },
                                             "best_fit_confidence": 0.71,
                                             "answered_role_questions": 3,
@@ -411,6 +678,7 @@
                                                 {
                                                     "key": "systems_design",
                                                     "label": "Systems Design",
+                                                    "label_th": "การออกแบบระบบ",
                                                     "raw_score": 7.0,
                                                     "normalized_score": 0.5,
                                                     "evidence_count": 3
@@ -418,6 +686,7 @@
                                                 {
                                                     "key": "reliability_automation",
                                                     "label": "Reliability and Automation",
+                                                    "label_th": "ความเชื่อถือได้และระบบอัตโนมัติ",
                                                     "raw_score": 4.0,
                                                     "normalized_score": 0.286,
                                                     "evidence_count": 2
@@ -427,22 +696,33 @@
                                                 {
                                                     "slug": "backend-engineer",
                                                     "name": "Backend Engineer",
+                                                    "name_th": "นักพัฒนา Backend",
                                                     "fit_score": 0.71,
                                                     "fit_share": 0.18,
                                                     "top_supporting_pillars": [
                                                         "Systems Design",
                                                         "Reliability and Automation",
                                                         "Data Reasoning"
+                                                    ],
+                                                    "top_supporting_pillars_th": [
+                                                        "การออกแบบระบบ",
+                                                        "ความเชื่อถือได้และระบบอัตโนมัติ",
+                                                        "การใช้เหตุผลกับข้อมูล"
                                                     ]
                                                 },
                                                 {
                                                     "slug": "system-architect",
                                                     "name": "System Architect",
+                                                    "name_th": "สถาปนิกระบบ",
                                                     "fit_score": 0.58,
                                                     "fit_share": 0.16,
                                                     "top_supporting_pillars": [
                                                         "Systems Design",
                                                         "Risk and Security"
+                                                    ],
+                                                    "top_supporting_pillars_th": [
+                                                        "การออกแบบระบบ",
+                                                        "ความเสี่ยงและความปลอดภัย"
                                                     ]
                                                 }
                                             ],
@@ -454,6 +734,107 @@
                             }
                         },
                         "description": "Pillar profile and ranked role insights for the session."
+                    },
+                    "404": {
+                        "description": "Assessment session was not found."
+                    }
+                }
+            }
+        },
+        "/api/v1/assessment-sessions/{id}/next-question/": {
+            "get": {
+                "operationId": "getAssessmentNextQuestion",
+                "summary": "Get the next role discovery question",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Assessment session UUID.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Assessment Sessions"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RoleDiscoveryNextQuestionResponse"
+                                },
+                                "examples": {
+                                    "NextQuestionResponse": {
+                                        "value": {
+                                            "next_question": {
+                                                "id": 101,
+                                                "code": "role-likert-build-working-parts",
+                                                "stage": "role",
+                                                "question_type": "likert_5",
+                                                "prompt": "I enjoy turning an idea into a working technical part.",
+                                                "help_text": "",
+                                                "role": null,
+                                                "topic": null,
+                                                "difficulty": 1,
+                                                "options": [],
+                                                "response_scale": [
+                                                    {
+                                                        "key": "strongly_agree",
+                                                        "label": "Strongly agree",
+                                                        "value": 2,
+                                                        "display_order": 1
+                                                    },
+                                                    {
+                                                        "key": "agree",
+                                                        "label": "Agree",
+                                                        "value": 1,
+                                                        "display_order": 2
+                                                    },
+                                                    {
+                                                        "key": "neutral",
+                                                        "label": "Neutral",
+                                                        "value": 0,
+                                                        "display_order": 3
+                                                    },
+                                                    {
+                                                        "key": "disagree",
+                                                        "label": "Disagree",
+                                                        "value": -1,
+                                                        "display_order": 4
+                                                    },
+                                                    {
+                                                        "key": "strongly_disagree",
+                                                        "label": "Strongly disagree",
+                                                        "value": -2,
+                                                        "display_order": 5
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "summary": "Next question response"
+                                    },
+                                    "NoQuestionRemains": {
+                                        "value": {
+                                            "next_question": null
+                                        },
+                                        "summary": "No question remains"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "The role discovery question this session is waiting on, or null once no question remains."
                     },
                     "404": {
                         "description": "Assessment session was not found."
@@ -481,6 +862,9 @@
                 ],
                 "security": [
                     {
+                        "tokenAuth": []
+                    },
+                    {
                         "cookieAuth": []
                     },
                     {}
@@ -503,13 +887,17 @@
                                                 "id": 1,
                                                 "slug": "backend-engineer",
                                                 "name": "Backend Engineer",
-                                                "description": "Builds APIs and backend services."
+                                                "name_th": "นักพัฒนา Backend",
+                                                "description": "Builds APIs and backend services.",
+                                                "description_th": "สร้าง API และ service ฝั่ง backend"
                                             },
                                             "best_fit_role": {
                                                 "id": 1,
                                                 "slug": "backend-engineer",
                                                 "name": "Backend Engineer",
-                                                "description": "Builds APIs and backend services."
+                                                "name_th": "นักพัฒนา Backend",
+                                                "description": "Builds APIs and backend services.",
+                                                "description_th": "สร้าง API และ service ฝั่ง backend"
                                             },
                                             "profile": {
                                                 "education_level": "student",
@@ -525,11 +913,12 @@
                                             },
                                             "role_alignment_status": "aligned",
                                             "role_resolution_status": "resolved",
-                                            "guidance_summary": "You are tracking well toward Backend Engineer. Focus next on Databases, HTTP Fundamentals.",
+                                            "guidance_summary": "You are tracking well toward Backend Engineer.",
                                             "pillar_profile": [
                                                 {
                                                     "key": "systems_design",
                                                     "label": "Systems Design",
+                                                    "label_th": "การออกแบบระบบ",
                                                     "raw_score": 7.0,
                                                     "normalized_score": 0.5,
                                                     "evidence_count": 3
@@ -539,30 +928,18 @@
                                                 {
                                                     "slug": "backend-engineer",
                                                     "name": "Backend Engineer",
+                                                    "name_th": "นักพัฒนา Backend",
                                                     "fit_score": 0.71,
                                                     "fit_share": 0.18,
                                                     "top_supporting_pillars": [
                                                         "Systems Design",
                                                         "Reliability and Automation",
                                                         "Data Reasoning"
-                                                    ]
-                                                }
-                                            ],
-                                            "preferred_role_gap_topics": [
-                                                {
-                                                    "id": 12,
-                                                    "slug": "databases",
-                                                    "title": "Databases",
-                                                    "description": "Relational data modeling and SQL.",
-                                                    "difficulty": "beginner",
-                                                    "display_order": 2,
-                                                    "parent_id": null,
-                                                    "prerequisites": [
-                                                        {
-                                                            "topic_id": 11,
-                                                            "required_mastery_threshold": 0.7,
-                                                            "dependency_weight": 1.0
-                                                        }
+                                                    ],
+                                                    "top_supporting_pillars_th": [
+                                                        "การออกแบบระบบ",
+                                                        "ความเชื่อถือได้และระบบอัตโนมัติ",
+                                                        "การใช้เหตุผลกับข้อมูล"
                                                     ]
                                                 }
                                             ]
@@ -603,6 +980,9 @@
                 ],
                 "security": [
                     {
+                        "tokenAuth": []
+                    },
+                    {
                         "cookieAuth": []
                     },
                     {}
@@ -619,14 +999,112 @@
                                         "value": {
                                             "completed": true,
                                             "answers": {
-                                                "q-req": 4,
-                                                "q-design": 5,
-                                                "q-dev": 4,
-                                                "q-test": 3,
-                                                "q-release": 3,
-                                                "q-psp": 4
+                                                "backend-developer--internet-and-web": 5,
+                                                "backend-developer--databases": 2
                                             },
-                                            "completed_at": "2026-05-08T20:00:00Z"
+                                            "completed_at": "2026-05-08T20:00:00Z",
+                                            "topic_mastery": {
+                                                "backend-developer--databases": 0.25
+                                            },
+                                            "topic_states": [
+                                                {
+                                                    "topic_slug": "backend-developer--databases",
+                                                    "topic_title": "Data storage",
+                                                    "topic_title_th": "การจัดเก็บข้อมูล",
+                                                    "node_slugs": [
+                                                        "databases",
+                                                        "sql"
+                                                    ],
+                                                    "state": "assessed_gap",
+                                                    "mastery": 0.25
+                                                },
+                                                {
+                                                    "topic_slug": "backend-developer--caching",
+                                                    "topic_title": "Caching",
+                                                    "topic_title_th": "การแคช",
+                                                    "node_slugs": [
+                                                        "caching",
+                                                        "redis"
+                                                    ],
+                                                    "state": "unassessed",
+                                                    "mastery": null
+                                                },
+                                                {
+                                                    "topic_slug": "backend-developer--internet-and-web",
+                                                    "topic_title": "Internet and web protocols",
+                                                    "topic_title_th": "อินเทอร์เน็ตและโปรโตคอลเว็บ",
+                                                    "node_slugs": [
+                                                        "internet",
+                                                        "http"
+                                                    ],
+                                                    "state": "held",
+                                                    "mastery": 1.0,
+                                                    "statement": "You said you can already work on \"Internet and web protocols\".",
+                                                    "statement_th": "คุณระบุว่าคุณทำงานเรื่อง \"อินเทอร์เน็ตและโปรโตคอลเว็บ\" ได้แล้ว",
+                                                    "held_by_mark": false
+                                                }
+                                            ],
+                                            "recommended_topics": [
+                                                {
+                                                    "topic_slug": "backend-developer--databases",
+                                                    "topic_title": "Data storage",
+                                                    "topic_title_th": "การจัดเก็บข้อมูล",
+                                                    "node_slugs": [
+                                                        "databases",
+                                                        "sql"
+                                                    ],
+                                                    "state": "assessed_gap",
+                                                    "mastery": 0.25,
+                                                    "reason": "You rated \"Data storage\" low, and it builds on \"Internet and web protocols\".",
+                                                    "reason_th": "คุณให้คะแนน \"การจัดเก็บข้อมูล\" ค่อนข้างต่ำ และหัวข้อนี้ต่อยอดจาก \"อินเทอร์เน็ตและโปรโตคอลเว็บ\""
+                                                },
+                                                {
+                                                    "topic_slug": "backend-developer--caching",
+                                                    "topic_title": "Caching",
+                                                    "topic_title_th": "การแคช",
+                                                    "node_slugs": [
+                                                        "caching",
+                                                        "redis"
+                                                    ],
+                                                    "state": "unassessed",
+                                                    "mastery": null,
+                                                    "reason": "The assessment has not asked about \"Caching\" yet.",
+                                                    "reason_th": "แบบประเมินยังไม่ได้ถามเรื่อง \"การแคช\""
+                                                }
+                                            ],
+                                            "next_topics": [
+                                                {
+                                                    "topic_slug": "backend-developer--databases",
+                                                    "topic_title": "Data storage",
+                                                    "topic_title_th": "การจัดเก็บข้อมูล",
+                                                    "node_slugs": [
+                                                        "databases",
+                                                        "sql"
+                                                    ],
+                                                    "state": "assessed_gap",
+                                                    "mastery": 0.25,
+                                                    "reason": "You rated \"Data storage\" low, and it builds on \"Internet and web protocols\".",
+                                                    "reason_th": "คุณให้คะแนน \"การจัดเก็บข้อมูล\" ค่อนข้างต่ำ และหัวข้อนี้ต่อยอดจาก \"อินเทอร์เน็ตและโปรโตคอลเว็บ\""
+                                                }
+                                            ],
+                                            "readiness": {
+                                                "targets": {
+                                                    "backend-developer--databases": 0.6,
+                                                    "backend-developer--caching": 0.6
+                                                },
+                                                "overall_target": 0.6,
+                                                "overall_mastery": 0.25,
+                                                "assessed_count": 1
+                                            },
+                                            "progress": {
+                                                "answered": 2,
+                                                "total": 18,
+                                                "remaining": 16,
+                                                "floor": 12,
+                                                "ceiling": 18,
+                                                "settled": false
+                                            },
+                                            "confidence": "low"
                                         },
                                         "summary": "Skill assessment state"
                                     }
@@ -668,6 +1146,9 @@
                 },
                 "security": [
                     {
+                        "tokenAuth": []
+                    },
+                    {
                         "cookieAuth": []
                     },
                     {}
@@ -684,14 +1165,112 @@
                                         "value": {
                                             "completed": true,
                                             "answers": {
-                                                "q-req": 4,
-                                                "q-design": 5,
-                                                "q-dev": 4,
-                                                "q-test": 3,
-                                                "q-release": 3,
-                                                "q-psp": 4
+                                                "backend-developer--internet-and-web": 5,
+                                                "backend-developer--databases": 2
                                             },
-                                            "completed_at": "2026-05-08T20:00:00Z"
+                                            "completed_at": "2026-05-08T20:00:00Z",
+                                            "topic_mastery": {
+                                                "backend-developer--databases": 0.25
+                                            },
+                                            "topic_states": [
+                                                {
+                                                    "topic_slug": "backend-developer--databases",
+                                                    "topic_title": "Data storage",
+                                                    "topic_title_th": "การจัดเก็บข้อมูล",
+                                                    "node_slugs": [
+                                                        "databases",
+                                                        "sql"
+                                                    ],
+                                                    "state": "assessed_gap",
+                                                    "mastery": 0.25
+                                                },
+                                                {
+                                                    "topic_slug": "backend-developer--caching",
+                                                    "topic_title": "Caching",
+                                                    "topic_title_th": "การแคช",
+                                                    "node_slugs": [
+                                                        "caching",
+                                                        "redis"
+                                                    ],
+                                                    "state": "unassessed",
+                                                    "mastery": null
+                                                },
+                                                {
+                                                    "topic_slug": "backend-developer--internet-and-web",
+                                                    "topic_title": "Internet and web protocols",
+                                                    "topic_title_th": "อินเทอร์เน็ตและโปรโตคอลเว็บ",
+                                                    "node_slugs": [
+                                                        "internet",
+                                                        "http"
+                                                    ],
+                                                    "state": "held",
+                                                    "mastery": 1.0,
+                                                    "statement": "You said you can already work on \"Internet and web protocols\".",
+                                                    "statement_th": "คุณระบุว่าคุณทำงานเรื่อง \"อินเทอร์เน็ตและโปรโตคอลเว็บ\" ได้แล้ว",
+                                                    "held_by_mark": false
+                                                }
+                                            ],
+                                            "recommended_topics": [
+                                                {
+                                                    "topic_slug": "backend-developer--databases",
+                                                    "topic_title": "Data storage",
+                                                    "topic_title_th": "การจัดเก็บข้อมูล",
+                                                    "node_slugs": [
+                                                        "databases",
+                                                        "sql"
+                                                    ],
+                                                    "state": "assessed_gap",
+                                                    "mastery": 0.25,
+                                                    "reason": "You rated \"Data storage\" low, and it builds on \"Internet and web protocols\".",
+                                                    "reason_th": "คุณให้คะแนน \"การจัดเก็บข้อมูล\" ค่อนข้างต่ำ และหัวข้อนี้ต่อยอดจาก \"อินเทอร์เน็ตและโปรโตคอลเว็บ\""
+                                                },
+                                                {
+                                                    "topic_slug": "backend-developer--caching",
+                                                    "topic_title": "Caching",
+                                                    "topic_title_th": "การแคช",
+                                                    "node_slugs": [
+                                                        "caching",
+                                                        "redis"
+                                                    ],
+                                                    "state": "unassessed",
+                                                    "mastery": null,
+                                                    "reason": "The assessment has not asked about \"Caching\" yet.",
+                                                    "reason_th": "แบบประเมินยังไม่ได้ถามเรื่อง \"การแคช\""
+                                                }
+                                            ],
+                                            "next_topics": [
+                                                {
+                                                    "topic_slug": "backend-developer--databases",
+                                                    "topic_title": "Data storage",
+                                                    "topic_title_th": "การจัดเก็บข้อมูล",
+                                                    "node_slugs": [
+                                                        "databases",
+                                                        "sql"
+                                                    ],
+                                                    "state": "assessed_gap",
+                                                    "mastery": 0.25,
+                                                    "reason": "You rated \"Data storage\" low, and it builds on \"Internet and web protocols\".",
+                                                    "reason_th": "คุณให้คะแนน \"การจัดเก็บข้อมูล\" ค่อนข้างต่ำ และหัวข้อนี้ต่อยอดจาก \"อินเทอร์เน็ตและโปรโตคอลเว็บ\""
+                                                }
+                                            ],
+                                            "readiness": {
+                                                "targets": {
+                                                    "backend-developer--databases": 0.6,
+                                                    "backend-developer--caching": 0.6
+                                                },
+                                                "overall_target": 0.6,
+                                                "overall_mastery": 0.25,
+                                                "assessed_count": 1
+                                            },
+                                            "progress": {
+                                                "answered": 2,
+                                                "total": 18,
+                                                "remaining": 16,
+                                                "floor": 12,
+                                                "ceiling": 18,
+                                                "settled": false
+                                            },
+                                            "confidence": "low"
                                         },
                                         "summary": "Saved skill assessment state"
                                     }
@@ -712,7 +1291,7 @@
         "/api/v1/assessment-sessions/{id}/skill-assessment/catalog/": {
             "get": {
                 "operationId": "getAssessmentSkillAssessmentCatalog",
-                "summary": "Get skill assessment PSP and SDLC questionnaire catalog for an assessment session",
+                "summary": "Get the skill assessment catalog for an assessment session's target role",
                 "parameters": [
                     {
                         "in": "path",
@@ -729,6 +1308,9 @@
                 ],
                 "security": [
                     {
+                        "tokenAuth": []
+                    },
+                    {
                         "cookieAuth": []
                     },
                     {}
@@ -742,10 +1324,123 @@
                                 }
                             }
                         },
-                        "description": "Skill assessment question, dimension, scale, and role guidance catalog."
+                        "description": "Skill assessment items and radar axes from the target role Assessable Topic Sets, the rating scale, and role guidance."
                     },
                     "404": {
                         "description": "Assessment session was not found."
+                    }
+                }
+            }
+        },
+        "/api/v1/assessment-sessions/{id}/skill-assessment/held-topics/": {
+            "post": {
+                "operationId": "markAssessmentHeldTopic",
+                "summary": "Mark a topic as something the respondent can already do",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Assessment session UUID.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Assessment Sessions"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HeldTopicMarkRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SkillAssessmentSessionState"
+                                }
+                            }
+                        },
+                        "description": "The set is held; the response is the updated skill-assessment state, so the suggestions visibly react."
+                    },
+                    "401": {
+                        "description": "Marking a topic as already held requires an account."
+                    },
+                    "404": {
+                        "description": "Assessment session or Assessable Topic Set was not found."
+                    }
+                }
+            }
+        },
+        "/api/v1/assessment-sessions/{id}/skill-assessment/held-topics/{topic_key}/": {
+            "delete": {
+                "operationId": "unmarkAssessmentHeldTopic",
+                "summary": "Withdraw a mark that a topic is already held",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Assessment session UUID.",
+                        "required": true
+                    },
+                    {
+                        "in": "path",
+                        "name": "topic_key",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Assessable Topic Set key.",
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Assessment Sessions"
+                ],
+                "security": [
+                    {
+                        "tokenAuth": []
+                    },
+                    {
+                        "cookieAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SkillAssessmentSessionState"
+                                }
+                            }
+                        },
+                        "description": "The mark is withdrawn; the response is the updated skill-assessment state."
+                    },
+                    "401": {
+                        "description": "Marking a topic as already held requires an account."
+                    },
+                    "404": {
+                        "description": "Assessment session or Assessable Topic Set was not found."
                     }
                 }
             }
@@ -779,6 +1474,9 @@
                 },
                 "security": [
                     {
+                        "tokenAuth": []
+                    },
+                    {
                         "cookieAuth": []
                     },
                     {}
@@ -794,9 +1492,28 @@
                                     "NextQuestionResponse": {
                                         "value": {
                                             "next_question": {
-                                                "id": "q-dev",
-                                                "prompt": "I can implement features using clear design and coding practices.",
-                                                "dimension_key": "development"
+                                                "id": "backend-developer--caching",
+                                                "prompt": "I could work on \"Caching\" in a real project without help.",
+                                                "translations": {
+                                                    "en": {
+                                                        "prompt": "I could work on \"Caching\" in a real project without help."
+                                                    },
+                                                    "th": {
+                                                        "prompt": "ฉันทำงานเรื่อง \"การแคช\" ในโปรเจกต์จริงได้เองโดยไม่ต้องมีคนช่วย"
+                                                    }
+                                                },
+                                                "dimension_key": "backend-developer--caching",
+                                                "display_order": 3,
+                                                "topic_slug": "backend-developer--caching",
+                                                "topic_title": "Caching"
+                                            },
+                                            "progress": {
+                                                "answered": 2,
+                                                "total": 18,
+                                                "remaining": 16,
+                                                "floor": 12,
+                                                "ceiling": 18,
+                                                "settled": false
                                             }
                                         },
                                         "summary": "Next question response"
@@ -823,6 +1540,9 @@
                     "Catalog"
                 ],
                 "security": [
+                    {
+                        "tokenAuth": []
+                    },
                     {
                         "cookieAuth": []
                     },
@@ -864,6 +1584,9 @@
                     "Catalog"
                 ],
                 "security": [
+                    {
+                        "tokenAuth": []
+                    },
                     {
                         "cookieAuth": []
                     },
@@ -946,6 +1669,9 @@
                 ],
                 "security": [
                     {
+                        "tokenAuth": []
+                    },
+                    {
                         "cookieAuth": []
                     },
                     {}
@@ -979,6 +1705,9 @@
                 ],
                 "security": [
                     {
+                        "tokenAuth": []
+                    },
+                    {
                         "cookieAuth": []
                     },
                     {}
@@ -993,6 +1722,27 @@
     },
     "components": {
         "schemas": {
+            "Account": {
+                "type": "object",
+                "description": "The identity a signed-in respondent gets back when they ask who they are.",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "readOnly": true
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "readOnly": true,
+                        "title": "Email address"
+                    }
+                },
+                "required": [
+                    "email",
+                    "id"
+                ]
+            },
             "AnswerHistory": {
                 "type": "object",
                 "properties": {
@@ -1099,6 +1849,7 @@
                     },
                     "response_time_ms": {
                         "type": "integer",
+                        "maximum": 2147483647,
                         "minimum": 0
                     },
                     "confidence_indicator": {
@@ -1242,13 +1993,6 @@
                             "$ref": "#/components/schemas/RankedRoleInsight"
                         },
                         "readOnly": true
-                    },
-                    "preferred_role_gap_topics": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/RoadmapTopic"
-                        },
-                        "readOnly": true
                     }
                 },
                 "required": [
@@ -1260,7 +2004,6 @@
                     "milestones",
                     "pillar_profile",
                     "preferred_role",
-                    "preferred_role_gap_topics",
                     "profile",
                     "ranked_roles",
                     "role_alignment_status",
@@ -1367,8 +2110,14 @@
                         "readOnly": true
                     },
                     "current_question": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Question"
+                            }
+                        ],
                         "nullable": true,
-                        "readOnly": true
+                        "readOnly": true,
+                        "description": "Deprecated: read GET /api/v1/assessment-sessions/{id}/next-question/ instead. Still served, and still the same value."
                     }
                 },
                 "required": [
@@ -1393,6 +2142,14 @@
                 "enum": [
                     ""
                 ]
+            },
+            "ConfidenceEnum": {
+                "enum": [
+                    "low",
+                    "high"
+                ],
+                "type": "string",
+                "description": "* `low` - low\n* `high` - high"
             },
             "DifficultyEnum": {
                 "enum": [
@@ -1495,6 +2252,20 @@
                     "topic_group"
                 ]
             },
+            "HeldTopicMarkRequest": {
+                "type": "object",
+                "description": "Which Assessable Topic Set the respondent says they can already work on.",
+                "properties": {
+                    "topic_key": {
+                        "type": "string",
+                        "maxLength": 128,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    }
+                },
+                "required": [
+                    "topic_key"
+                ]
+            },
             "LanguageEnum": {
                 "enum": [
                     "en",
@@ -1502,6 +2273,39 @@
                 ],
                 "type": "string",
                 "description": "* `en` - English\n* `th` - Thai"
+            },
+            "LikertResponseScaleChoice": {
+                "type": "object",
+                "description": "One rung of the five-point agreement scale, labeled in the session language.",
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "label": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "value": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "display_order": {
+                        "type": "integer",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "display_order",
+                    "key",
+                    "label",
+                    "value"
+                ]
+            },
+            "NullEnum": {
+                "enum": [
+                    null
+                ]
             },
             "PhaseEnum": {
                 "enum": [
@@ -1520,6 +2324,9 @@
                     "label": {
                         "type": "string"
                     },
+                    "label_th": {
+                        "type": "string"
+                    },
                     "raw_score": {
                         "type": "number",
                         "format": "double"
@@ -1536,9 +2343,126 @@
                     "evidence_count",
                     "key",
                     "label",
+                    "label_th",
                     "normalized_score",
                     "raw_score"
                 ]
+            },
+            "Question": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "code": {
+                        "type": "string",
+                        "maxLength": 96,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "stage": {
+                        "$ref": "#/components/schemas/StageEnum"
+                    },
+                    "question_type": {
+                        "$ref": "#/components/schemas/QuestionTypeEnum"
+                    },
+                    "prompt": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "help_text": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "translations": {
+                        "readOnly": true
+                    },
+                    "role": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "topic": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "difficulty": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    },
+                    "options": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/QuestionOption"
+                        },
+                        "readOnly": true
+                    },
+                    "response_scale": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/LikertResponseScaleChoice"
+                        },
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "code",
+                    "help_text",
+                    "id",
+                    "options",
+                    "prompt",
+                    "question_type",
+                    "response_scale",
+                    "role",
+                    "stage",
+                    "topic",
+                    "translations"
+                ]
+            },
+            "QuestionOption": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "readOnly": true
+                    },
+                    "key": {
+                        "type": "string",
+                        "maxLength": 64,
+                        "pattern": "^[-a-zA-Z0-9_]+$"
+                    },
+                    "label": {
+                        "type": "string",
+                        "maxLength": 160
+                    },
+                    "value": {
+                        "type": "string",
+                        "maxLength": 64
+                    },
+                    "display_order": {
+                        "type": "integer",
+                        "maximum": 9223372036854775807,
+                        "minimum": 0,
+                        "format": "int64"
+                    }
+                },
+                "required": [
+                    "id",
+                    "key",
+                    "label"
+                ]
+            },
+            "QuestionTypeEnum": {
+                "enum": [
+                    "yes_no",
+                    "yes_no_maybe",
+                    "likert_5",
+                    "single_choice",
+                    "ranked_choice"
+                ],
+                "type": "string",
+                "description": "* `yes_no` - Yes / No\n* `yes_no_maybe` - Yes / No / Maybe\n* `likert_5` - Five-Point Agreement Scale\n* `single_choice` - Single Choice\n* `ranked_choice` - Ranked Choice"
             },
             "RankedRoleInsight": {
                 "type": "object",
@@ -1547,6 +2471,9 @@
                         "type": "string"
                     },
                     "name": {
+                        "type": "string"
+                    },
+                    "name_th": {
                         "type": "string"
                     },
                     "fit_score": {
@@ -1562,14 +2489,41 @@
                         "items": {
                             "type": "string"
                         }
+                    },
+                    "top_supporting_pillars_th": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
                     }
                 },
                 "required": [
                     "fit_score",
                     "fit_share",
                     "name",
+                    "name_th",
                     "slug",
-                    "top_supporting_pillars"
+                    "top_supporting_pillars",
+                    "top_supporting_pillars_th"
+                ]
+            },
+            "Registration": {
+                "type": "object",
+                "description": "The email and password pair a respondent presents to register or to sign in.",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 150
+                    },
+                    "password": {
+                        "type": "string",
+                        "writeOnly": true
+                    }
+                },
+                "required": [
+                    "email",
+                    "password"
                 ]
             },
             "RoadmapPrerequisiteEdge": {
@@ -1673,7 +2627,14 @@
                         "type": "string",
                         "maxLength": 128
                     },
+                    "name_th": {
+                        "type": "string",
+                        "maxLength": 128
+                    },
                     "description": {
+                        "type": "string"
+                    },
+                    "description_th": {
                         "type": "string"
                     },
                     "top_ka_codes": {},
@@ -1687,6 +2648,23 @@
                     "id",
                     "name",
                     "slug"
+                ]
+            },
+            "RoleDiscoveryNextQuestionResponse": {
+                "type": "object",
+                "properties": {
+                    "next_question": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/Question"
+                            }
+                        ],
+                        "readOnly": true,
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "next_question"
                 ]
             },
             "RoleInsights": {
@@ -1794,6 +2772,25 @@
                     "topics"
                 ]
             },
+            "SignIn": {
+                "type": "object",
+                "description": "The email and password pair a respondent presents to register or to sign in.",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 150
+                    },
+                    "password": {
+                        "type": "string",
+                        "writeOnly": true
+                    }
+                },
+                "required": [
+                    "email",
+                    "password"
+                ]
+            },
             "SkillAssessmentCatalog": {
                 "type": "object",
                 "properties": {
@@ -1835,15 +2832,13 @@
             },
             "SkillAssessmentDimension": {
                 "type": "object",
+                "description": "One radar axis: an Assessable Topic Set of the session's target role.",
                 "properties": {
                     "key": {
                         "type": "string"
                     },
                     "label": {
                         "type": "string"
-                    },
-                    "track": {
-                        "$ref": "#/components/schemas/TrackEnum"
                     },
                     "low_score_action": {
                         "type": "string"
@@ -1856,8 +2851,7 @@
                 "required": [
                     "key",
                     "label",
-                    "low_score_action",
-                    "track"
+                    "low_score_action"
                 ]
             },
             "SkillAssessmentNextQuestionRequest": {
@@ -1883,10 +2877,16 @@
                             }
                         ],
                         "nullable": true
+                    },
+                    "progress": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
                     }
                 },
                 "required": [
-                    "next_question"
+                    "next_question",
+                    "progress"
                 ]
             },
             "SkillAssessmentQuestion": {
@@ -1904,12 +2904,20 @@
                     },
                     "dimension_key": {
                         "type": "string"
+                    },
+                    "topic_slug": {
+                        "type": "string"
+                    },
+                    "topic_title": {
+                        "type": "string"
                     }
                 },
                 "required": [
                     "dimension_key",
                     "id",
-                    "prompt"
+                    "prompt",
+                    "topic_slug",
+                    "topic_title"
                 ]
             },
             "SkillAssessmentScaleOption": {
@@ -1961,7 +2969,23 @@
                         },
                         "readOnly": true
                     },
+                    "topic_states": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        },
+                        "readOnly": true
+                    },
                     "recommended_topics": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                        },
+                        "readOnly": true
+                    },
+                    "next_topics": {
                         "type": "array",
                         "items": {
                             "type": "object",
@@ -1973,14 +2997,42 @@
                         "type": "object",
                         "additionalProperties": {},
                         "readOnly": true
+                    },
+                    "progress": {
+                        "type": "object",
+                        "additionalProperties": {},
+                        "readOnly": true
+                    },
+                    "confidence": {
+                        "readOnly": true,
+                        "nullable": true,
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/ConfidenceEnum"
+                            },
+                            {
+                                "$ref": "#/components/schemas/NullEnum"
+                            }
+                        ]
                     }
                 },
                 "required": [
                     "completed_at",
+                    "confidence",
+                    "next_topics",
+                    "progress",
                     "readiness",
                     "recommended_topics",
-                    "topic_mastery"
+                    "topic_mastery",
+                    "topic_states"
                 ]
+            },
+            "StageEnum": {
+                "enum": [
+                    "role"
+                ],
+                "type": "string",
+                "description": "* `role` - Role Discovery"
             },
             "StatusEnum": {
                 "enum": [
@@ -2016,14 +3068,6 @@
                     "title",
                     "topic_id"
                 ]
-            },
-            "TrackEnum": {
-                "enum": [
-                    "psp",
-                    "sdlc"
-                ],
-                "type": "string",
-                "description": "* `psp` - psp\n* `sdlc` - sdlc"
             }
         },
         "securitySchemes": {
@@ -2031,6 +3075,12 @@
                 "type": "apiKey",
                 "in": "cookie",
                 "name": "sessionid"
+            },
+            "tokenAuth": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "Authorization",
+                "description": "Token-based authentication with required prefix \"Token\""
             }
         }
     }

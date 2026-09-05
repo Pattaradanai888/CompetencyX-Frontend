@@ -100,12 +100,9 @@ export function useQuestionI18n(questionRef: () => LocalizableQuestion | null) {
 
     return q.response_scale.map((opt) => {
       let label = opt.label
-      if (
-        isThai.value &&
-        STANDARD_SCALES.likert_5 &&
-        STANDARD_SCALES.likert_5[opt.key]
-      ) {
-        label = STANDARD_SCALES.likert_5[opt.key]
+      const thaiScaleLabel = STANDARD_SCALES.likert_5?.[opt.key]
+      if (isThai.value && thaiScaleLabel) {
+        label = thaiScaleLabel
       } else if (isThai.value) {
         switch (opt.value) {
           case -2:

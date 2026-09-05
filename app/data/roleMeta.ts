@@ -452,8 +452,350 @@ export const DEFAULT_ROLE_META: RoleExplorerMeta = {
   ],
 }
 
-/** Returns display metadata for a role slug, falling back to DEFAULT_ROLE_META. */
-export function getRoleMeta(slug: string | null | undefined): RoleExplorerMeta {
-  if (!slug) return DEFAULT_ROLE_META
-  return ROLE_META[slug] ?? DEFAULT_ROLE_META
+/**
+ * The tag vocabulary as a Thai respondent reads it. Terms practitioners keep
+ * in English (Frontend, DevOps, MLOps, CI/CD) stay in English, following the
+ * register the topic-set wording uses (ADR-0004). A tag missing here is shown
+ * in English.
+ */
+export const ROLE_META_VOCAB_TH: Record<string, string> = {
+  // domain
+  Business: 'ธุรกิจ',
+  Data: 'ข้อมูล',
+  Design: 'การออกแบบ',
+  Security: 'ความปลอดภัย',
+  Technology: 'เทคโนโลยี',
+  // career areas
+  'Front-end': 'Frontend',
+  'Back-end': 'Backend',
+  Backend: 'Backend',
+  'Full-stack': 'Full Stack',
+  DevOps: 'DevOps',
+  Cloud: 'Cloud',
+  'Data Analyst': 'นักวิเคราะห์ข้อมูล',
+  AI: 'AI',
+  'Software Engineering': 'วิศวกรรมซอฟต์แวร์',
+  'Data Scientist': 'นักวิทยาศาสตร์ข้อมูล',
+  'Machine Learning': 'Machine Learning',
+  'Data Engineer': 'วิศวกรข้อมูล',
+  Mobile: 'มือถือ',
+  Android: 'Android',
+  'Database Administration': 'การดูแลฐานข้อมูล',
+  Infrastructure: 'โครงสร้างพื้นฐาน',
+  iOS: 'iOS',
+  Blockchain: 'Blockchain',
+  Cryptography: 'การเข้ารหัส',
+  'Quality Assurance': 'การประกันคุณภาพ',
+  Testing: 'การทดสอบ',
+  Architecture: 'สถาปัตยกรรม',
+  'Technical Leadership': 'ผู้นำทางเทคนิค',
+  'Cyber Security': 'ความปลอดภัยไซเบอร์',
+  'User Experience': 'ประสบการณ์ผู้ใช้',
+  'Product Design': 'การออกแบบผลิตภัณฑ์',
+  Documentation: 'เอกสาร',
+  Communications: 'การสื่อสาร',
+  'Game Development': 'การพัฒนาเกม',
+  'Game Infrastructure': 'โครงสร้างพื้นฐานของเกม',
+  MLOps: 'MLOps',
+  'Product Management': 'การจัดการผลิตภัณฑ์',
+  'Engineering Leadership': 'ผู้นำฝ่ายวิศวกรรม',
+  'Developer Relations': 'Developer Relations',
+  Advocacy: 'การเป็นตัวแทน',
+  'BI Analyst': 'นักวิเคราะห์ BI',
+  'Data Reporting': 'การรายงานข้อมูล',
+  // work style
+  Creative: 'สร้างสรรค์',
+  Technical: 'เชิงเทคนิค',
+  Analytical: 'เชิงวิเคราะห์',
+  Strategic: 'เชิงกลยุทธ์',
+  'Communication-focused': 'เน้นการสื่อสาร',
+  'Innovation-focused': 'เน้นนวัตกรรม',
+  Research: 'การค้นคว้าวิจัย',
+  'Security-focused': 'เน้นความปลอดภัย',
+  'Leadership-focused': 'เน้นภาวะผู้นำ',
+  // environment
+  'Remote-friendly': 'ทำงานทางไกลได้',
+  'Team-oriented': 'เน้นการทำงานเป็นทีม',
+  Independent: 'ทำงานอิสระ',
+  Hybrid: 'แบบผสม',
+  // experience
+  'Entry Level': 'เริ่มต้น',
+  Junior: 'Junior',
+  'Mid Level': 'ระดับกลาง',
+  Senior: 'Senior',
+  // skills
+  Programming: 'การเขียนโปรแกรม',
+  'Project Management': 'การบริหารโครงการ',
+  'Security Scanning': 'การสแกนความปลอดภัย',
+  'Cloud Infrastructure': 'โครงสร้างพื้นฐาน Cloud',
+  'Data Analysis': 'การวิเคราะห์ข้อมูล',
+  Communication: 'การสื่อสาร',
+  'Machine Learning Integration': 'การผสาน Machine Learning',
+  'Model Optimization': 'การปรับแต่งโมเดล',
+  'SQL Optimization': 'การปรับแต่ง SQL',
+  'Database Management': 'การจัดการฐานข้อมูล',
+  'Apple Design Guidelines': 'แนวทางการออกแบบของ Apple',
+  'Smart Contracts': 'Smart Contract',
+  'Web3 Systems': 'ระบบ Web3',
+  'System Design': 'การออกแบบระบบ',
+  'Technical Direction': 'ทิศทางทางเทคนิค',
+  'Security Compliance': 'การปฏิบัติตามมาตรฐานความปลอดภัย',
+  'Vulnerability Assessment': 'การประเมินช่องโหว่',
+  'User Research': 'การวิจัยผู้ใช้',
+  Wireframing: 'การทำ wireframe',
+  Prototyping: 'การทำ prototype',
+  'Technical Writing': 'การเขียนเอกสารเทคนิค',
+  Editing: 'การตรวจแก้',
+  'Game Physics': 'ฟิสิกส์ในเกม',
+  'Multiplayer Networking': 'ระบบเครือข่ายหลายผู้เล่น',
+  'Scalable Systems': 'ระบบที่ขยายได้',
+  'CI/CD Pipelines': 'CI/CD Pipeline',
+  'Model Serving': 'การให้บริการโมเดล',
+  'People Management': 'การบริหารคน',
+  'Sprint Planning': 'การวางแผน Sprint',
+  'SQL Querying': 'การเขียน SQL',
+  // interests
+  Creativity: 'ความคิดสร้างสรรค์',
+  'Helping People': 'การช่วยเหลือผู้อื่น',
+  'Problem Solving': 'การแก้ปัญหา',
+  Innovation: 'นวัตกรรม',
+  'Business Growth': 'การเติบโตของธุรกิจ',
+  Automation: 'ระบบอัตโนมัติ',
+  'Artificial Intelligence': 'ปัญญาประดิษฐ์',
+  'Mobile Apps': 'แอปมือถือ',
+  Reliability: 'ความเชื่อถือได้',
+  'System Tuning': 'การจูนระบบ',
+  'Apple Ecosystem': 'ระบบนิเวศของ Apple',
+  Decentralization: 'การกระจายศูนย์',
+  'System Scale': 'ระบบขนาดใหญ่',
+  'System Hardening': 'การเสริมความแข็งแกร่งของระบบ',
+  'Human Behavior': 'พฤติกรรมมนุษย์',
+  'Video Games': 'วิดีโอเกม',
+  'Online Gaming': 'เกมออนไลน์',
+  Efficiency: 'ประสิทธิภาพ',
+  'Team Success': 'ความสำเร็จของทีม',
+  'Community Building': 'การสร้างชุมชน',
+}
+
+/** Core responsibilities in Thai, one list per role; English shows where a role has none. */
+export const ROLE_RESPONSIBILITIES_TH: Record<string, string[]> = {
+  'frontend-developer': [
+    'พัฒนาหน้าจอที่ตอบสนองทุกขนาดหน้าจอและเข้าถึงได้',
+    'แปลงงานออกแบบให้เป็นจริงด้วย frontend framework สมัยใหม่',
+    'ปรับประสิทธิภาพและความง่ายในการใช้งานของแอปพลิเคชัน',
+    'ทำงานร่วมกับนักออกแบบและนักพัฒนา backend',
+    'รักษาคุณภาพโค้ดและ UI component ที่นำกลับมาใช้ซ้ำได้',
+  ],
+  'backend-developer': [
+    'ออกแบบและดูแลแอปพลิเคชันฝั่งเซิร์ฟเวอร์และ API',
+    'พัฒนา business logic และการเชื่อมต่อระหว่างระบบ',
+    'จัดการฐานข้อมูลและ workflow การประมวลผลข้อมูล',
+    'ดูแลประสิทธิภาพ ความปลอดภัย และการขยายตัวของระบบ',
+    'รองรับแอปพลิเคชันฝั่ง frontend ด้วย service ที่เชื่อถือได้',
+  ],
+  'full-stack-developer': [
+    'พัฒนาฟีเจอร์ตั้งแต่ต้นจนจบทั้งฝั่ง client และ server',
+    'ออกแบบฐานข้อมูลและเชื่อมต่อ API จากภายนอก',
+    'เขียนเทสต์สำหรับ frontend component, backend endpoint และการเชื่อมต่อ',
+    'Deploy และติดตามเว็บแอปพลิเคชันบน staging และ production',
+    'ทำงานร่วมกับทีมออกแบบผลิตภัณฑ์ ทีมพัฒนา และทีม QA',
+  ],
+  'devops-engineer': [
+    'สร้างและดูแล CI/CD pipeline เพื่อส่งมอบแอปพลิเคชันอัตโนมัติ',
+    'จัดการโครงสร้างพื้นฐานแบบ infrastructure as code ด้วยแพลตฟอร์มและเครื่องมือ cloud',
+    'ปรับปรุงระบบ monitoring, logging และ dashboard ด้าน observability',
+    'ตั้งค่า container environment และแพลตฟอร์ม orchestration',
+    'สนับสนุนการแก้ไข incident และกลยุทธ์กู้คืนระบบ',
+  ],
+  'devsecops-engineer': [
+    'ผสานการสแกนความปลอดภัยและการตรวจสอบ compliance เข้ากับ CI/CD pipeline โดยตรง',
+    'เสริมความแข็งแกร่งให้โครงสร้างพื้นฐาน cloud, container registry และ secret ของแอปพลิเคชัน',
+    'รันการสแกนช่องโหว่อัตโนมัติและการวิเคราะห์แบบ static/dynamic',
+    'จัดทำ threat model และประสานแผนแก้ไขด้านความปลอดภัย',
+    'ฝึกอบรมทีมพัฒนาเรื่องแนวปฏิบัติการเขียนโค้ดอย่างปลอดภัย',
+  ],
+  'data-analyst': [
+    'รวบรวมและวิเคราะห์ข้อมูลธุรกิจ',
+    'สร้างรายงานและ dashboard',
+    'ค้นหาแนวโน้มและ insight ที่นำไปปฏิบัติได้',
+    'สนับสนุนการตัดสินใจบนพื้นฐานของข้อมูล',
+    'สื่อสารผลการวิเคราะห์ให้ผู้มีส่วนได้ส่วนเสีย',
+  ],
+  'ai-engineer': [
+    'ผสาน large language model, API และบริการ machine learning เข้ากับซอฟต์แวร์',
+    'ออกแบบฟีเจอร์อัจฉริยะ เช่น retrieval-augmented generation และการค้นหา',
+    'ปรับแต่ง prompt และประเมินความถูกต้องของผลลัพธ์จากโมเดล',
+    'ติดตามต้นทุน ประสิทธิภาพ และ latency ของการเรียกโมเดลภายนอก',
+    'ทำงานร่วมกับทีมข้อมูลเพื่อทำความสะอาดชุดข้อมูลสำหรับ fine-tuning',
+  ],
+  'ai-data-scientist': [
+    'ทำ exploratory data analysis และทดสอบสมมติฐานทางสถิติ',
+    'พัฒนาโมเดล machine learning เชิงทำนายและ workflow การฝึกโมเดล',
+    'ตรวจสอบประสิทธิภาพของโมเดลเทียบกับ baseline และข้อมูลผู้ใช้จริง',
+    'สื่อสารผลการทดลองและ insight จากข้อมูลให้ผู้มีส่วนได้ส่วนเสีย',
+    'ทำงานร่วมกับวิศวกรเพื่อแพ็กเกจและ deploy โมเดลขึ้น production',
+  ],
+  'data-engineer': [
+    'ออกแบบและสร้าง ETL/ELT pipeline และ data stream ที่ขยายได้',
+    'จัดการสถาปัตยกรรม data warehouse และฐานข้อมูลเชิงธุรกรรม',
+    'ปรับแต่ง SQL query, สคริปต์ประมวลผลข้อมูล และ workflow การ orchestrate',
+    'บังคับใช้นโยบาย data governance, การตรวจสอบ, lineage และการเข้าถึง',
+    'สนับสนุนทีม analytics และ data science ด้วยชุดข้อมูลที่มีโครงสร้าง',
+  ],
+  'android-developer': [
+    'สร้างแอป Android แบบ native ด้วย Kotlin และ UI toolkit สมัยใหม่',
+    'เชื่อมต่อความสามารถของอุปกรณ์ เช่น เซ็นเซอร์ กล้อง และที่เก็บข้อมูลในเครื่อง',
+    'เขียน unit test และ UI test เพื่อตรวจสอบความเสถียรของแอป',
+    'เผยแพร่และจัดการ release บน Google Play Store',
+    'ดูแลให้แอปทำงานลื่นไหล ใช้หน่วยความจำอย่างเหมาะสม และรองรับการใช้งานออฟไลน์',
+  ],
+  'machine-learning-engineer': [
+    'สร้าง ฝึก และจูน hyperparameter ของโมเดล deep learning และโมเดลทางสถิติ',
+    'ขยาย training pipeline ด้วย distributed computing และ GPU cluster',
+    'Deploy endpoint สำหรับ inference ของโมเดลหลัง API ประสิทธิภาพสูง',
+    'ติดตาม model versioning, feature store และ lineage metadata',
+    'เฝ้าระวัง model drift, ความผิดพลาดของการทำนาย และการเปลี่ยนแปลงของข้อมูลในโลกจริง',
+  ],
+  'postgresql-developer-dba': [
+    'ออกแบบ schema, ตาราง, index และชนิดข้อมูลที่กำหนดเอง',
+    'ปรับแต่ง SQL query, แผนการรันคำสั่ง และการล็อกของธุรกรรม',
+    'เขียน stored function, trigger และกลยุทธ์การ partition ที่ซับซ้อน',
+    'ตั้งค่าการสำรองข้อมูล, replication, high availability และ failover',
+    'เฝ้าระวังหน่วยความจำ, disk I/O, การล็อก และ connection ที่ใช้งานอยู่ของฐานข้อมูล',
+  ],
+  'ios-developer': [
+    'สร้างแอป iOS แบบ native ด้วย Swift และ SwiftUI',
+    'ออกแบบ transition และการโต้ตอบที่สอดคล้องกับแนวทางการออกแบบของ Apple',
+    'เชื่อมต่อ API ของแพลตฟอร์ม, background task และที่เก็บข้อมูลในเครื่องด้วย CoreData',
+    'จัดการการแจกจ่ายเทสต์ผ่าน TestFlight และการ release บน App Store',
+    'ปรับประสิทธิภาพของแอป อายุแบตเตอรี่ และเวลาเปิดแอป',
+  ],
+  'blockchain-developer': [
+    'เขียน ทดสอบ และตรวจสอบ smart contract ให้ปลอดภัย',
+    'ผสานแพลตฟอร์ม decentralized ledger เข้ากับสถาปัตยกรรมซอฟต์แวร์แบบเดิม',
+    'ออกแบบการยืนยันตัวตนด้วยการเข้ารหัสและลายเซ็นธุรกรรมที่ปลอดภัย',
+    'ทำงานร่วมกับ decentralized storage, node provider และ wallet บนเบราว์เซอร์แบบ Web3',
+    'ปรับการใช้ gas และป้องกันบั๊กประเภท reentrancy และการคำนวณเลขใน contract',
+  ],
+  'qa-engineer': [
+    'ออกแบบและรัน test case และ test plan',
+    'ค้นหา บันทึก และติดตามข้อบกพร่องของซอฟต์แวร์',
+    'ตรวจสอบคุณภาพผลิตภัณฑ์ก่อน release',
+    'ทำ regression, integration และ exploratory testing',
+    'ทำงานร่วมกับนักพัฒนาเพื่อแก้ปัญหาด้านคุณภาพ',
+  ],
+  'software-architect': [
+    'กำหนดโครงสร้างระบบระดับสูง การแบ่งโมดูล และหลักการออกแบบ',
+    'เลือก tech stack, ฐานข้อมูล และรูปแบบสถาปัตยกรรม',
+    'ประเมินข้อแลกเปลี่ยนด้านการขยายตัว ความเป็นโมดูล ความปลอดภัย และต้นทุน',
+    'จัดทำเอกสาร blueprint ของสถาปัตยกรรม ขอบเขตของ service และสัญญาการเชื่อมต่อ',
+    'ให้แนวทางแก่ทีมพัฒนาเรื่องมาตรฐานทางเทคนิคและรูปแบบการเขียนโค้ด',
+  ],
+  'cyber-security-engineer-analyst': [
+    'วิเคราะห์การตั้งค่าระบบเพื่อหาช่องโหว่และจุดอ่อนด้านความปลอดภัย',
+    'ตั้งค่า firewall, ระบบตรวจจับการบุกรุก และการควบคุมการเข้าถึง',
+    'สืบสวนการแจ้งเตือน security log และพฤติกรรมผิดปกติของระบบ',
+    'ดำเนินการตามขั้นตอนตอบสนอง incident และทบทวนหลังเหตุการณ์',
+    'ตรวจสอบโค้ดของแอปพลิเคชันและทรัพยากร cloud ตามกฎ compliance ด้านความปลอดภัย',
+  ],
+  'ux-designer': [
+    'วิจัยความต้องการ เส้นทางการใช้งาน จุดเจ็บปวด และข้อจำกัดด้าน usability ของผู้ใช้',
+    'ออกแบบ user flow, site map และโครงสร้างข้อมูลอย่างครบถ้วน',
+    'ออกแบบ wireframe, layout ความละเอียดต่ำ และ prototype แบบโต้ตอบได้',
+    'จัดการทดสอบ usability และสรุป feedback',
+    'ทำงานร่วมกับนักออกแบบ UI และวิศวกรเพื่อนำ design system ไปใช้',
+  ],
+  'technical-writer': [
+    'ร่างเอกสาร API, คู่มือนักพัฒนา และคู่มือ SDK ที่อ่านเข้าใจง่าย',
+    'เขียนคู่มือผู้ใช้, release note และบทความช่วยเหลือของผลิตภัณฑ์',
+    'จัดโครงสร้าง documentation portal ด้วย markdown, เครื่องมือ static site และ version control',
+    'ตรวจแก้ข้อความในหน้าจอผลิตภัณฑ์ให้ชัดเจนและสอดคล้องกัน',
+    'ทำงานร่วมกับทีมวิศวกรรมเพื่อทำความเข้าใจและจัดทำเอกสารฟีเจอร์ที่ซับซ้อน',
+  ],
+  'game-developer': [
+    'เขียนโปรแกรมกลไก gameplay, ฟิสิกส์ และระบบควบคุมตัวละคร',
+    'เชื่อมต่อ asset pipeline ทั้งโมเดล 3D, texture, แอนิเมชัน และเสียง',
+    'สร้างเมนูเกม, องค์ประกอบ HUD และการบันทึกสถานะเกม',
+    'ปรับ frame rate, rendering pass และการจัดสรรหน่วยความจำ',
+    'เขียน logic ของ game loop และทดสอบการโต้ตอบเพื่อหาบั๊กในกรณีขอบของผู้เล่น',
+  ],
+  'server-side-game-developer': [
+    'สร้างบริการเครือข่ายหลายผู้เล่น ระบบ lobby และคิว matchmaking',
+    'ออกแบบ game server แบบ authoritative และโปรโตคอล replicate สถานะที่รวดเร็ว',
+    'จัดการการเก็บข้อมูลถาวรของ inventory, สถิติ และ leaderboard ของผู้เล่น',
+    'ตั้งค่าระบบความปลอดภัยของเกมเพื่อตรวจจับและป้องกันการโกง',
+    'Deploy container cluster ที่ขยายได้เพื่อรองรับผู้เล่นพร้อมกันจำนวนมาก',
+  ],
+  'mlops-engineer': [
+    'สร้าง CI/CD pipeline เพื่อฝึกและทดสอบโมเดล machine learning อัตโนมัติ',
+    'จัดการการ deploy โมเดลอัตโนมัติและโครงสร้างพื้นฐานการให้บริการแบบ container',
+    'ติดตั้ง telemetry ของโมเดล, การบันทึกผลการทำนาย และการแจ้งเตือน drift',
+    'จัดการ pipeline ของ feature store, model registry และประวัติเวอร์ชัน',
+    'ปรับการใช้ทรัพยากรของ compute cluster และค่าใช้จ่ายฮาร์ดแวร์บน cloud',
+  ],
+  'product-manager': [
+    'กำหนดวิสัยทัศน์และ roadmap ของผลิตภัณฑ์',
+    'รวบรวมและจัดลำดับความสำคัญของความต้องการทางธุรกิจ',
+    'ประสานงานข้ามทีม',
+    'วัดความสำเร็จของผลิตภัณฑ์ด้วย metric หลัก',
+    'ทำให้โซลูชันสอดคล้องกับเป้าหมายของผู้ใช้และธุรกิจ',
+  ],
+  'engineering-manager': [
+    'ประสานการวางแผนส่งมอบ กำลังของทีม เวลาของโครงการ และการรัน sprint',
+    'วางมาตรฐานการพัฒนาซอฟต์แวร์ การ review โค้ด และแนวปฏิบัติการทดสอบ',
+    'เป็นพี่เลี้ยงให้นักพัฒนา สนับสนุนความก้าวหน้าในอาชีพ และประเมินผลงาน',
+    'เชื่อมเป้าหมายผลิตภัณฑ์กับสถาปัตยกรรมและการจัดลำดับ technical debt',
+    'ขับเคลื่อนการทำงานร่วมกันของทีม ความพร้อมด้าน DevOps และความปลอดภัยทางจิตใจ',
+  ],
+  'developer-relations': [
+    'สร้าง repository ตัวอย่างโค้ด, quickstart และบทเรียนเชิงเทคนิค',
+    'เขียนบล็อกสำหรับนักพัฒนา พูดในงานสัมมนา และบรรยายเชิงเทคนิค',
+    'รวบรวม feedback จากชุมชนนักพัฒนาและผลักดันการปรับปรุงผลิตภัณฑ์ภายในองค์กร',
+    'ดูแล forum, กลุ่มแชท และช่องทาง feedback ของชุมชนนักพัฒนา',
+    'จัดทำสื่อ onboarding สำหรับนักพัฒนาและปรับปรุงเอกสาร',
+  ],
+  'bi-analyst': [
+    'พัฒนา data model, SQL query และ semantic layer สำหรับรายงานทางธุรกิจ',
+    'สร้าง dashboard เชิงธุรกิจแบบโต้ตอบได้และ scorecard ติดตาม KPI',
+    'ตรวจสอบความถูกต้องของข้อมูล metric ทางธุรกิจ และการ join ของ pipeline แหล่งข้อมูล',
+    'รวบรวมความต้องการด้านรายงานจากผู้ใช้และแปลงเป็น dashboard',
+    'วิเคราะห์แนวโน้มทางธุรกิจและสื่อสาร insight ให้ผู้จัดการฝ่ายปฏิบัติการ',
+  ],
+}
+
+const DEFAULT_RESPONSIBILITIES_TH = [
+  'ทำความเข้าใจความต้องการของผู้ใช้และธุรกิจให้ชัดเจน',
+  'ใช้เครื่องมือและแนวปฏิบัติทางเทคนิคเฉพาะของบทบาท',
+  'ทำงานร่วมกับทีมเพื่อส่งมอบผลลัพธ์ที่ใช้ได้จริง',
+]
+
+function localizeTags(values: string[]): string[] {
+  return values.map((value) => ROLE_META_VOCAB_TH[value] ?? value)
+}
+
+/**
+ * Display metadata for a role slug in the requested language, falling back
+ * to DEFAULT_ROLE_META for a slug the catalog does not know.
+ */
+export function getRoleMeta(
+  slug: string | null | undefined,
+  locale: 'en' | 'th' = 'en',
+): RoleExplorerMeta {
+  const meta = (slug && ROLE_META[slug]) || DEFAULT_ROLE_META
+  if (locale !== 'th') return meta
+  const responsibilities =
+    (slug && ROLE_RESPONSIBILITIES_TH[slug]) ??
+    (meta === DEFAULT_ROLE_META
+      ? DEFAULT_RESPONSIBILITIES_TH
+      : meta.responsibilities)
+  return {
+    domain: ROLE_META_VOCAB_TH[meta.domain] ?? meta.domain,
+    careerAreas: localizeTags(meta.careerAreas),
+    workStyle: localizeTags(meta.workStyle),
+    environment: localizeTags(meta.environment),
+    experience: localizeTags(meta.experience),
+    skills: localizeTags(meta.skills),
+    interests: localizeTags(meta.interests),
+    responsibilities,
+  }
 }

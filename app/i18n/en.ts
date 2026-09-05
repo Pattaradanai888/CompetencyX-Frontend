@@ -1,4 +1,36 @@
 export default {
+  app: {
+    skipToContent: 'Skip to main content',
+  },
+  header: {
+    signIn: 'Sign in',
+    register: 'Create account',
+    signOut: 'Sign out',
+    account: 'Account',
+    signedInAs: 'Signed in as',
+  },
+  account: {
+    signInTitle: 'Sign in',
+    signInIntro:
+      'Sign in to keep what you say about yourself: topics you mark as already held follow your account, not this browser.',
+    registerTitle: 'Create an account',
+    registerIntro:
+      'An account is only needed to mark topics as already held and to list your own sessions. Role Discovery and the Skill Assessment work without one.',
+    email: 'Email',
+    password: 'Password',
+    passwordHint: 'At least 8 characters; avoid something easy to guess.',
+    signInAction: 'Sign in',
+    registerAction: 'Create account',
+    working: 'Please wait…',
+    noAccountYet: 'No account yet?',
+    haveAccount: 'Already have an account?',
+    switchToRegister: 'Create one',
+    switchToSignIn: 'Sign in instead',
+    signInError: 'Could not sign in',
+    registerError: 'Could not create the account',
+    alreadySignedIn: 'You are signed in as',
+    backHome: 'Back to home',
+  },
   index: {
     heroEyebrow: 'Discover your software path',
     heroTitle: 'Find the software role that ',
@@ -129,6 +161,7 @@ export default {
     ],
   },
   start: {
+    eyebrow: 'Onboarding',
     resumeBtn: 'Resume previous session',
     title: 'Choose your preferred role',
     subtitle: 'Search and select a target role to begin the skill assessment.',
@@ -354,5 +387,16 @@ export default {
     questionLabel: 'Question',
     openDiscoveryPath: 'Open discovery path',
     roadmapHiddenNote: 'Your roadmap stays hidden until this calibration step is complete.',
+    searchWeb: 'Search the web',
+    watchOnYouTube: 'Watch on YouTube',
+    skillAssessmentChip: 'Skill assessment',
+    agreementScaleChip: 'Agreement scale',
+    nextQuestionErrorTitle: 'Could not fetch the next question',
+    nextQuestionErrorHint: 'Check your connection and pick the answer again.',
+    answeredOfUpTo: 'of up to',
+    assessedCount: 'topics assessed',
+    confidenceHigh: 'Answering more would not change these suggestions.',
+    confidenceLow:
+      'The assessment ended at the question limit before the suggestions settled, so treat this order as a starting point.',
   },
 }

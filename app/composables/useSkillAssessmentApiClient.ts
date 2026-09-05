@@ -1,4 +1,3 @@
-import { useAccountToken } from '~/composables/useAccountToken'
 import { useApiClient } from '~/composables/useApiClient'
 import type {
   SkillAssessmentCatalog,
@@ -8,12 +7,6 @@ import type {
 
 export function useSkillAssessmentApiClient() {
   const { apiFetch } = useApiClient()
-  const { getToken } = useAccountToken()
-
-  function authHeaders(): Record<string, string> | undefined {
-    const token = getToken()
-    return token ? { Authorization: `Token ${token}` } : undefined
-  }
 
   async function getSkillAssessmentCatalog(sessionId: string) {
     return await apiFetch<SkillAssessmentCatalog>(
@@ -21,6 +14,11 @@ export function useSkillAssessmentApiClient() {
     )
   }
 
+  /**
+   * The next item to ask, decided from the answers handed in -- saved or not.
+   * `next_question` is null once the assessment should stop: the suggestions
+   * have settled, or the ceiling was reached, or nothing is left to ask.
+   */
   async function getSkillAssessmentNextQuestion(
     sessionId: string,
     answers: Record<string, number> = {},
@@ -42,7 +40,7 @@ export function useSkillAssessmentApiClient() {
 
   async function saveSkillAssessmentState(
     sessionId: string,
-    state: SkillAssessmentSessionState,
+    state: Pick<SkillAssessmentSessionState, 'completed' | 'answers'>,
   ) {
     return await apiFetch<SkillAssessmentSessionState>(
       `/api/v1/assessment-sessions/${sessionId}/skill-assessment/`,
@@ -56,7 +54,8 @@ export function useSkillAssessmentApiClient() {
   /**
    * Marking is the respondent's own statement about themself, so it belongs
    * to their account; the response is the updated skill-assessment state so
-   * the suggestions visibly react.
+   * the suggestions visibly react. The account credential travels with every
+   * request through the API client.
    */
   async function markHeldTopic(sessionId: string, topicKey: string) {
     return await apiFetch<SkillAssessmentSessionState>(
@@ -64,7 +63,6 @@ export function useSkillAssessmentApiClient() {
       {
         method: 'POST',
         body: { topic_key: topicKey },
-        headers: authHeaders(),
       },
     )
   }
@@ -74,7 +72,6 @@ export function useSkillAssessmentApiClient() {
       `/api/v1/assessment-sessions/${sessionId}/skill-assessment/held-topics/${encodeURIComponent(topicKey)}/`,
       {
         method: 'DELETE',
-        headers: authHeaders(),
       },
     )
   }

@@ -2,12 +2,52 @@ import type {
   AssessmentInsights,
   AssessmentResult,
   AssessmentSession,
+  PillarInsight,
   QuestionStage,
   QuestionType,
+  RankedRoleInsight,
+  Role,
   RoleAlignmentStatus,
   RoleResolutionStatus,
   SessionMilestones,
 } from '~~/shared/types/assessment'
+
+/**
+ * The role as the respondent reads it. A Thai session reads the role's Thai
+ * name when it has one; the English name is the fallback, not the default.
+ */
+export function getRoleDisplayName(
+  role: Pick<Role, 'name' | 'name_th'> | Pick<RankedRoleInsight, 'name' | 'name_th'> | null | undefined,
+  isThai: boolean,
+): string {
+  if (!role) return ''
+  return (isThai && role.name_th) || role.name
+}
+
+export function getRoleDisplayDescription(
+  role: Pick<Role, 'description' | 'description_th'> | null | undefined,
+  isThai: boolean,
+): string {
+  if (!role) return ''
+  return (isThai && role.description_th) || role.description || ''
+}
+
+export function getPillarLabel(
+  pillar: Pick<PillarInsight, 'label' | 'label_th'>,
+  isThai: boolean,
+): string {
+  return (isThai && pillar.label_th) || pillar.label
+}
+
+export function getSupportingPillars(
+  role: Pick<RankedRoleInsight, 'top_supporting_pillars' | 'top_supporting_pillars_th'>,
+  isThai: boolean,
+): string[] {
+  if (isThai && role.top_supporting_pillars_th?.length) {
+    return role.top_supporting_pillars_th
+  }
+  return role.top_supporting_pillars
+}
 
 export function isSessionComplete(
   session: AssessmentSession | AssessmentResult,
@@ -18,13 +58,12 @@ export function isSessionComplete(
 }
 
 export function getQuestionStageLabel(
-  stage: QuestionStage,
+  _stage: QuestionStage,
   lang?: string,
 ): string {
-  if (lang === 'th') {
-    return stage === 'role' ? 'ค้นหาบทบาท' : 'ประเมินทักษะ'
-  }
-  return stage === 'role' ? 'Role discovery' : 'Skill assessment'
+  // The session only ever asks Role Discovery questions; the Skill
+  // Assessment has its own endpoints and its own screen.
+  return lang === 'th' ? 'ค้นหาบทบาท' : 'Role discovery'
 }
 
 export function getQuestionTypeLabel(

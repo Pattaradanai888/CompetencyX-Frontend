@@ -1,7 +1,8 @@
 export type AssessmentPhase = 'role_discovery' | 'recommendation_ready'
 
 export type AssessmentStatus = 'in_progress' | 'completed'
-export type QuestionStage = 'role' | 'skill'
+/** Only Role Discovery asks through the session; the Skill Assessment has its own endpoints. */
+export type QuestionStage = 'role'
 export type QuestionType =
   | 'yes_no'
   | 'yes_no_maybe'
@@ -21,7 +22,10 @@ export interface Role {
   id: number
   slug: string
   name: string
+  /** The role as a Thai respondent reads it; empty when the English name is used in Thai too. */
+  name_th?: string
   description?: string
+  description_th?: string
   top_ka_codes?: string[]
   core_tasks?: string[]
   swebok_source_version?: string
@@ -61,8 +65,8 @@ export interface RoadmapTopic {
   prerequisite_titles?: string[]
   subtopic_titles?: string[]
   follow_on_titles?: string[]
+  /** True when one of the suggested Assessable Topic Sets covers this node. */
   is_gap?: boolean
-  resource_links?: ResourceLink[]
 }
 
 export interface ExternalRoadmapTopic {
@@ -98,17 +102,11 @@ export interface RoleRoadmap {
 }
 
 export interface SkillAssessmentReadiness {
+  /** The mastery each set should reach for this role, keyed by set key. */
   targets: Record<string, number>
   overall_target: number
   overall_mastery: number
-}
-
-export interface SkillAssessmentRecommendedTopic {
-  topic_slug: string
-  topic_title: string
-  mastery: number
-  prerequisite_titles: string[]
-  reason: string
+  assessed_count?: number
 }
 
 export interface QuestionOption {
@@ -162,6 +160,7 @@ export interface AssessmentSession {
   milestones: SessionMilestones
   role_alignment_status: RoleAlignmentStatus
   role_resolution_status: RoleResolutionStatus
+  /** Written by the backend in the session's language. */
   guidance_summary: string
   current_question: Question | null
 }
@@ -169,6 +168,7 @@ export interface AssessmentSession {
 export interface PillarInsight {
   key: string
   label: string
+  label_th?: string
   raw_score: number
   normalized_score: number
   evidence_count: number
@@ -177,9 +177,11 @@ export interface PillarInsight {
 export interface RankedRoleInsight {
   slug: string
   name: string
+  name_th?: string
   fit_score: number
   fit_share: number
   top_supporting_pillars: string[]
+  top_supporting_pillars_th?: string[]
 }
 
 export interface AssessmentResult extends Omit<
@@ -188,7 +190,6 @@ export interface AssessmentResult extends Omit<
 > {
   pillar_profile: PillarInsight[]
   ranked_roles: RankedRoleInsight[]
-  preferred_role_gap_topics: RoadmapTopic[]
 }
 
 export interface AssessmentInsights {
@@ -224,6 +225,10 @@ export interface AssessmentHistory {
   answers: AnswerHistory[]
 }
 
+/**
+ * Where the Skill Assessment stands. `settled` is Recommendation Stability:
+ * no further answer could change the next topics, so the backend stops asking.
+ */
 export interface SkillAssessmentProgress {
   answered: number
   total: number
@@ -243,7 +248,7 @@ export interface SkillAssessmentSessionState {
   recommended_topics?: SkillAssessmentTopicEntry[]
   /** What the post-assessment screen reads: the next few topics, not the graph. */
   next_topics?: SkillAssessmentTopicEntry[]
-  readiness?: SkillAssessmentReadiness & { assessed_count?: number }
+  readiness?: SkillAssessmentReadiness
   progress?: SkillAssessmentProgress
   confidence?: 'low' | 'high' | null
 }
@@ -258,14 +263,16 @@ export interface SkillAssessmentTopicEntry {
   topic_slug: string
   topic_title: string
   /** The unit's Canonical Thai Wording, when the set carries one. */
-  topic_title_th?: string
+  topic_title_th?: string | null
+  /** The imported roadmap nodes the set covers, so a roadmap view marks them by slug. */
+  node_slugs?: string[]
   state: TopicAssessmentState
   mastery: number | null
   reason?: string
   /** The same reason in Thai; the prerequisite names behind it live server-side. */
-  reason_th?: string
+  reason_th?: string | null
   statement?: string
-  statement_th?: string
+  statement_th?: string | null
   /** True only when this unit is held because the account marked it. */
   held_by_mark?: boolean
 }
@@ -276,10 +283,10 @@ export interface SkillAssessmentScaleOption {
   label_th?: string
 }
 
+/** One radar axis: an Assessable Topic Set of the session's target role. */
 export interface SkillAssessmentCatalogDimension {
   key: string
   label: string
-  track: 'psp' | 'sdlc'
   low_score_action: string
   translations?: {
     th?: {
@@ -294,7 +301,13 @@ export interface SkillAssessmentCatalogQuestion {
   prompt: string
   dimension_key: string
   display_order?: number
+  /** The Assessable Topic Set the item is about: its key and title. */
+  topic_slug: string
+  topic_title: string
   translations?: {
+    en?: {
+      prompt?: string
+    }
     th?: {
       prompt?: string
     }
@@ -311,6 +324,7 @@ export interface SkillAssessmentCatalog {
 
 export interface SkillAssessmentNextQuestionResponse {
   next_question: SkillAssessmentCatalogQuestion | null
+  progress: SkillAssessmentProgress
 }
 
 export interface SessionCreatePayload {
@@ -347,19 +361,33 @@ export interface ApiError {
 }
 
 // ---------------------------------------------------------------------------
-// Roadmap evaluation types (shared between roadmaps.ts util and components)
+// Accounts
 // ---------------------------------------------------------------------------
 
+/** The identity a respondent signs in with. */
+export interface Account {
+  id: string
+  email: string
+}
+
+/** What register and sign-in return: the credential to hold, and who it is for. */
+export interface AccountCredential {
+  token: string
+  user: Account
+}
+
+export interface AccountCredentialsPayload {
+  email: string
+  password: string
+}
+
+// ---------------------------------------------------------------------------
+// Radar
+// ---------------------------------------------------------------------------
+
+/** One axis of the readiness radar: an assessed set and its Self-placed Mastery. */
 export interface RadarDimension {
   key: string
   label: string
   value: number
-  track: 'psp' | 'sdlc'
-}
-
-export interface RoadmapsEvaluation {
-  dimensions: RadarDimension[]
-  strengths: string[]
-  growthAreas: string[]
-  personalitySignals: string[]
 }

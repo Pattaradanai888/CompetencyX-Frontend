@@ -1,4 +1,36 @@
 export default {
+  app: {
+    skipToContent: 'ข้ามไปยังเนื้อหาหลัก',
+  },
+  header: {
+    signIn: 'เข้าสู่ระบบ',
+    register: 'สร้างบัญชี',
+    signOut: 'ออกจากระบบ',
+    account: 'บัญชี',
+    signedInAs: 'เข้าสู่ระบบในชื่อ',
+  },
+  account: {
+    signInTitle: 'เข้าสู่ระบบ',
+    signInIntro:
+      'เข้าสู่ระบบเพื่อเก็บสิ่งที่คุณระบุเกี่ยวกับตัวเอง หัวข้อที่คุณทำเครื่องหมายว่าทำได้แล้วจะติดตามบัญชีของคุณ ไม่ใช่เบราว์เซอร์นี้',
+    registerTitle: 'สร้างบัญชี',
+    registerIntro:
+      'บัญชีจำเป็นเฉพาะตอนทำเครื่องหมายว่าทำหัวข้อได้แล้ว และตอนดูรายการเซสชันของตัวเอง Role Discovery และ Skill Assessment ใช้ได้โดยไม่ต้องมีบัญชี',
+    email: 'อีเมล',
+    password: 'รหัสผ่าน',
+    passwordHint: 'อย่างน้อย 8 ตัวอักษร และหลีกเลี่ยงรหัสที่เดาง่าย',
+    signInAction: 'เข้าสู่ระบบ',
+    registerAction: 'สร้างบัญชี',
+    working: 'กรุณารอสักครู่…',
+    noAccountYet: 'ยังไม่มีบัญชี?',
+    haveAccount: 'มีบัญชีอยู่แล้ว?',
+    switchToRegister: 'สร้างบัญชี',
+    switchToSignIn: 'เข้าสู่ระบบแทน',
+    signInError: 'เข้าสู่ระบบไม่สำเร็จ',
+    registerError: 'สร้างบัญชีไม่สำเร็จ',
+    alreadySignedIn: 'คุณเข้าสู่ระบบในชื่อ',
+    backHome: 'กลับหน้าแรก',
+  },
   index: {
     heroEyebrow: 'ค้นพบเส้นทางซอฟต์แวร์ของคุณ',
     heroTitle: 'ค้นหาตำแหน่งงานที่ใช่ ',
@@ -128,6 +160,7 @@ export default {
     ],
   },
   start: {
+    eyebrow: 'เริ่มต้น',
     resumeBtn: 'กลับไปทำเซสชันล่าสุด',
     title: 'เลือกตำแหน่งงานเป้าหมาย',
     subtitle:
@@ -353,5 +386,16 @@ export default {
     questionLabel: 'คำถาม',
     openDiscoveryPath: 'เส้นทางค้นหาบทบาทแบบเปิด',
     roadmapHiddenNote: 'แผนพัฒนาของคุณจะแสดงเมื่อทำขั้นตอนปรับเทียบนี้เสร็จ',
+    searchWeb: 'ค้นหาบนเว็บ',
+    watchOnYouTube: 'ดูบน YouTube',
+    skillAssessmentChip: 'การประเมินทักษะ',
+    agreementScaleChip: 'สเกลความเห็น',
+    nextQuestionErrorTitle: 'ดึงคำถามถัดไปไม่สำเร็จ',
+    nextQuestionErrorHint: 'ตรวจสอบการเชื่อมต่อแล้วเลือกคำตอบอีกครั้ง',
+    answeredOfUpTo: 'จากสูงสุด',
+    assessedCount: 'หัวข้อที่ประเมินแล้ว',
+    confidenceHigh: 'การตอบเพิ่มจะไม่เปลี่ยนคำแนะนำชุดนี้',
+    confidenceLow:
+      'แบบประเมินจบที่จำนวนคำถามสูงสุดก่อนที่คำแนะนำจะนิ่ง ให้ถือลำดับนี้เป็นจุดเริ่มต้น',
   },
 }
