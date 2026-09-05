@@ -16,6 +16,11 @@ export default defineConfig({
           name: 'e2e',
           include: ['test/e2e/*.{test,spec}.ts'],
           environment: 'node',
+          // A browser against a served app: each step may wait on a real
+          // navigation, and the whole file shares one browser.
+          testTimeout: 90000,
+          hookTimeout: 90000,
+          fileParallelism: false,
         },
       },
       await defineVitestProject({

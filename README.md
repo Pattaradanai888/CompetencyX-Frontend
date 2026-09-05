@@ -59,14 +59,27 @@ pnpm lint:fix       # ESLint แก้อัตโนมัติเท่าท
 pnpm format         # Prettier เขียนทับไฟล์
 pnpm format:check   # เช็ค format เฉย ๆ ใช้ก่อนเปิด PR
 
-pnpm test           # vitest ทุก project
+pnpm typecheck      # vue-tsc ผ่าน nuxt typecheck
+pnpm test           # vitest ทุก project (e2e จะ skip เองถ้าไม่ได้ตั้ง E2E_BASE_URL)
 pnpm test:unit      # เฉพาะ test/unit
 pnpm test:nuxt      # เฉพาะ test/nuxt (รันใน environment ของ Nuxt)
-pnpm test:e2e       # เฉพาะ test/e2e
+pnpm test:e2e       # เฉพาะ test/e2e — ต้องมี FE และ BE รันอยู่จริง ดูข้อ 4.1
 pnpm test:watch     # โหมด watch
 ```
 
-รัน `pnpm lint` กับ `pnpm test` ให้ผ่านก่อนเปิด PR
+รัน `pnpm lint`, `pnpm typecheck` กับ `pnpm test` ให้ผ่านก่อนเปิด PR
+
+### 3.1 CI (GitHub Actions)
+
+ทุก push ไป `main` และทุก pull request รัน `.github/workflows/ci.yml` แยกเป็น 3 job ขนานกัน
+
+| Job | ทำอะไร |
+| --- | --- |
+| `checks` | `pnpm lint`, `format:check`, `typecheck`, `test:unit`, `test:nuxt`, `build` |
+| `e2e` | checkout repo backend มาด้วย (`Pattaradanai888/CompetencyX-Backend` branch `main`), migrate + `sync_content` บน SQLite, start gunicorn ที่ :8000, build แล้ว start Nuxt ที่ :3000 ชี้ไปที่ backend นั้น, ติดตั้ง Chromium, แล้วรัน `pnpm test:e2e` ด้วย Playwright จริง |
+| `docker` | build image จาก `Dockerfile` โดยไม่ push |
+
+ตั้งค่าเพิ่มได้ผ่าน repository variables/secrets: `BACKEND_REPOSITORY`, `BACKEND_REF` (เปลี่ยน branch ของ backend ที่ใช้ทดสอบ) และ `BACKEND_REPO_TOKEN` (จำเป็นเฉพาะกรณี repo backend เป็น private)
 
 ---
 
@@ -90,6 +103,25 @@ endpoint ที่หน้าเว็บเรียกอยู่ตอน�
 - `GET|POST /api/v1/assessment-sessions/{id}/skill-assessment/`
 
 รายละเอียด payload ดูที่ `frontend-integration.md` และ `openapi.json` ใน repo นี้ (snapshot จาก backend)
+
+### 4.1 รัน e2e ในเครื่อง
+
+e2e ใน `test/e2e/` ขับเบราว์เซอร์จริง (Playwright) ใส่ FE ที่ต่อกับ BE จริง จึงต้องมีทั้งคู่รันอยู่ก่อน
+
+```powershell
+# terminal 1: backend (ดู README ของ repo backend) ให้อยู่ที่ :8000 และ sync_content แล้ว
+# terminal 2: frontend แบบ production build
+pnpm build
+node .output/server/index.mjs
+
+# terminal 3
+pnpm exec playwright-core install chromium        # ครั้งแรกครั้งเดียว
+$env:E2E_BASE_URL = 'http://127.0.0.1:3000'
+$env:E2E_API_BASE = 'http://127.0.0.1:8000'
+pnpm test:e2e
+```
+
+ถ้าไม่ตั้ง `E2E_BASE_URL` ชุด e2e จะ skip ตัวเอง `pnpm test` จึงรันได้ตามปกติในเครื่องที่ไม่มี server เปิดอยู่
 
 ---
 

@@ -20,6 +20,7 @@
     "test:nuxt": "vitest run --project nuxt",
     "test:unit": "vitest run --project unit",
     "test:watch": "vitest",
+    "typecheck": "nuxt typecheck",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
@@ -47,7 +48,9 @@
     "happy-dom": "^20.9.0",
     "playwright-core": "^1.60.0",
     "prettier": "^3.8.3",
+    "typescript": "~5.9.3",
     "vitest": "^4.1.6",
-    "vue-mess-detector": "^0.68.1"
+    "vue-mess-detector": "^0.68.1",
+    "vue-tsc": "^3.3.11"
   }
 }
