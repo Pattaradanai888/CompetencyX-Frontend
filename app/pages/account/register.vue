@@ -14,9 +14,14 @@ const t = usePageI18n('account', isThai)
 const isSubmitting = ref(false)
 const error = ref<ApiError | null>(null)
 
+/**
+ * Where to go once registered: the page that sent the respondent here, else
+ * home. Only a same-site path is followed: `//host` and `/\host` are
+ * protocol-relative URLs to another site, not paths.
+ */
 const nextPath = computed(() => {
   const next = route.query.next
-  return typeof next === 'string' && next.startsWith('/') ? next : '/'
+  return typeof next === 'string' && /^\/(?![/\\])/.test(next) ? next : '/'
 })
 
 async function handleSubmit(payload: { email: string; password: string }) {
