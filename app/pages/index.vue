@@ -3,6 +3,7 @@ import { useCatalogApi } from '~/composables/useCatalogApi'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
 import { useLocale } from '~/composables/useLocale'
 import { useLastSession } from '~/composables/useLastSession'
+import { getRoleDisplayName } from '~/utils/assessment'
 import type { Role } from '~~/shared/types/assessment'
 
 const { listRoles } = useCatalogApi()
@@ -94,7 +95,10 @@ useSeoMeta({
             </span>
           </div>
           <p class="mt-3 font-display text-2xl font-semibold text-ink">
-            {{ featuredRoles[0]?.name ?? 'Backend Engineer' }}
+            {{
+              getRoleDisplayName(featuredRoles[0], isThai) ||
+              (isThai ? 'วิศวกรฝั่งเซิร์ฟเวอร์' : 'Backend Engineer')
+            }}
           </p>
 
           <div class="mt-5 grid gap-3">

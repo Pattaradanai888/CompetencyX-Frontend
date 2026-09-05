@@ -1,5 +1,6 @@
 import { flushPromises } from '@vue/test-utils'
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
+import { clearNuxtData } from '#imports'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ResultsPage from '../../app/pages/results/[sessionId].vue'
 
@@ -33,6 +34,8 @@ vi.mock('~/composables/useAssessmentResults', () => ({
 describe('results page', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // The page's useAsyncData caches by key across mounts in one file.
+    clearNuxtData()
     getSessionMock.mockResolvedValue({
       id: 'session-1',
       status: 'completed',
@@ -103,19 +106,26 @@ describe('results page', () => {
         {
           slug: 'backend-engineer',
           name: 'Backend Engineer',
+          name_th: 'วิศวกรฝั่งเซิร์ฟเวอร์',
           fit_score: 0.81,
           fit_share: 0.62,
           top_supporting_pillars: [
             'Systems Design',
             'Reliability and Automation',
           ],
+          top_supporting_pillars_th: [
+            'การออกแบบระบบ',
+            'ความน่าเชื่อถือและอัตโนมัติ',
+          ],
         },
         {
           slug: 'data-engineer',
           name: 'Data Engineer',
+          name_th: 'วิศวกรข้อมูล',
           fit_score: 0.74,
           fit_share: 0.24,
           top_supporting_pillars: ['Systems Design'],
+          top_supporting_pillars_th: ['การออกแบบระบบ'],
         },
         {
           slug: 'devops-engineer',
@@ -125,7 +135,6 @@ describe('results page', () => {
           top_supporting_pillars: ['Reliability and Automation'],
         },
       ],
-      preferred_role_gap_topics: [],
     })
   })
 
@@ -250,5 +259,48 @@ describe('results page', () => {
     await vi.waitFor(() => {
       expect(navigateToMock).toHaveBeenCalledWith('/roadmaps/session-2')
     })
+  })
+
+  it('reads Thai role names, descriptions and pillars in a Thai session', async () => {
+    const thaiRole = {
+      id: 1,
+      slug: 'backend-engineer',
+      name: 'Backend Engineer',
+      name_th: 'วิศวกรฝั่งเซิร์ฟเวอร์',
+      description: 'Builds the services behind the product.',
+      description_th: 'สร้างบริการเบื้องหลังผลิตภัณฑ์',
+    }
+    const englishSession = await getSessionMock()
+    getSessionMock.mockResolvedValue({
+      ...englishSession,
+      language: 'th',
+      preferred_role: thaiRole,
+      best_fit_role: thaiRole,
+    })
+    const englishResults = await getResultsMock()
+    getResultsMock.mockResolvedValue({
+      ...englishResults,
+      language: 'th',
+      preferred_role: thaiRole,
+      best_fit_role: thaiRole,
+    })
+    getSessionMock.mockClear()
+    getResultsMock.mockClear()
+
+    const wrapper = await mountSuspended(ResultsPage)
+    const text = wrapper.text()
+
+    expect(text).toContain('วิศวกรฝั่งเซิร์ฟเวอร์')
+    expect(text).toContain('สร้างบริการเบื้องหลังผลิตภัณฑ์')
+    expect(text).toContain('วิศวกรข้อมูล')
+    // Data Engineer carries Thai pillars; DevOps Engineer carries none and
+    // keeps its English name and pillar, never an empty string.
+    expect(text).toContain('การออกแบบระบบ')
+    expect(text).toContain('DevOps Engineer')
+    expect(text).toContain('Reliability and Automation')
+    expect(text).not.toContain('Backend Engineer')
+    expect(text).not.toContain('Data Engineer')
+    expect(text).not.toContain('Builds the services behind the product.')
+    expect(text).not.toContain('Systems Design')
   })
 })

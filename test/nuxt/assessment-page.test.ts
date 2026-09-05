@@ -238,4 +238,32 @@ describe('assessment page', () => {
     )
     expect(wrapper.findAll('button.answer-option--choice')).toHaveLength(0)
   })
+
+  it('names the preferred and best-fit roles in Thai in a Thai session', async () => {
+    const thaiSession = makeSession({
+      language: 'th',
+      preferred_role: {
+        id: 1,
+        slug: 'backend-engineer',
+        name: 'Backend Engineer',
+        name_th: 'วิศวกรฝั่งเซิร์ฟเวอร์',
+      },
+      best_fit_role: {
+        id: 2,
+        slug: 'data-engineer',
+        name: 'Data Engineer',
+      },
+    })
+    sessionState.value = thaiSession
+    getSessionMock.mockResolvedValue(thaiSession)
+
+    const wrapper = await mountSuspended(AssessmentPage)
+    await flushPromises()
+
+    const sidebar = wrapper.get('aside').text()
+    expect(sidebar).toContain('วิศวกรฝั่งเซิร์ฟเวอร์')
+    expect(sidebar).not.toContain('Backend Engineer')
+    // A role the backend carries no Thai name for keeps its English name.
+    expect(sidebar).toContain('Data Engineer')
+  })
 })
