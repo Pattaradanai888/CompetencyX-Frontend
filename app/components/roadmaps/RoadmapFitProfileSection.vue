@@ -13,6 +13,15 @@ const props = defineProps<{
 }>()
 
 const t = usePageI18n('roadmaps', () => props.isThai)
+
+// Formatted per the session's locale rather than a hardcoded toFixed pattern.
+const coherenceFormatter = computed(
+  () =>
+    new Intl.NumberFormat(props.isThai ? 'th-TH' : 'en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+)
 </script>
 
 <template>
@@ -75,7 +84,7 @@ const t = usePageI18n('roadmaps', () => props.isThai)
                   >{{ t.profileCoherence }}</span
                 >
                 <span class="data-value text-lg font-bold text-ink"
-                  >{{ personalityFitRaw.toFixed(2)
+                  >{{ coherenceFormatter.format(personalityFitRaw)
                   }}<span class="text-xs font-normal text-ink-soft"
                     >/1</span
                   ></span

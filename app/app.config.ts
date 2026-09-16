@@ -7,7 +7,7 @@ export default defineAppConfig({
     },
     button: {
       slots: {
-        base: 'rounded-full font-semibold tracking-[0.02em] transition-all duration-300',
+        base: 'rounded-full font-semibold tracking-[0.02em] transition-[color,background-color,border-color,box-shadow,transform] duration-300',
       },
       defaultVariants: {
         color: 'primary',

@@ -74,14 +74,15 @@ const isThai = computed(() => props.session.language === 'th')
       }}
     </p>
 
-    <!-- Expandable detail panel -->
+    <!-- Expandable detail panel. Visibility (not just opacity) keeps the
+         collapsed copy out of the accessibility tree. -->
     <div
       id="session-guidance-detail"
-      class="grid transition-all duration-300 ease-in-out"
+      class="grid transition-[grid-template-rows,margin-top,opacity,visibility] duration-300 ease-in-out"
       :class="
         isExpanded
-          ? 'mt-6 grid-rows-[1fr] opacity-100'
-          : 'mt-0 grid-rows-[0fr] opacity-0'
+          ? 'mt-6 grid-rows-[1fr] opacity-100 visible'
+          : 'mt-0 grid-rows-[0fr] opacity-0 invisible'
       "
     >
       <div class="min-h-0 overflow-hidden">

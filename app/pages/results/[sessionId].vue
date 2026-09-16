@@ -110,6 +110,14 @@ const selectedRoleName = computed(
     t.value.selectedRole,
 )
 
+function selectRole(role: RankedRoleInsight | Role) {
+  selectedRole.value = role
+  // Picking a role swaps the card's select button for the confirmation
+  // panel, so focus moves on to the next action instead of dropping to
+  // <body>.
+  continueButton.value?.focus()
+}
+
 function getRoleDescription(role: RankedRoleInsight | Role | null): string {
   if (!role) {
     return t.value.fallbackDescription
@@ -176,11 +184,6 @@ useSeoMeta({
       : 'Review your primary recommended software role and top alternatives before continuing to skill assessment.',
   ),
 })
-
-onMounted(async () => {
-  await nextTick()
-  continueButton.value?.focus()
-})
 </script>
 
 <template>
@@ -220,7 +223,6 @@ onMounted(async () => {
               selectedRole?.slug === primaryRole.slug ? 'is-selected' : '',
               isContinuing ? 'is-busy' : '',
             ]"
-            @click="selectedRole = primaryRole"
           >
             <div>
               <div
@@ -261,6 +263,7 @@ onMounted(async () => {
                 type="button"
                 class="cx-button-secondary w-full"
                 :disabled="isContinuing"
+                @click="selectRole(primaryRole)"
               >
                 {{ t.selectPrimaryRole }}
               </button>
@@ -276,7 +279,6 @@ onMounted(async () => {
               selectedRole?.slug === role.slug ? 'is-selected' : '',
               isContinuing ? 'is-busy' : '',
             ]"
-            @click="selectedRole = role"
           >
             <div>
               <div
@@ -317,6 +319,7 @@ onMounted(async () => {
                 type="button"
                 class="cx-button-secondary w-full"
                 :disabled="isContinuing"
+                @click="selectRole(role)"
               >
                 {{ t.useThisRole }}
               </button>

@@ -52,11 +52,11 @@ const isExpanded = ref(false)
 
     <div
       id="skill-assessment-guidance-body"
-      class="grid transition-all duration-300 ease-out"
+      class="grid transition-[grid-template-rows,margin-top,opacity,visibility] duration-300 ease-out"
       :class="
         isExpanded
-          ? 'mt-6 grid-rows-[1fr] opacity-100'
-          : 'mt-0 grid-rows-[0fr] opacity-0'
+          ? 'mt-6 grid-rows-[1fr] opacity-100 visible'
+          : 'mt-0 grid-rows-[0fr] opacity-0 invisible'
       "
     >
       <div class="min-h-0 overflow-hidden">

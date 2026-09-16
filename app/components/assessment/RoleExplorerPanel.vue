@@ -77,6 +77,7 @@ function metaFor(role: Role): RoleExplorerMeta {
         name="role-search"
         type="text"
         autocomplete="off"
+        :aria-label="t.searchPlaceholder"
         :placeholder="t.searchPlaceholder"
         class="w-full rounded-full border border-border-subtle bg-surface-card py-2.5 pl-11 pr-4 text-sm text-ink placeholder:text-ink-soft/50 transition focus-visible:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
       />
@@ -163,20 +164,23 @@ function metaFor(role: Role): RoleExplorerMeta {
         >
           <div class="space-y-4">
             <div>
-              <h3 class="font-display text-lg font-bold text-ink">
+              <!-- The desktop detail panel (with its h2) is hidden on the
+                   viewport where this block shows, so the role name carries
+                   the h2 itself. -->
+              <h2 class="font-display text-lg font-bold text-ink">
                 {{ getRoleDisplayName(role, isThai) }}
-              </h3>
+              </h2>
               <p class="mt-1.5 text-xs text-ink-soft leading-relaxed">
                 {{ getRoleDisplayDescription(role, isThai) }}
               </p>
             </div>
 
             <div class="role-details-section">
-              <h4
+              <h3
                 class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
               >
                 {{ t.responsibilities }}
-              </h4>
+              </h3>
               <ul class="role-details-list mt-1.5">
                 <li
                   v-for="resp in metaFor(role).responsibilities"
@@ -189,11 +193,11 @@ function metaFor(role: Role): RoleExplorerMeta {
             </div>
 
             <div class="role-details-section">
-              <h4
+              <h3
                 class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
               >
                 {{ t.skills }}
-              </h4>
+              </h3>
               <div class="role-details-tags mt-1.5">
                 <span
                   v-for="skill in metaFor(role).skills"
@@ -206,11 +210,11 @@ function metaFor(role: Role): RoleExplorerMeta {
             </div>
 
             <div class="role-details-section">
-              <h4
+              <h3
                 class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
               >
                 {{ t.roadmapPreview }}
-              </h4>
+              </h3>
               <div
                 v-if="topicsPending"
                 class="role-details-loading-preview mt-1.5"
@@ -240,11 +244,11 @@ function metaFor(role: Role): RoleExplorerMeta {
 
             <div class="grid grid-cols-2 gap-3 mt-2">
               <div v-if="metaFor(role).workStyle.length">
-                <h5
+                <h4
                   class="text-[0.6rem] font-bold uppercase tracking-wider text-ink-soft"
                 >
                   {{ t.workStyle }}
-                </h5>
+                </h4>
                 <div class="flex flex-wrap gap-1 mt-1">
                   <span
                     v-for="style in metaFor(role).workStyle"
@@ -257,11 +261,11 @@ function metaFor(role: Role): RoleExplorerMeta {
               </div>
 
               <div v-if="metaFor(role).interests.length">
-                <h5
+                <h4
                   class="text-[0.6rem] font-bold uppercase tracking-wider text-ink-soft"
                 >
                   {{ t.interests }}
-                </h5>
+                </h4>
                 <div class="flex flex-wrap gap-1 mt-1">
                   <span
                     v-for="interest in metaFor(role).interests"
@@ -274,11 +278,11 @@ function metaFor(role: Role): RoleExplorerMeta {
               </div>
 
               <div v-if="metaFor(role).careerAreas.length">
-                <h5
+                <h4
                   class="text-[0.6rem] font-bold uppercase tracking-wider text-ink-soft"
                 >
                   {{ t.careerAreas }}
-                </h5>
+                </h4>
                 <div class="flex flex-wrap gap-1 mt-1">
                   <span
                     v-for="area in metaFor(role).careerAreas"
@@ -291,11 +295,11 @@ function metaFor(role: Role): RoleExplorerMeta {
               </div>
 
               <div v-if="metaFor(role).environment.length">
-                <h5
+                <h4
                   class="text-[0.6rem] font-bold uppercase tracking-wider text-ink-soft"
                 >
                   {{ t.environment }}
-                </h5>
+                </h4>
                 <div class="flex flex-wrap gap-1 mt-1">
                   <span
                     v-for="env in metaFor(role).environment"

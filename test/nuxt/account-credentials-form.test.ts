@@ -15,20 +15,34 @@ function mountForm(props: Partial<{ isSubmitting: boolean }> = {}) {
 }
 
 describe('account credentials form', () => {
-  it('keeps the submit button disabled until both fields are filled', async () => {
+  it('keeps the submit button enabled and asks for missing fields inline', async () => {
     const wrapper = await mountForm()
     const button = wrapper.get('button[type="submit"]')
 
-    expect(button.attributes('disabled')).toBeDefined()
-
-    await wrapper.get('input[name="email"]').setValue('somsri@example.com')
-    expect(button.attributes('disabled')).toBeDefined()
-
-    await wrapper.get('input[name="password"]').setValue('correct horse')
     expect(button.attributes('disabled')).toBeUndefined()
 
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.emitted('submit')).toBeUndefined()
+    expect(wrapper.text()).toContain('Enter your email address to continue.')
+    expect(wrapper.text()).toContain('Enter your password to continue.')
+    expect(wrapper.get('input[name="email"]').attributes('aria-invalid')).toBe(
+      'true',
+    )
+
     await wrapper.get('input[name="email"]').setValue('   ')
-    expect(button.attributes('disabled')).toBeDefined()
+    await wrapper.get('input[name="password"]').setValue('correct horse')
+    await wrapper.get('form').trigger('submit')
+    // A whitespace-only email still counts as missing.
+    expect(wrapper.emitted('submit')).toBeUndefined()
+  })
+
+  it('clears a field error once the respondent types in it', async () => {
+    const wrapper = await mountForm()
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.find('#email-error').exists()).toBe(true)
+
+    await wrapper.get('input[name="email"]').setValue('somsri@example.com')
+    expect(wrapper.find('#email-error').exists()).toBe(false)
   })
 
   it('stays disabled while submitting and says so', async () => {

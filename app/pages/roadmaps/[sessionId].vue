@@ -580,12 +580,12 @@ const personalityFitNarrative = computed(() => {
   const pillarSummary =
     labels.length >= 2
       ? isThai.value
-        ? `โปรไฟล์ของคุณเน้นไปที่ "${labels[0]}" โดยมี "${labels[1]}" เป็นองค์ประกอบเสริม`
-        : `Your profile leans most on "${labels[0]}", complemented by "${labels[1]}"`
+        ? `โปรไฟล์ของคุณเน้นไปที่ “${labels[0]}” โดยมี “${labels[1]}” เป็นองค์ประกอบเสริม`
+        : `Your profile leans most on “${labels[0]}”, complemented by “${labels[1]}”`
       : labels.length === 1
         ? isThai.value
-          ? `โปรไฟล์ของคุณถูกขับเคลื่อนโดย "${labels[0]}" เป็นหลัก`
-          : `Your profile is primarily driven by "${labels[0]}"`
+          ? `โปรไฟล์ของคุณถูกขับเคลื่อนโดย “${labels[0]}” เป็นหลัก`
+          : `Your profile is primarily driven by “${labels[0]}”`
         : isThai.value
           ? 'ยังไม่มีข้อมูลบุคลิกภาพที่เพียงพอ'
           : 'Not enough personality data yet.'
@@ -752,7 +752,7 @@ async function openFullRoadmap() {
   showFullRoadmap.value = true
   await nextTick()
   fullRoadmapSection.value?.scrollIntoView({
-    behavior: 'smooth',
+    behavior: prefersReduced.value ? 'auto' : 'smooth',
     block: 'start',
   })
 }

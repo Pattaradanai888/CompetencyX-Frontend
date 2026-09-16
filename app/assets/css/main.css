@@ -80,6 +80,11 @@ label,
   touch-action: manipulation;
 }
 
+/* In-page scroll targets must clear the sticky header when jumped to. */
+[id] {
+  scroll-margin-top: 6rem;
+}
+
 a:focus-visible,
 button:focus-visible,
 [role='button']:focus-visible,
@@ -556,15 +561,10 @@ button:focus-visible,
 }
 
 .result-role-card--selectable {
-  cursor: pointer;
   transition:
     border-color 200ms ease,
     box-shadow 200ms ease,
     background-color 200ms ease;
-}
-
-.result-role-card--selectable:hover {
-  border-color: rgba(118, 107, 97, 0.4);
 }
 
 .result-role-card--selectable.is-selected {
@@ -1564,23 +1564,30 @@ button:focus-visible,
 
 /* ── Skeleton loader ── */
 .skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+/* The shimmer sweeps a transformed overlay instead of animating
+   background-position, which would repaint every frame. */
+.skeleton::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.55) 25%,
-    rgba(255, 255, 255, 0.85) 50%,
-    rgba(255, 255, 255, 0.55) 75%
+    transparent,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent
   );
-  background-size: 200% 100%;
   animation: cx-shimmer 1.5s ease infinite;
-  will-change: background-position;
 }
 
 @keyframes cx-shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
+  to {
+    transform: translateX(100%);
   }
 }
 
@@ -1817,7 +1824,10 @@ button:focus-visible,
   font-size: 1.05rem;
   border-radius: var(--radius-md);
   letter-spacing: 0.02em;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 16px 36px var(--color-accent-shadow);
 }
 
@@ -1876,7 +1886,10 @@ button:focus-visible,
   backdrop-filter: blur(14px);
   box-shadow: var(--cx-shadow-soft);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .preferred-role-option:hover {
@@ -2183,6 +2196,13 @@ button:focus-visible,
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--color-ink);
+}
+
+/* Imported roadmap graphs run past a hundred nodes; let the browser skip
+   rendering the ones far outside the viewport. */
+.roadmap-topic-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
 }
 
 /* Mobile Inline Details section expanding below cards */

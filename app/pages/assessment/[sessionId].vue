@@ -128,7 +128,26 @@ async function handleSelect(answer: QuestionAnswerSelection) {
   }
 }
 
+const isConfirmingReset = ref(false)
+let resetConfirmTimer: ReturnType<typeof setTimeout> | null = null
+
+onBeforeUnmount(() => {
+  if (resetConfirmTimer) clearTimeout(resetConfirmTimer)
+})
+
+// Resetting throws away every answer in the session, so the first click only
+// arms the button; a second click within a few seconds confirms.
 async function handleResetSession() {
+  if (!isConfirmingReset.value) {
+    isConfirmingReset.value = true
+    resetConfirmTimer = setTimeout(() => {
+      isConfirmingReset.value = false
+    }, 4000)
+    return
+  }
+
+  if (resetConfirmTimer) clearTimeout(resetConfirmTimer)
+  isConfirmingReset.value = false
   clearSession()
   await navigateTo('/assessment/preferred-role')
 }
@@ -192,9 +211,18 @@ useSeoMeta({
             <button
               type="button"
               class="inline-flex items-center justify-center rounded-full border border-ink/12 bg-surface-elevated px-4 py-2 text-sm font-semibold text-ink transition hover:-translate-y-0.5 hover:border-accent/35"
+              :class="isConfirmingReset ? 'border-error text-error' : ''"
               @click="handleResetSession"
             >
-              {{ isThai ? 'รีเซ็ตเซสชัน' : 'Reset session' }}
+              {{
+                isConfirmingReset
+                  ? isThai
+                    ? 'ยืนยันการรีเซ็ต'
+                    : 'Confirm reset'
+                  : isThai
+                    ? 'รีเซ็ตเซสชัน'
+                    : 'Reset session'
+              }}
             </button>
             <button
               type="button"
@@ -236,7 +264,7 @@ useSeoMeta({
         v-else
         class="mt-6 grid gap-6 lg:grid-cols-[0.68fr_1.32fr] lg:items-start"
         aria-busy="true"
-        :aria-label="isThai ? 'กำลังโหลดข้อมูลเซสชัน...' : 'Loading session'"
+        :aria-label="isThai ? 'กำลังโหลดข้อมูลเซสชัน…' : 'Loading session'"
       >
         <div class="space-y-4">
           <div class="skeleton h-8 w-32 rounded-full" />

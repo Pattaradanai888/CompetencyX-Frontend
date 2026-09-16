@@ -19,6 +19,8 @@ export default {
     email: 'Email',
     password: 'Password',
     passwordHint: 'At least 8 characters; avoid something easy to guess.',
+    emailRequired: 'Enter your email address to continue.',
+    passwordRequired: 'Enter your password to continue.',
     signInAction: 'Sign in',
     registerAction: 'Create account',
     working: 'Please wait…',
@@ -165,15 +167,15 @@ export default {
     resumeBtn: 'Resume previous session',
     title: 'Choose your preferred role',
     subtitle: 'Search and select a target role to begin the skill assessment.',
-    searchPlaceholder: 'Search roles, skills, or interests...',
+    searchPlaceholder: 'Search roles, skills, or interests…',
     clearFilters: 'Clear search',
     emptyCatalog: 'Role catalog is empty.',
     noRolesMatch:
       'No roles match the current search. Reset search or try a broader term.',
-    preparingSession: 'Preparing your assessment...',
+    preparingSession: 'Preparing your assessment…',
     startSkillAssessment: 'Select this role and start skill assessment',
     chooseRoleToContinue: 'Choose a role to continue',
-    settingUpQuestion: 'Setting up your first question...',
+    settingUpQuestion: 'Setting up your first question…',
     previewEyebrow: 'Roadmap preview',
     previewDefaultTitle: 'Choose a path to preview its learning arc',
     previewDefaultSub:
@@ -206,12 +208,12 @@ export default {
     yesTitle: 'Yes, I already have a preferred role',
     yesCopy:
       'Open role selection, choose your target path, then continue into role-specific skill calibration.',
-    noTitle: "No, I'd like the system to help me discover one",
+    noTitle: 'No, I’d like the system to help me discover one',
     noCopy:
       'Start with preference and work-style questions so the system can recommend your best-fit role.',
     yesAction: 'Choose a role',
     noAction: 'Start role discovery',
-    preparing: 'Preparing role discovery...',
+    preparing: 'Preparing role discovery…',
     footer:
       'You can restart later. This choice only affects the current onboarding session.',
     errorTitle: 'Could not start role discovery',
@@ -235,7 +237,7 @@ export default {
     alternativePath:
       'You have selected an alternative software role for your skill assessment.',
     selectedRole: 'Selected role',
-    preparing: 'Preparing skill assessment...',
+    preparing: 'Preparing skill assessment…',
     continue: 'Continue to skill assessment',
     fallbackRole: 'Recommended software role',
     fallbackDescription:

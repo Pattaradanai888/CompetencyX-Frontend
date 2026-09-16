@@ -9,7 +9,27 @@ const props = defineProps<{
 
 const t = usePageI18n('roadmaps', () => props.isThai === true)
 
-const viewMode = ref<'as-is' | 'both' | 'to-be'>('both')
+const RADAR_VIEW_PARAM = 'radar-view'
+type RadarViewMode = 'as-is' | 'both' | 'to-be'
+
+function isRadarViewMode(value: unknown): value is RadarViewMode {
+  return value === 'as-is' || value === 'both' || value === 'to-be'
+}
+
+const route = useRoute()
+const router = useRouter()
+
+// The chosen view is shareable: it starts from the query string and writes
+// itself back, so a link reopens the radar exactly as it was read.
+const viewMode = ref<RadarViewMode>(
+  isRadarViewMode(route.query[RADAR_VIEW_PARAM])
+    ? (route.query[RADAR_VIEW_PARAM] as RadarViewMode)
+    : 'both',
+)
+
+watch(viewMode, (mode) => {
+  router.replace({ query: { ...route.query, [RADAR_VIEW_PARAM]: mode } })
+})
 
 const showAsIs = computed(() => viewMode.value !== 'to-be')
 const showToBe = computed(
@@ -266,7 +286,9 @@ const viewBox = computed(() => {
         class="mx-auto mb-3 flex w-fit flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-border-subtle bg-surface-card p-1 text-[0.68rem] font-semibold"
       >
         <button
+          type="button"
           class="rounded-xl px-3 py-1.5 transition-colors"
+          :aria-pressed="viewMode === 'as-is'"
           :class="
             viewMode === 'as-is'
               ? 'bg-accent/12 text-accent'
@@ -277,7 +299,9 @@ const viewBox = computed(() => {
           {{ t.asIs }}
         </button>
         <button
+          type="button"
           class="rounded-xl px-3 py-1.5 transition-colors"
+          :aria-pressed="viewMode === 'both'"
           :class="
             viewMode === 'both'
               ? 'bg-accent/12 text-accent'
@@ -288,7 +312,9 @@ const viewBox = computed(() => {
           {{ t.viewBoth }}
         </button>
         <button
+          type="button"
           class="rounded-xl px-3 py-1.5 transition-colors"
+          :aria-pressed="viewMode === 'to-be'"
           :class="
             viewMode === 'to-be'
               ? 'bg-accent/12 text-accent'

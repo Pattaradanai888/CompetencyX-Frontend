@@ -99,7 +99,7 @@ function searchUrl(topic: RoadmapTopic, engine: 'google' | 'youtube'): string {
         <article
           :id="'topic-' + topic.id"
           data-testid="roadmap-topic"
-          class="paper-panel ml-5 md:ml-14"
+          class="roadmap-topic-card paper-panel ml-5 md:ml-14"
         >
           <div class="grid gap-5 p-6 md:grid-cols-[minmax(0,1fr)_auto] md:p-8">
             <div class="max-w-3xl">

@@ -17,20 +17,37 @@ const t = usePageI18n('account', () => props.isThai)
 
 const email = ref('')
 const password = ref('')
+const emailError = ref('')
+const passwordError = ref('')
+const emailInput = ref<HTMLInputElement | null>(null)
+const passwordInput = ref<HTMLInputElement | null>(null)
 
 const actionLabel = computed(() =>
   props.mode === 'register' ? t.value.registerAction : t.value.signInAction,
 )
 
-const canSubmit = computed(
-  () =>
-    !props.isSubmitting &&
-    email.value.trim().length > 0 &&
-    password.value.length > 0,
-)
+// Typing clears the field's error so the message tracks the latest state.
+watch(email, () => {
+  if (emailError.value) emailError.value = ''
+})
+watch(password, () => {
+  if (passwordError.value) passwordError.value = ''
+})
 
 function handleSubmit() {
-  if (!canSubmit.value) return
+  emailError.value = email.value.trim() ? '' : t.value.emailRequired
+  passwordError.value = password.value ? '' : t.value.passwordRequired
+
+  if (emailError.value) {
+    emailInput.value?.focus()
+    return
+  }
+  if (passwordError.value) {
+    passwordInput.value?.focus()
+    return
+  }
+
+  if (props.isSubmitting) return
   emit('submit', { email: email.value.trim(), password: password.value })
 }
 </script>
@@ -40,18 +57,32 @@ function handleSubmit() {
     <label class="grid gap-2 text-sm font-semibold text-ink">
       <span>{{ t.email }}</span>
       <input
+        ref="emailInput"
         v-model="email"
         name="email"
         type="email"
         autocomplete="email"
+        spellcheck="false"
+        autocapitalize="none"
         required
+        :aria-invalid="emailError ? 'true' : undefined"
+        :aria-describedby="emailError ? 'email-error' : undefined"
         class="w-full rounded-xl border border-border-subtle bg-surface-card px-4 py-3 text-base font-normal text-ink placeholder:text-ink-soft/50 transition focus-visible:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+        :class="emailError ? 'border-error' : ''"
       />
+      <p
+        v-if="emailError"
+        id="email-error"
+        class="text-xs font-normal leading-5 text-error"
+      >
+        {{ emailError }}
+      </p>
     </label>
 
     <label class="grid gap-2 text-sm font-semibold text-ink">
       <span>{{ t.password }}</span>
       <input
+        ref="passwordInput"
         v-model="password"
         name="password"
         type="password"
@@ -60,10 +91,20 @@ function handleSubmit() {
         "
         required
         :minlength="mode === 'register' ? 8 : undefined"
+        :aria-invalid="passwordError ? 'true' : undefined"
+        :aria-describedby="passwordError ? 'password-error' : undefined"
         class="w-full rounded-xl border border-border-subtle bg-surface-card px-4 py-3 text-base font-normal text-ink transition focus-visible:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+        :class="passwordError ? 'border-error' : ''"
       />
+      <p
+        v-if="passwordError"
+        id="password-error"
+        class="text-xs font-normal leading-5 text-error"
+      >
+        {{ passwordError }}
+      </p>
       <span
-        v-if="mode === 'register'"
+        v-else-if="mode === 'register'"
         class="text-xs font-normal leading-6 text-ink-soft"
       >
         {{ t.passwordHint }}
@@ -82,7 +123,7 @@ function handleSubmit() {
     <button
       type="submit"
       class="cx-button-primary w-full disabled:cursor-not-allowed disabled:opacity-60"
-      :disabled="!canSubmit"
+      :disabled="isSubmitting"
     >
       <span
         v-if="isSubmitting"

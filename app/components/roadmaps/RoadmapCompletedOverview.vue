@@ -23,18 +23,21 @@ const props = defineProps<{
 
 const t = usePageI18n('roadmaps', () => props.isThai)
 
+const prefersReduced = useReducedMotion()
+
+function scrollIntoView(el: HTMLElement | null) {
+  el?.scrollIntoView({
+    behavior: prefersReduced.value ? 'auto' : 'smooth',
+    block: 'start',
+  })
+}
+
 function scrollToGapInsight() {
-  const el = document.getElementById('role-gap-insight')
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
+  scrollIntoView(document.getElementById('role-gap-insight'))
 }
 
 function scrollToTopic(topicSlug: string) {
-  const el = document.getElementById(`next-topic-${topicSlug}`)
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
+  scrollIntoView(document.getElementById(`next-topic-${topicSlug}`))
 }
 
 /**
@@ -106,8 +109,9 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
                     {{ isThai ? 'ด้าน' : 'areas' }}</span
                   >
                 </div>
-                <div
-                  class="flex cursor-pointer items-center justify-between"
+                <button
+                  type="button"
+                  class="flex w-full items-center justify-between rounded-lg px-1 py-0.5 text-left transition-colors hover:bg-accent/5"
                   @click="scrollToGapInsight"
                 >
                   <span class="text-[11px] font-semibold text-ink-soft">{{
@@ -119,7 +123,7 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
                     {{ recalculatedGrowthAreas.length }}
                     {{ isThai ? 'ด้าน' : 'areas' }}
                   </span>
-                </div>
+                </button>
               </div>
             </div>
           </article>
@@ -137,8 +141,8 @@ const targetPerDimension = computed<RadarDimension[]>(() =>
           >
             {{
               isThai
-                ? 'คิดง่าย ๆ: "ปัจจุบัน" คือสิ่งที่คุณรู้อยู่แล้ว "เป้าหมาย" คือสิ่งที่บทบาทนี้ต้องการ — ยิ่งช่องว่างน้อยเท่าไหร่ ยิ่งหมายความว่าคุณพร้อมมากขึ้น'
-                : 'Think of it simply: "As-Is" is what you already know; "To-Be" is what this role looks for. The smaller the gap, the more ready you are.'
+                ? 'คิดง่าย ๆ: “ปัจจุบัน” คือสิ่งที่คุณรู้อยู่แล้ว “เป้าหมาย” คือสิ่งที่บทบาทนี้ต้องการ — ยิ่งช่องว่างน้อยเท่าไหร่ ยิ่งหมายความว่าคุณพร้อมมากขึ้น'
+                : 'Think of it simply: “As-Is” is what you already know; “To-Be” is what this role looks for. The smaller the gap, the more ready you are.'
             }}
           </p>
 

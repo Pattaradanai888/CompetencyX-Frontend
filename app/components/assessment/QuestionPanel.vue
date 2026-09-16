@@ -287,8 +287,8 @@ function handleOptionSelect(option: QuestionOption) {
             <p v-if="selectedOptionId === option.id" class="sr-only">
               {{
                 isThai
-                  ? 'เลือกแล้ว กำลังบันทึกคำตอบ...'
-                  : 'Selected. Saving your response...'
+                  ? 'เลือกแล้ว กำลังบันทึกคำตอบ…'
+                  : 'Selected. Saving your response…'
               }}
             </p>
           </div>
@@ -309,8 +309,8 @@ function handleOptionSelect(option: QuestionOption) {
                 {{
                   selectedOptionId === option.id
                     ? isThai
-                      ? 'เลือกแล้ว กำลังบันทึกคำตอบ...'
-                      : 'Selected. Saving your response...'
+                      ? 'เลือกแล้ว กำลังบันทึกคำตอบ…'
+                      : 'Selected. Saving your response…'
                     : isThai
                       ? 'คลิกเลือกคำตอบนี้เพื่อไปต่อ'
                       : 'Choose this response to continue.'
@@ -337,8 +337,8 @@ function handleOptionSelect(option: QuestionOption) {
         {{
           isSubmitting
             ? isThai
-              ? 'กำลังบันทึกคำตอบ...'
-              : 'Saving your answer...'
+              ? 'กำลังบันทึกคำตอบ…'
+              : 'Saving your answer…'
             : isLikertQuestion
               ? isThai
                 ? 'ระดับความคิดเห็น ระบบจะบันทึกคำตอบทันที'
