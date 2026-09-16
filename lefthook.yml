@@ -1,0 +1,35 @@
+# Fast, staged-file-only checks. The project-wide gates (typecheck, knip,
+# vitest, build) belong to CI and the optional pre-push hook, not to commits.
+pre-commit:
+  parallel: true
+
+  commands:
+    prettier:
+      # Formatting is Prettier's job alone; keep the verbatim backend
+      # snapshots out so they never drift from the source repo.
+      glob: '*.{js,jsx,ts,tsx,mjs,cjs,vue,json,jsonc,css,scss,md,yml,yaml,html}'
+      exclude:
+        - openapi.json
+        - frontend-integration.md
+      run: pnpm exec prettier --write --ignore-unknown {staged_files}
+      stage_fixed: true
+
+    eslint:
+      glob: '*.{js,jsx,ts,tsx,mjs,cjs,vue}'
+      # --no-warn-ignored keeps vendored .agents scripts (ESLint-ignored by
+      # design) from failing the hook if they are ever staged.
+      run: pnpm exec eslint --no-warn-ignored {staged_files}
+
+# Lefthook substitutes {staged_files} into the command line directly. Commits
+# touching many hundreds of files can exceed the Windows ~32k character
+# command-line limit; split such commits or run `pnpm lint` / `pnpm format`
+# manually. Everyday commits stay well under the limit.
+
+# Optional second gate before the commit leaves the machine. Still no test
+# suite or build here; CI covers those on every push.
+pre-push:
+  commands:
+    typecheck:
+      run: pnpm typecheck
+    knip:
+      run: pnpm knip

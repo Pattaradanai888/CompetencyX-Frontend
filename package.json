@@ -14,6 +14,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
+    "knip": "knip",
     "preview": "nuxt preview",
     "test": "vitest run",
     "test:e2e": "vitest run --project e2e",
@@ -36,6 +37,7 @@
     "onlyBuiltDependencies": [
       "esbuild",
       "@parcel/watcher",
+      "lefthook",
       "unrs-resolver"
     ]
   },
@@ -46,11 +48,12 @@
     "@vueuse/nuxt": "^14.3.0",
     "eslint": "^10.3.0",
     "happy-dom": "^20.9.0",
+    "knip": "^6.35.1",
+    "lefthook": "^2.1.14",
     "playwright-core": "^1.60.0",
     "prettier": "^3.8.3",
     "typescript": "~5.9.3",
     "vitest": "^4.1.6",
-    "vue-mess-detector": "^0.68.1",
     "vue-tsc": "^3.3.11"
   }
 }

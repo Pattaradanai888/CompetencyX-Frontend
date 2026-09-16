@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/knip/schema.json",
+  // Nuxt auto-registers every component globally, so each one is an entry
+  // point of the module graph regardless of where it is referenced first.
+  // The maintenance script fetches roadmap content from the developer-roadmap
+  // repo and writes public/resources; it is run by hand, not imported.
+  "entry": ["app/components/**/*.{vue,ts}", "scripts/generate-resources.mjs"],
+  // Vendored agent-skill documentation and its helper scripts; never imported
+  // by the app on purpose.
+  "ignore": [".agents/**"],
+  "ignoreDependencies": [
+    // `nuxt typecheck` shells out to vue-tsc at runtime; nothing imports it.
+    "vue-tsc",
+    // @nuxt/test-utils provides the `environment: 'nuxt'` Vitest environment;
+    // knip resolves that string to the transitive shim package.
+    "vitest-environment-nuxt",
+  ],
+}
