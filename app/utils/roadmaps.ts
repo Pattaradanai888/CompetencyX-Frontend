@@ -7,7 +7,7 @@ import type {
 
 export type { RadarDimension }
 
-export function clamp(value: number): number {
+function clamp(value: number): number {
   return Math.max(0, Math.min(1, value))
 }
 
@@ -79,11 +79,6 @@ export function formatPillarScore(pillar: PillarInsight): string {
 
 export function cleanPillarLabel(label: string): string {
   return label.replace(/^[A-Z]+\d+\s*[-–—]\s*/, '').trim()
-}
-
-export function pillarScoreMax(pillars: PillarInsight[]): number {
-  if (!pillars.length) return 0
-  return Math.max(...pillars.map((p) => p.normalized_score))
 }
 
 export function getRoadmapScaleLabel(

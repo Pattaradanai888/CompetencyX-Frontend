@@ -1,21 +1,15 @@
-export type AssessmentPhase = 'role_discovery' | 'recommendation_ready'
+type AssessmentPhase = 'role_discovery' | 'recommendation_ready'
 
-export type AssessmentStatus = 'in_progress' | 'completed'
+type AssessmentStatus = 'in_progress' | 'completed'
+
+type ConfidenceIndicator = 'low' | 'medium' | 'high'
 /** Only Role Discovery asks through the session; the Skill Assessment has its own endpoints. */
 export type QuestionStage = 'role'
 export type QuestionType =
-  | 'yes_no'
-  | 'yes_no_maybe'
-  | 'single_choice'
-  | 'ranked_choice'
-  | 'likert_5'
-export type ConfidenceIndicator = 'low' | 'medium' | 'high'
+  'yes_no' | 'yes_no_maybe' | 'single_choice' | 'ranked_choice' | 'likert_5'
 export type RoleAlignmentStatus = 'unknown' | 'aligned' | 'mismatch'
 export type RoleResolutionStatus =
-  | 'unknown'
-  | 'in_progress'
-  | 'resolved'
-  | 'low_confidence'
+  'unknown' | 'in_progress' | 'resolved' | 'low_confidence'
 export type LikertScaleValue = -2 | -1 | 0 | 1 | 2
 
 export interface Role {
@@ -31,7 +25,7 @@ export interface Role {
   swebok_source_version?: string
 }
 
-export interface TopicPrerequisite {
+interface TopicPrerequisite {
   topic_id: number
   required_mastery_threshold: number
   dependency_weight: number
@@ -69,7 +63,7 @@ export interface RoadmapTopic {
   is_gap?: boolean
 }
 
-export interface ExternalRoadmapTopic {
+interface ExternalRoadmapTopic {
   slug: string
   title: string
   topic_group?: string
@@ -81,7 +75,7 @@ export interface ExternalRoadmapTopic {
   follow_on_titles: string[]
 }
 
-export interface ExternalRoadmapSource {
+interface ExternalRoadmapSource {
   source: string
   source_url: string
   retrieved_on: string | null
@@ -101,7 +95,7 @@ export interface RoleRoadmap {
   external_source: ExternalRoadmapSource | null
 }
 
-export interface SkillAssessmentReadiness {
+interface SkillAssessmentReadiness {
   /** The mastery each set should reach for this role, keyed by set key. */
   targets: Record<string, number>
   overall_target: number
@@ -123,7 +117,7 @@ export interface ResponseScaleOption {
   value: LikertScaleValue
 }
 
-export interface Question {
+interface Question {
   id: number
   code: string
   stage: QuestionStage
@@ -202,29 +196,6 @@ export interface AssessmentInsights {
   guidance_summary: string
 }
 
-export interface AnswerHistory {
-  id: number
-  question_id: number
-  question_code: string
-  question_prompt: string
-  question_stage: string
-  topic_slug: string | null
-  selected_option_id: number | null
-  selected_option_key: string | null
-  selected_option_label: string | null
-  scale_value: LikertScaleValue | null
-  response_time_ms?: number | null
-  confidence_indicator?: ConfidenceIndicator | null
-  responded_at: string
-}
-
-export interface AssessmentHistory {
-  id: string
-  phase: AssessmentPhase
-  status: AssessmentStatus
-  answers: AnswerHistory[]
-}
-
 /**
  * Where the Skill Assessment stands. `settled` is Recommendation Stability:
  * no further answer could change the next topics, so the backend stops asking.
@@ -253,7 +224,7 @@ export interface SkillAssessmentSessionState {
   confidence?: 'low' | 'high' | null
 }
 
-export type TopicAssessmentState = 'held' | 'assessed_gap' | 'unassessed'
+type TopicAssessmentState = 'held' | 'assessed_gap' | 'unassessed'
 
 /**
  * One assessable unit as the backend reports it: a held topic, an assessed
@@ -284,7 +255,7 @@ export interface SkillAssessmentScaleOption {
 }
 
 /** One radar axis: an Assessable Topic Set of the session's target role. */
-export interface SkillAssessmentCatalogDimension {
+interface SkillAssessmentCatalogDimension {
   key: string
   label: string
   low_score_action: string
@@ -335,25 +306,24 @@ export interface SessionCreatePayload {
   profile?: Record<string, unknown>
 }
 
-export interface BaseAnswerSubmitPayload {
+interface BaseAnswerSubmitPayload {
   question_id: number
   response_time_ms?: number
   confidence_indicator?: ConfidenceIndicator
 }
 
-export interface OptionAnswerSubmitPayload extends BaseAnswerSubmitPayload {
+interface OptionAnswerSubmitPayload extends BaseAnswerSubmitPayload {
   option_id: number
   scale_value?: never
 }
 
-export interface LikertAnswerSubmitPayload extends BaseAnswerSubmitPayload {
+interface LikertAnswerSubmitPayload extends BaseAnswerSubmitPayload {
   scale_value: LikertScaleValue
   option_id?: never
 }
 
 export type AnswerSubmitPayload =
-  | OptionAnswerSubmitPayload
-  | LikertAnswerSubmitPayload
+  OptionAnswerSubmitPayload | LikertAnswerSubmitPayload
 
 export interface ApiError {
   statusCode: number

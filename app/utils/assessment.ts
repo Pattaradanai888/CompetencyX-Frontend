@@ -105,20 +105,6 @@ export function getQuestionTypeLabel(
   }
 }
 
-export function getAlignmentTone(
-  status: RoleAlignmentStatus,
-): 'neutral' | 'success' | 'warning' {
-  if (status === 'aligned') {
-    return 'success'
-  }
-
-  if (status === 'mismatch') {
-    return 'warning'
-  }
-
-  return 'neutral'
-}
-
 export function getAlignmentLabel(
   status: RoleAlignmentStatus,
   lang?: string,
