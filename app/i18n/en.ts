@@ -38,7 +38,7 @@ export default {
     heroTitle: 'Find the software role that ',
     heroTitleAccent: 'fits how you think',
     heroSub:
-      'CompetencyX guides students through role discovery and technical skill calibration, then turns the result into a clear learning roadmap.',
+      'Competency guides students through role discovery and technical skill calibration, then turns the result into a clear learning roadmap.',
     startBtn: 'Start discovery',
 
     heroFooter:
@@ -204,7 +204,7 @@ export default {
     eyebrow: 'Onboarding',
     title: 'Do you already have a preferred career role in mind?',
     description:
-      'Choose the path that matches where you are now, so CompetencyX can start with the right first step.',
+      'Choose the path that matches where you are now, so Competency can start with the right first step.',
     yesTitle: 'Yes, I already have a preferred role',
     yesCopy:
       'Open role selection, choose your target path, then continue into role-specific skill calibration.',

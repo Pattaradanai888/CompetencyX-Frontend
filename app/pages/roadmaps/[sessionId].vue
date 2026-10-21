@@ -742,7 +742,7 @@ async function openFullRoadmap() {
 }
 
 useSeoMeta({
-  // `app.vue` appends "| CompetencyX" through its titleTemplate, so the brand
+  // `app.vue` appends "| Competency" through its titleTemplate, so the brand
   // is left off here rather than printed at both ends of the tab title.
   title: computed(() => (isThai.value ? 'แผนเส้นทางพัฒนา' : 'Roadmaps')),
   description: computed(() =>

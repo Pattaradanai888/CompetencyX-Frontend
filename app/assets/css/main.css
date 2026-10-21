@@ -181,15 +181,17 @@ button:focus-visible,
 }
 
 .app-header__mark {
-  display: inline-flex;
+  display: block;
+  flex: none;
   height: 2.25rem;
   width: 2.25rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-md);
-  background: var(--color-accent);
-  color: white;
-  box-shadow: 0 3px 0 var(--color-accent-lip);
+}
+
+.app-header__name {
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--color-ink);
 }
 
 .app-header__actions {
