@@ -20,6 +20,9 @@ export default defineNuxtConfig({
     '/assessment/**': { ssr: true },
     '/results/**': { ssr: true },
     '/roadmaps/**': { ssr: true },
+    '/fonts/**': {
+      headers: { 'cache-control': 'public, max-age=31536000, immutable' },
+    },
   },
   // SWR caching is production-only: in dev the Nitro cache driver writes to
   // .nuxt/cache (breaks on Windows) and cached routes trigger _payload.json
