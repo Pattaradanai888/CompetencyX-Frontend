@@ -2,41 +2,32 @@
 import { useLocale } from '~/composables/useLocale'
 
 const { currentLanguage, selectLanguage } = useLocale()
+
+const languages = [
+  { code: 'th', label: 'ไทย' },
+  { code: 'en', label: 'EN' },
+] as const
 </script>
 
 <template>
   <div
-    class="flex items-center gap-1 rounded-full border border-border-subtle bg-surface-elevated/80 p-0.5 shadow-sm backdrop-blur-sm"
+    class="flex items-center gap-0.5 rounded-xl border-2 border-border-subtle p-0.5"
   >
     <button
+      v-for="language in languages"
+      :key="language.code"
       type="button"
-      class="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-[0.05em] transition-[background-color,color,box-shadow] duration-300"
-      :aria-pressed="currentLanguage === 'en'"
-      aria-label="English"
+      class="rounded-lg px-2.5 py-1 text-sm font-bold transition-colors"
+      :lang="language.code"
+      :aria-pressed="currentLanguage === language.code"
       :class="
-        currentLanguage === 'en'
-          ? 'bg-accent text-white shadow-[0_4px_12px_rgba(15,118,110,0.25)]'
-          : 'text-ink-soft hover:text-ink hover:bg-surface-muted/50'
+        currentLanguage === language.code
+          ? 'bg-ink text-white'
+          : 'text-ink-soft hover:bg-surface-muted hover:text-ink'
       "
-      @click="selectLanguage('en')"
+      @click="selectLanguage(language.code)"
     >
-      <span aria-hidden="true">🇺🇸</span>
-      <span class="hidden sm:inline">EN</span>
-    </button>
-    <button
-      type="button"
-      class="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-[0.05em] transition-[background-color,color,box-shadow] duration-300"
-      :aria-pressed="currentLanguage === 'th'"
-      aria-label="ไทย"
-      :class="
-        currentLanguage === 'th'
-          ? 'bg-accent text-white shadow-[0_4px_12px_rgba(15,118,110,0.25)]'
-          : 'text-ink-soft hover:text-ink hover:bg-surface-muted/50'
-      "
-      @click="selectLanguage('th')"
-    >
-      <span aria-hidden="true">🇹🇭</span>
-      <span class="hidden sm:inline">TH</span>
+      {{ language.label }}
     </button>
   </div>
 </template>

@@ -18,7 +18,7 @@ useHead({
   },
   titleTemplate: '%s | CompetencyX',
   meta: [
-    { name: 'theme-color', content: '#fbf6eb' },
+    { name: 'theme-color', content: '#ffffff' },
     {
       name: 'description',
       content:
@@ -36,8 +36,6 @@ useHead({
       <NuxtLoadingIndicator color="var(--color-accent)" />
       <AppHeader :variant="headerVariant" />
       <div class="app-shell">
-        <div class="ambient-plane" />
-        <div class="ambient-grid" />
         <NuxtPage />
       </div>
     </UApp>

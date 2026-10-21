@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { defineAsyncComponent, hydrateOnVisible } from 'vue'
-import SkillAssessmentGuidanceCard from '~/components/roadmaps/SkillAssessmentGuidanceCard.vue'
 import SkillAssessmentQuestionPanel from '~/components/roadmaps/SkillAssessmentQuestionPanel.vue'
 import RoadmapNextTopics from '~/components/roadmaps/RoadmapNextTopics.vue'
 import { useAssessmentResults } from '~/composables/useAssessmentResults'
@@ -21,7 +20,6 @@ import { AUTO_ADVANCE_DELAY_MS } from '~/utils/constants'
 import {
   buildRadarDimensions,
   cleanPillarLabel,
-  getRoadmapScaleLabel,
   getTopicEntryTitle,
 } from '~/utils/roadmaps'
 import type { DimensionCard, RadarDimension } from '~/utils/roadmaps'
@@ -281,42 +279,28 @@ const selectedScaleOption = computed(() => {
   )
 })
 
-const skillAssessmentGuidanceTitle = computed(() =>
+const skillAssessmentContext = computed(() =>
   preferredRoleName.value
     ? t.value.roleTrack.replace('{role}', preferredRoleName.value)
     : t.value.skillCalibration,
 )
 
-const skillAssessmentProgressSummary = computed(() => {
-  const calibrationState = progress.value?.settled
-    ? t.value.readyToReview
-    : answeredCount.value
-      ? t.value.buildingConfidence
-      : t.value.stillCalibrating
-  const progressState = isSavingSkillAssessment.value
-    ? t.value.saving
-    : t.value.inProgress
+const skillAssessmentCount = computed(() =>
+  t.value.questionCount
+    .replace('{n}', String(answeredCount.value + 1))
+    .replace('{max}', String(questionCeiling.value)),
+)
 
-  return `${answeredCount.value} ${t.value.answered} ${t.value.answeredOfUpTo} ${questionCeiling.value} • ${calibrationState} • ${progressState}`
-})
-
-const skillAssessmentMicrocopy = computed(() => {
-  if (isSavingSkillAssessment.value) return t.value.savingSignal
+const skillAssessmentStatus = computed(() => {
+  if (isSavingSkillAssessment.value) return t.value.saving
   if (
     (isAutoAdvancing.value || isResolvingNextQuestion.value) &&
     selectedScaleOption.value
   ) {
-    return `${getRoadmapScaleLabel(selectedScaleOption.value, isThai.value)}. ${t.value.movingNext}`
+    return t.value.movingNext
   }
-  if (selectedScaleOption.value) {
-    return `${getRoadmapScaleLabel(selectedScaleOption.value, isThai.value)}.`
-  }
-  return t.value.selectOne
+  return ''
 })
-
-const skillAssessmentPromptContext = computed(() =>
-  activeQuestion.value ? t.value.promptContext : t.value.preparingPrompt,
-)
 
 async function submitSkillAssessment() {
   isSavingSkillAssessment.value = true
@@ -770,14 +754,11 @@ useSeoMeta({
 </script>
 
 <template>
-  <main
-    id="main-content"
-    :class="[
-      'page-wrap',
-      !isSkillAssessmentComplete ? 'skill-assessment-assessment-page' : '',
-    ]"
-  >
-    <div class="flex flex-wrap items-center justify-between gap-4">
+  <main id="main-content" class="page-wrap">
+    <div
+      v-if="isSkillAssessmentComplete"
+      class="flex flex-wrap items-center justify-between gap-4"
+    >
       <NuxtLink
         v-if="hasRoleAnswers"
         :to="`/results/${route.params.sessionId}`"
@@ -824,38 +805,24 @@ useSeoMeta({
       </div>
     </section>
 
-    <section
+    <SkillAssessmentQuestionPanel
       v-if="!isSkillAssessmentComplete"
-      class="mt-8 grid gap-6 lg:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)] lg:items-start"
-      aria-live="polite"
-    >
-      <aside class="lg:sticky lg:top-8">
-        <SkillAssessmentGuidanceCard
-          :title="skillAssessmentGuidanceTitle"
-          :progress-summary="skillAssessmentProgressSummary"
-          :progress-percent="skillAssessmentProgressPercent"
-          :prompt-context="skillAssessmentPromptContext"
-          :preferred-role-name="preferredRoleName"
-          :is-thai="isThai"
-        />
-      </aside>
-
-      <SkillAssessmentQuestionPanel
-        :question="activeQuestion"
-        :prompt="localizedPrompt || activeQuestion?.prompt || ''"
-        :prompt-context="skillAssessmentPromptContext"
-        :microcopy="skillAssessmentMicrocopy"
-        :answer-scale="answerScale"
-        :selected-value="activeQuestionAnswer"
-        :is-saving="isSavingSkillAssessment"
-        :is-auto-advancing="isAutoAdvancing || isResolvingNextQuestion"
-        :is-first-question="askedQuestionIds.length === 0"
-        :is-thai="isThai"
-        :prefers-reduced="prefersReduced ?? false"
-        @select="selectAnswer"
-        @previous="goToPreviousQuestion"
-      />
-    </section>
+      :question="activeQuestion"
+      :prompt="localizedPrompt || activeQuestion?.prompt || ''"
+      :context="skillAssessmentContext"
+      :count="skillAssessmentCount"
+      :progress="skillAssessmentProgressPercent"
+      :status="skillAssessmentStatus"
+      :exit-to="hasRoleAnswers ? `/results/${route.params.sessionId}` : '/'"
+      :answer-scale="answerScale"
+      :selected-value="activeQuestionAnswer"
+      :is-saving="isSavingSkillAssessment"
+      :is-auto-advancing="isAutoAdvancing || isResolvingNextQuestion"
+      :is-first-question="askedQuestionIds.length === 0"
+      :is-thai="isThai"
+      @select="selectAnswer"
+      @previous="goToPreviousQuestion"
+    />
 
     <template v-if="isSkillAssessmentComplete">
       <RoadmapNextTopics

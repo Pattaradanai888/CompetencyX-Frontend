@@ -11,8 +11,8 @@ export default defineNuxtConfig({
   },
   fonts: {
     families: [
-      { name: 'Anuphan', provider: 'google', weights: [400, 500, 700] },
-      { name: 'Prompt', provider: 'google', weights: [500, 600, 700] },
+      { name: 'IBM Plex Mono', provider: 'google', weights: [400, 500] },
+      { name: 'Noto Sans Thai', provider: 'google', weights: [400, 700] },
     ],
   },
   routeRules: {

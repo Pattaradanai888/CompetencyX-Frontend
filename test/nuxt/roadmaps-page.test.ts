@@ -490,9 +490,7 @@ describe('roadmaps page', () => {
       expect(wrapper.findAll('[data-testid="next-topic-item"]').length).toBe(0)
       expect(wrapper.text()).toContain('"Data storage"')
 
-      await wrapper
-        .findAll('.skill-assessment-scale__option')[1]!
-        .trigger('click')
+      await wrapper.findAll('button.quiz-answer')[1]!.trigger('click')
       await settleAnswer()
 
       expect(getSkillAssessmentNextQuestionMock).toHaveBeenLastCalledWith(
@@ -502,9 +500,7 @@ describe('roadmaps page', () => {
       expect(wrapper.text()).toContain('"Caching"')
       expect(saveSkillAssessmentStateMock).not.toHaveBeenCalled()
 
-      await wrapper
-        .findAll('.skill-assessment-scale__option')[4]!
-        .trigger('click')
+      await wrapper.findAll('button.quiz-answer')[4]!.trigger('click')
       await settleAnswer()
 
       expect(getSkillAssessmentNextQuestionMock).toHaveBeenLastCalledWith(
@@ -524,22 +520,18 @@ describe('roadmaps page', () => {
       expect(wrapper.text()).toContain('Data storage')
     })
 
-    it('reads progress from the backend: answered of up to the ceiling, and ready to review once settled', async () => {
+    it('reads progress from the backend: the next question number out of the ceiling', async () => {
       getSkillAssessmentNextQuestionMock
         .mockResolvedValueOnce(nextQuestion(DATABASES, 0))
         .mockResolvedValueOnce(nextQuestion(CACHING, 1, true))
 
       const wrapper = await mountSuspended(RoadmapsPage)
-      expect(wrapper.text()).toContain('0 answered of up to 18')
-      expect(wrapper.text()).toContain('Still calibrating')
+      expect(wrapper.text()).toContain('Question 1 · up to 18')
 
-      await wrapper
-        .findAll('.skill-assessment-scale__option')[1]!
-        .trigger('click')
+      await wrapper.findAll('button.quiz-answer')[1]!.trigger('click')
       await settleAnswer()
 
-      expect(wrapper.text()).toContain('1 answered of up to 18')
-      expect(wrapper.text()).toContain('Ready to review')
+      expect(wrapper.text()).toContain('Question 2 · up to 18')
       const progressbar = wrapper.get('[role="progressbar"]')
       // 1 of a ceiling of 18, not 1 of the 4 catalog items.
       expect(progressbar.attributes('aria-valuenow')).toBe('6')
@@ -554,9 +546,7 @@ describe('roadmaps page', () => {
       const wrapper = await mountSuspended(RoadmapsPage)
       expect(wrapper.text()).toContain('"Data storage"')
 
-      await wrapper
-        .findAll('.skill-assessment-scale__option')[1]!
-        .trigger('click')
+      await wrapper.findAll('button.quiz-answer')[1]!.trigger('click')
       await settleAnswer()
 
       expect(toastAddMock).toHaveBeenCalledWith(
@@ -570,9 +560,7 @@ describe('roadmaps page', () => {
       expect(wrapper.text()).toContain('"Data storage"')
       expect(saveSkillAssessmentStateMock).not.toHaveBeenCalled()
 
-      await wrapper
-        .findAll('.skill-assessment-scale__option')[2]!
-        .trigger('click')
+      await wrapper.findAll('button.quiz-answer')[2]!.trigger('click')
       await settleAnswer()
 
       expect(getSkillAssessmentNextQuestionMock).toHaveBeenLastCalledWith(

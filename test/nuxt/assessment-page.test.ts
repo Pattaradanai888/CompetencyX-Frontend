@@ -124,15 +124,13 @@ describe('assessment page', () => {
     const wrapper = await mountSuspended(AssessmentPage)
 
     await flushPromises()
-    expect(wrapper.text()).toContain(
-      'Place the statement on the agreement scale and continue.',
+    expect(wrapper.get('h1').text()).toBe(
+      'I prefer solving open-ended technical problems.',
     )
-    expect(wrapper.text()).toContain('Strongly disagree')
-    expect(wrapper.text()).toContain('Strongly agree')
     expect(
       wrapper
-        .findAll('label.likert-spectrum__node')
-        .map((node) => node.text().replace(/\s+/g, ' ').trim()),
+        .findAll('button.quiz-answer')
+        .map((node) => node.get('span').text().trim()),
     ).toEqual([
       'Strongly disagree',
       'Disagree',
@@ -140,7 +138,7 @@ describe('assessment page', () => {
       'Agree',
       'Strongly agree',
     ])
-    await wrapper.get('input[value="2"]').setValue()
+    await wrapper.findAll('button.quiz-answer')[4]!.trigger('click')
 
     expect(submitAnswerMock).toHaveBeenCalledWith(
       'session-1',
@@ -191,7 +189,7 @@ describe('assessment page', () => {
     const wrapper = await mountSuspended(AssessmentPage)
 
     await flushPromises()
-    await wrapper.get('button.answer-option--choice').trigger('click')
+    await wrapper.get('button.quiz-answer').trigger('click')
 
     expect(submitAnswerMock).toHaveBeenCalledWith(
       'session-1',
@@ -203,7 +201,7 @@ describe('assessment page', () => {
     expect(navigateToMock).toHaveBeenCalledWith('/results/session-1')
   })
 
-  it('renders question help text and shows ranked-choice guidance once per question', async () => {
+  it('renders question help text without extra instructions', async () => {
     sessionState.value = makeSession({
       current_question: {
         ...baseSession.current_question!,
@@ -230,40 +228,37 @@ describe('assessment page', () => {
     expect(wrapper.text()).toContain(
       'Answer based on the topic you want to prioritize first.',
     )
-    expect(wrapper.text()).toContain(
-      'Pick the option that should carry the most weight in the next recommendation step.',
-    )
-    expect(wrapper.text()).not.toContain(
-      'Choose the option that should carry the most weight for your next recommendation step.',
-    )
-    expect(wrapper.findAll('button.answer-option--choice')).toHaveLength(0)
+    expect(wrapper.text()).not.toContain('Pick the option')
+    expect(wrapper.findAll('button.quiz-answer')).toHaveLength(0)
   })
 
-  it('names the preferred and best-fit roles in Thai in a Thai session', async () => {
-    const thaiSession = makeSession({
-      language: 'th',
-      preferred_role: {
-        id: 1,
-        slug: 'backend-engineer',
-        name: 'Backend Engineer',
-        name_th: 'วิศวกรฝั่งเซิร์ฟเวอร์',
-      },
-      best_fit_role: {
-        id: 2,
-        slug: 'data-engineer',
-        name: 'Data Engineer',
-      },
+  it('selects an answer with its number key', async () => {
+    const wrapper = await mountSuspended(AssessmentPage, {
+      attachTo: document.body,
     })
+    await flushPromises()
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '5' }))
+    await flushPromises()
+
+    expect(submitAnswerMock).toHaveBeenCalledWith(
+      'session-1',
+      expect.objectContaining({ question_id: 101, scale_value: 2 }),
+    )
+    wrapper.unmount()
+  })
+
+  it('shows the question count and exit control in Thai in a Thai session', async () => {
+    const thaiSession = makeSession({ language: 'th' })
     sessionState.value = thaiSession
     getSessionMock.mockResolvedValue(thaiSession)
 
     const wrapper = await mountSuspended(AssessmentPage)
     await flushPromises()
 
-    const sidebar = wrapper.get('aside').text()
-    expect(sidebar).toContain('วิศวกรฝั่งเซิร์ฟเวอร์')
-    expect(sidebar).not.toContain('Backend Engineer')
-    // A role the backend carries no Thai name for keeps its English name.
-    expect(sidebar).toContain('Data Engineer')
+    expect(wrapper.text()).toContain('ข้อ 2')
+    expect(
+      wrapper.get('a[aria-label="ออกจากแบบประเมิน"]').attributes('href'),
+    ).toBe('/')
   })
 })
