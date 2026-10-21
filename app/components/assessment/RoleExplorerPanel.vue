@@ -121,11 +121,6 @@ function metaFor(role: Role): RoleExplorerMeta {
               ? 'border-accent bg-accent-soft/20 shadow-[0_16px_34px_rgba(234,112,31,0.14)]'
               : ''
           "
-          :aria-label="
-            isThai
-              ? `เลือก ${getRoleDisplayName(role, true)}`
-              : `Select ${role.name}`
-          "
           :aria-pressed="role.slug === preferredRoleSlug ? 'true' : 'false'"
           @click="emit('select-role', role.slug)"
         >
