@@ -1,4 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+const apiBase = process.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:8000'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   css: ['~/assets/css/main.css'],
@@ -27,6 +29,11 @@ export default defineNuxtConfig({
   // SWR caching is production-only: in dev the Nitro cache driver writes to
   // .nuxt/cache (breaks on Windows) and cached routes trigger _payload.json
   // fetches on every client navigation.
+  $development: {
+    routeRules: {
+      '/api/v1/**': { proxy: `${apiBase}/api/v1/**` },
+    },
+  },
   $production: {
     routeRules: {
       // Public pages: SWR-cache the SSR HTML, keyed by cookie because the
@@ -42,7 +49,12 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:8000',
+      apiBase,
+    },
+  },
+  vite: {
+    server: {
+      allowedHosts: ['p51jrjjz-3000.asse.devtunnels.ms'],
     },
   },
   ui: {
