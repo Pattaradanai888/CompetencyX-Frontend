@@ -4,11 +4,11 @@ type AssessmentStatus = 'in_progress' | 'completed'
 
 type ConfidenceIndicator = 'low' | 'medium' | 'high'
 /** Only Role Discovery asks through the session; the Skill Assessment has its own endpoints. */
-export type QuestionStage = 'role'
-export type QuestionType =
+type QuestionStage = 'role'
+type QuestionType =
   'yes_no' | 'yes_no_maybe' | 'single_choice' | 'ranked_choice' | 'likert_5'
-export type RoleAlignmentStatus = 'unknown' | 'aligned' | 'mismatch'
-export type RoleResolutionStatus =
+type RoleAlignmentStatus = 'unknown' | 'aligned' | 'mismatch'
+type RoleResolutionStatus =
   'unknown' | 'in_progress' | 'resolved' | 'low_confidence'
 export type LikertScaleValue = -2 | -1 | 0 | 1 | 2
 
@@ -132,7 +132,7 @@ interface Question {
   response_scale?: ResponseScaleOption[]
 }
 
-export interface SessionMilestones {
+interface SessionMilestones {
   answered_role_questions: number
   answered_core_role_questions: number
   answered_tie_break_questions: number

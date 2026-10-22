@@ -15,9 +15,7 @@ const { isThai } = useLocale()
 const errorMessage = computed(() => {
   // Error may arrive as an Error, a ref-wrapped Error, or unknown
   const err = props.error as
-    | { value?: { message?: string }; message?: string }
-    | null
-    | undefined
+    { value?: { message?: string }; message?: string } | null | undefined
   const msg = err?.value?.message ?? err?.message
   if (msg) return msg
   return isThai.value

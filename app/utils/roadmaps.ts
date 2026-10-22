@@ -1,5 +1,4 @@
 import type {
-  PillarInsight,
   RadarDimension,
   SkillAssessmentTopicEntry,
 } from '~~/shared/types/assessment'
