@@ -25,14 +25,30 @@ useHead({
       rel: 'preload',
       as: 'font',
       type: 'font/woff2',
-      href: '/fonts/line-seed-sans-th/LINESeedSansTH_W_Rg.woff2',
+      href: () =>
+        isThai.value
+          ? '/fonts/line-seed-sans-th/LINESeedSansTH_W_XBd.woff2'
+          : '/fonts/line-seed-sans-th/line-seed-sans-th-xbd-latin.woff2',
       crossorigin: '',
     },
     {
       rel: 'preload',
       as: 'font',
       type: 'font/woff2',
-      href: '/fonts/line-seed-sans-th/LINESeedSansTH_W_Bd.woff2',
+      href: () =>
+        isThai.value
+          ? '/fonts/line-seed-sans-th/LINESeedSansTH_W_Rg.woff2'
+          : '/fonts/line-seed-sans-th/line-seed-sans-th-rg-latin.woff2',
+      crossorigin: '',
+    },
+    {
+      rel: 'preload',
+      as: 'font',
+      type: 'font/woff2',
+      href: () =>
+        isThai.value
+          ? '/fonts/line-seed-sans-th/LINESeedSansTH_W_Bd.woff2'
+          : '/fonts/line-seed-sans-th/line-seed-sans-th-bd-latin.woff2',
       crossorigin: '',
     },
   ],

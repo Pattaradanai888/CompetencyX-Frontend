@@ -2,11 +2,42 @@
 @import '@nuxt/ui';
 
 @font-face {
+  font-family: 'LINE Seed Sans TH Latin';
+  src: url('/fonts/line-seed-sans-th/line-seed-sans-th-rg-latin.woff2')
+    format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'LINE Seed Sans TH Latin';
+  src: url('/fonts/line-seed-sans-th/line-seed-sans-th-bd-latin.woff2')
+    format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'LINE Seed Sans TH Latin';
+  src: url('/fonts/line-seed-sans-th/line-seed-sans-th-xbd-latin.woff2')
+    format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'LINE Seed Sans TH';
   src: url('/fonts/line-seed-sans-th/LINESeedSansTH_W_Rg.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  unicode-range:
+    U+0-FF, U+E00-E7F, U+2000-206F, U+20AC, U+2122, U+2212, U+263B, U+2709,
+    U+E001-E003, U+FB00-FB04, U+FEFF, U+1F3B5, U+1F464, U+1F4AC, U+1F4DE,
+    U+1F4F7, U+1F508, U+1F50D, U+1F553, U+1F6CD;
 }
 
 @font-face {
@@ -15,6 +46,10 @@
   font-weight: 700;
   font-style: normal;
   font-display: swap;
+  unicode-range:
+    U+0-FF, U+E00-E7F, U+2000-206F, U+20AC, U+2122, U+2212, U+263B, U+2709,
+    U+E001-E003, U+FB00-FB04, U+FEFF, U+1F3B5, U+1F464, U+1F4AC, U+1F4DE,
+    U+1F4F7, U+1F508, U+1F50D, U+1F553, U+1F6CD;
 }
 
 @font-face {
@@ -24,6 +59,10 @@
   font-weight: 800;
   font-style: normal;
   font-display: swap;
+  unicode-range:
+    U+0-FF, U+E00-E7F, U+2000-206F, U+20AC, U+2122, U+2212, U+263B, U+2709,
+    U+E001-E003, U+FB00-FB04, U+FEFF, U+1F3B5, U+1F464, U+1F4AC, U+1F4DE,
+    U+1F4F7, U+1F508, U+1F50D, U+1F553, U+1F6CD;
 }
 
 @theme {
@@ -93,6 +132,12 @@ body {
 
 h1,
 h2,
+html[lang='en'] {
+  --font-sans:
+    'LINE Seed Sans TH Latin', 'LINE Seed Sans TH', 'Noto Sans Thai',
+    ui-sans-serif, system-ui, sans-serif;
+}
+
 h3,
 h4 {
   line-height: 1.3;
