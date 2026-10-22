@@ -10,6 +10,8 @@ export default {
     signedInAs: 'Signed in as',
   },
   account: {
+    emailInvalid: 'Enter a valid email address.',
+    passwordTooShort: 'Use at least 8 characters for your password.',
     signInTitle: 'Sign in',
     signInIntro:
       'Sign in to keep what you say about yourself: topics you mark as already held follow your account, not this browser.',

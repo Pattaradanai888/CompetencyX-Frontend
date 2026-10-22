@@ -2,7 +2,13 @@ import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { describe, expect, it } from 'vitest'
 import AccountCredentialsForm from '../../app/components/account/AccountCredentialsForm.vue'
 
-function mountForm(props: Partial<{ isSubmitting: boolean }> = {}) {
+function mountForm(
+  props: Partial<{
+    isSubmitting: boolean
+    mode: 'register' | 'sign-in'
+    isThai: boolean
+  }> = {},
+) {
   return mountSuspended(AccountCredentialsForm, {
     props: {
       mode: 'sign-in',
@@ -15,6 +21,54 @@ function mountForm(props: Partial<{ isSubmitting: boolean }> = {}) {
 }
 
 describe('account credentials form', () => {
+  it('rejects malformed email and associates the error with its input', async () => {
+    const wrapper = await mountForm()
+    await wrapper.get('input[name="email"]').setValue('invalid-email')
+    await wrapper.get('input[name="password"]').setValue('correct horse')
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.emitted('submit')).toBeUndefined()
+    expect(wrapper.get('#email-error').text()).toBe(
+      'Enter a valid email address.',
+    )
+    expect(
+      wrapper.get('input[name="email"]').attributes('aria-describedby'),
+    ).toBe('email-error')
+  })
+
+  it.each([false, true])(
+    'requires eight characters for registration (Thai: %s)',
+    async (isThai) => {
+      const wrapper = await mountForm({ mode: 'register', isThai })
+      await wrapper.get('input[name="email"]').setValue('somsri@example.com')
+      await wrapper.get('input[name="password"]').setValue('1234567')
+      await wrapper.get('form').trigger('submit')
+      expect(wrapper.emitted('submit')).toBeUndefined()
+      expect(wrapper.get('#password-error').text()).toBe(
+        isThai
+          ? 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร'
+          : 'Use at least 8 characters for your password.',
+      )
+      expect(
+        wrapper.get('input[name="password"]').attributes('aria-invalid'),
+      ).toBe('true')
+      await wrapper.get('input[name="password"]').setValue('12345678')
+      expect(wrapper.find('#password-error').exists()).toBe(false)
+      await wrapper.get('form').trigger('submit')
+      expect(wrapper.emitted('submit')).toEqual([
+        [{ email: 'somsri@example.com', password: '12345678' }],
+      ])
+    },
+  )
+
+  it('does not apply registration password length rules to sign-in', async () => {
+    const wrapper = await mountForm()
+    await wrapper.get('input[name="email"]').setValue('somsri@example.com')
+    await wrapper.get('input[name="password"]').setValue('short')
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.emitted('submit')).toEqual([
+      [{ email: 'somsri@example.com', password: 'short' }],
+    ])
+  })
   it('keeps the submit button enabled and asks for missing fields inline', async () => {
     const wrapper = await mountForm()
     const button = wrapper.get('button[type="submit"]')
