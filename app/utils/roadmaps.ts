@@ -1,7 +1,6 @@
 import type {
   PillarInsight,
   RadarDimension,
-  RoadmapTopic,
   SkillAssessmentTopicEntry,
 } from '~~/shared/types/assessment'
 
@@ -9,39 +8,6 @@ export type { RadarDimension }
 
 export function clamp(value: number): number {
   return Math.max(0, Math.min(1, value))
-}
-
-export interface TopicDifficultyLabels {
-  foundation: string
-  intermediate: string
-  advanced: string
-  targeted: string
-}
-
-/**
- * Maps a topic difficulty (1–5 numeric scale from the API, or a
- * pre-labelled string) to a display label.
- */
-export function getTopicDifficultyLabel(
-  difficulty: RoadmapTopic['difficulty'],
-  labels: TopicDifficultyLabels,
-): string {
-  if (typeof difficulty === 'string' && difficulty.trim()) {
-    return difficulty
-  }
-
-  if (typeof difficulty === 'number') {
-    if (difficulty <= 2) return labels.foundation
-    if (difficulty <= 4) return labels.intermediate
-    return labels.advanced
-  }
-
-  return labels.targeted
-}
-
-export interface DimensionCard extends RadarDimension {
-  percent: number
-  description: string
 }
 
 /** The set's name as the respondent reads it: Canonical Thai Wording in a Thai session. */
@@ -71,10 +37,6 @@ export function buildRadarDimensions(
       label: getTopicEntryTitle(entry, isThai),
       value: clamp(entry.mastery),
     }))
-}
-
-export function formatPillarScore(pillar: PillarInsight): string {
-  return pillar.normalized_score.toFixed(2)
 }
 
 export function cleanPillarLabel(label: string): string {

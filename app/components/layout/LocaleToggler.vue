@@ -17,7 +17,7 @@ const languages = [
       v-for="language in languages"
       :key="language.code"
       type="button"
-      class="rounded-lg px-2.5 py-1 text-sm font-bold transition-colors"
+      class="min-h-9 rounded-lg px-2.5 text-sm font-bold transition-colors"
       :lang="language.code"
       :aria-pressed="currentLanguage === language.code"
       :class="

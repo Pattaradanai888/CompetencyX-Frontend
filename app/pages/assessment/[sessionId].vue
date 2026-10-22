@@ -195,7 +195,7 @@ useSeoMeta({
             <button
               type="button"
               class="cx-button-secondary"
-              :class="isConfirmingReset ? 'text-error' : ''"
+              :class="{ 'cx-button-secondary--danger': isConfirmingReset }"
               @click="handleResetSession"
             >
               {{

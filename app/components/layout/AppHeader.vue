@@ -50,22 +50,28 @@ const signInLink = computed(() => ({
         :aria-label="isThai ? 'หน้าแรก Competency' : 'Competency home'"
       >
         <BrandMark class="app-header__mark" />
-        <span class="app-header__name">Competency</span>
+        <span
+          class="app-header__name"
+          :class="isSignedIn ? 'hidden sm:inline' : 'hidden min-[420px]:inline'"
+          >Competency</span
+        >
       </NuxtLink>
 
       <div class="app-header__actions">
         <div
           v-if="isSignedIn"
-          class="hidden items-center gap-2 text-xs text-ink-soft sm:flex"
+          class="flex items-center gap-2 text-xs text-ink-soft"
           data-testid="header-account"
         >
-          <span class="sr-only">{{ t.signedInAs }}</span>
-          <span class="max-w-[14rem] truncate font-semibold text-ink">
+          <span class="sr-only hidden sm:inline">{{ t.signedInAs }}</span>
+          <span
+            class="hidden max-w-[14rem] truncate font-semibold text-ink sm:inline"
+          >
             {{ account?.email ?? t.account }}
           </span>
           <button
             type="button"
-            class="editorial-link text-xs"
+            class="editorial-link min-h-11 text-xs"
             :disabled="isSigningOut"
             @click="handleSignOut"
           >
@@ -75,7 +81,7 @@ const signInLink = computed(() => ({
         <NuxtLink
           v-else
           :to="signInLink"
-          class="editorial-link text-xs font-semibold"
+          class="editorial-link inline-flex min-h-11 items-center whitespace-nowrap text-sm font-semibold"
           data-testid="header-sign-in"
         >
           {{ t.signIn }}
