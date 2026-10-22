@@ -1,13 +1,14 @@
 export default defineAppConfig({
   ui: {
     colors: {
-      primary: 'orange',
+      primary: 'brand',
       secondary: 'amber',
-      neutral: 'stone',
+      success: 'green',
+      neutral: 'zinc',
     },
     button: {
       slots: {
-        base: 'rounded-full font-semibold tracking-[0.02em] transition-[color,background-color,border-color,box-shadow,transform] duration-300',
+        base: 'rounded-xl font-bold',
       },
       defaultVariants: {
         color: 'primary',
@@ -15,7 +16,7 @@ export default defineAppConfig({
     },
     badge: {
       slots: {
-        base: 'rounded-full px-3 py-1 text-[0.72rem] font-bold uppercase tracking-[0.08em]',
+        base: 'rounded-lg px-2.5 py-0.5 text-xs font-bold',
       },
     },
   },

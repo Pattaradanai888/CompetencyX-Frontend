@@ -16,9 +16,44 @@ useHead({
   htmlAttrs: {
     lang: currentLanguage,
   },
-  titleTemplate: '%s | CompetencyX',
+  titleTemplate: '%s | Competency',
+  link: [
+    { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },
+    { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
+    { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+    {
+      rel: 'preload',
+      as: 'font',
+      type: 'font/woff2',
+      href: () =>
+        isThai.value
+          ? '/fonts/line-seed-sans-th/LINESeedSansTH_W_XBd.woff2'
+          : '/fonts/line-seed-sans-th/line-seed-sans-th-xbd-latin.woff2',
+      crossorigin: '',
+    },
+    {
+      rel: 'preload',
+      as: 'font',
+      type: 'font/woff2',
+      href: () =>
+        isThai.value
+          ? '/fonts/line-seed-sans-th/LINESeedSansTH_W_Rg.woff2'
+          : '/fonts/line-seed-sans-th/line-seed-sans-th-rg-latin.woff2',
+      crossorigin: '',
+    },
+    {
+      rel: 'preload',
+      as: 'font',
+      type: 'font/woff2',
+      href: () =>
+        isThai.value
+          ? '/fonts/line-seed-sans-th/LINESeedSansTH_W_Bd.woff2'
+          : '/fonts/line-seed-sans-th/line-seed-sans-th-bd-latin.woff2',
+      crossorigin: '',
+    },
+  ],
   meta: [
-    { name: 'theme-color', content: '#fbf6eb' },
+    { name: 'theme-color', content: '#ffffff' },
     {
       name: 'description',
       content:
@@ -36,8 +71,6 @@ useHead({
       <NuxtLoadingIndicator color="var(--color-accent)" />
       <AppHeader :variant="headerVariant" />
       <div class="app-shell">
-        <div class="ambient-plane" />
-        <div class="ambient-grid" />
         <NuxtPage />
       </div>
     </UApp>

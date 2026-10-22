@@ -1,17 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildRadarDimensions,
-  getTopicDifficultyLabel,
   getTopicEntryTitle,
 } from '../../app/utils/roadmaps'
 import type { SkillAssessmentTopicEntry } from '../../shared/types/assessment'
-
-const labels = {
-  foundation: 'Foundation',
-  intermediate: 'Intermediate',
-  advanced: 'Advanced',
-  targeted: 'Targeted',
-}
 
 const entries: SkillAssessmentTopicEntry[] = [
   {
@@ -77,21 +69,5 @@ describe('buildRadarDimensions', () => {
       false,
     )
     expect(dimension!.value).toBe(1)
-  })
-})
-
-describe('getTopicDifficultyLabel', () => {
-  it('maps the numeric scale onto the three bands', () => {
-    expect(getTopicDifficultyLabel(1, labels)).toBe('Foundation')
-    expect(getTopicDifficultyLabel(2, labels)).toBe('Foundation')
-    expect(getTopicDifficultyLabel(3, labels)).toBe('Intermediate')
-    expect(getTopicDifficultyLabel(4, labels)).toBe('Intermediate')
-    expect(getTopicDifficultyLabel(5, labels)).toBe('Advanced')
-  })
-
-  it('passes a pre-labelled string through and falls back to targeted', () => {
-    expect(getTopicDifficultyLabel('Expert', labels)).toBe('Expert')
-    expect(getTopicDifficultyLabel(undefined, labels)).toBe('Targeted')
-    expect(getTopicDifficultyLabel('   ', labels)).toBe('Targeted')
   })
 })

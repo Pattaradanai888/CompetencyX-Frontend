@@ -3,13 +3,8 @@ import type {
   AssessmentResult,
   AssessmentSession,
   PillarInsight,
-  QuestionStage,
-  QuestionType,
   RankedRoleInsight,
   Role,
-  RoleAlignmentStatus,
-  RoleResolutionStatus,
-  SessionMilestones,
 } from '~~/shared/types/assessment'
 
 /**
@@ -62,108 +57,6 @@ export function isSessionComplete(
   return (
     session.status === 'completed' || session.phase === 'recommendation_ready'
   )
-}
-
-export function getQuestionStageLabel(
-  _stage: QuestionStage,
-  lang?: string,
-): string {
-  // The session only ever asks Role Discovery questions; the Skill
-  // Assessment has its own endpoints and its own screen.
-  return lang === 'th' ? 'ค้นหาบทบาท' : 'Role discovery'
-}
-
-export function getQuestionTypeLabel(
-  questionType: QuestionType,
-  lang?: string,
-): string {
-  if (lang === 'th') {
-    switch (questionType) {
-      case 'yes_no':
-        return 'ใช่ / ไม่ใช่'
-      case 'yes_no_maybe':
-        return 'ใช่ / ไม่ใช่ / อาจจะ'
-      case 'likert_5':
-        return 'สเกลความเห็น'
-      case 'ranked_choice':
-        return 'จัดอันดับความสำคัญ'
-      default:
-        return 'เลือกข้อเดียว'
-    }
-  }
-  switch (questionType) {
-    case 'yes_no':
-      return 'Yes / no'
-    case 'yes_no_maybe':
-      return 'Yes / no / maybe'
-    case 'likert_5':
-      return 'Agreement scale'
-    case 'ranked_choice':
-      return 'Priority pick'
-    default:
-      return 'Single choice'
-  }
-}
-
-export function getAlignmentLabel(
-  status: RoleAlignmentStatus,
-  lang?: string,
-): string {
-  if (lang === 'th') {
-    if (status === 'aligned') {
-      return 'ตรงตามเป้าหมาย'
-    }
-    if (status === 'mismatch') {
-      return 'เป้าหมายที่ต้องปรับตัว'
-    }
-    return 'กำลังวิเคราะห์ทักษะ'
-  }
-
-  if (status === 'aligned') {
-    return 'Trajectory aligned'
-  }
-
-  if (status === 'mismatch') {
-    return 'Stretch path'
-  }
-
-  return 'Still calibrating'
-}
-
-export function getRoleResolutionLabel(
-  status: RoleResolutionStatus,
-  lang?: string,
-): string {
-  if (lang === 'th') {
-    if (status === 'resolved') {
-      return 'วิเคราะห์แล้ว'
-    }
-    if (status === 'low_confidence') {
-      return 'ความมั่นใจยังต่ำ'
-    }
-    if (status === 'in_progress') {
-      return 'กำลังดำเนินการ'
-    }
-    return 'ไม่ระบุ'
-  }
-
-  if (status === 'resolved') {
-    return 'Resolved'
-  }
-
-  if (status === 'low_confidence') {
-    return 'Low confidence'
-  }
-
-  if (status === 'in_progress') {
-    return 'In progress'
-  }
-
-  return 'Unknown'
-}
-
-export function getTotalAnswered(milestones: SessionMilestones): number {
-  return milestones.answered_role_questions
 }
 
 function formatPercent(value?: number | null): string {

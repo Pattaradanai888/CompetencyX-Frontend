@@ -138,19 +138,25 @@ describe('results page', () => {
     })
   })
 
-  it('renders the simplified role discovery recommendation', async () => {
+  it('reveals the best match by rank and lists the closest roles', async () => {
     const wrapper = await mountSuspended(ResultsPage)
 
-    expect(wrapper.text()).toContain('Role discovery complete')
-    expect(wrapper.text()).toContain(
-      'Backend Engineer looks like your strongest role direction.',
-    )
+    expect(wrapper.get('h1').text()).toBe('Backend Engineer')
     expect(wrapper.text()).toContain('Data Engineer')
     expect(wrapper.text()).toContain('DevOps Engineer')
     expect(wrapper.text()).toContain('Systems Design')
-    expect(wrapper.text()).toContain('Default selection')
-    expect(wrapper.text()).toContain('Continue to skill assessment')
-    expect(wrapper.text()).toContain('Use this role instead')
+    expect(wrapper.text()).toContain('Best match of 3 roles')
+    // Neither fit_score (no fixed scale) nor fit_share is shown as a percent.
+    expect(wrapper.text()).not.toMatch(/\d+%/)
+
+    const radios = wrapper.findAll('input[type="radio"]')
+    expect(radios.map((radio) => radio.attributes('value'))).toEqual([
+      'backend-engineer',
+      'data-engineer',
+      'devops-engineer',
+    ])
+    expect((radios[0]!.element as HTMLInputElement).checked).toBe(true)
+    expect(wrapper.text()).toContain('Continue with Backend Engineer')
     expect(wrapper.text()).not.toContain('62%')
     expect(wrapper.text()).not.toContain('24%')
     expect(wrapper.text()).not.toContain('14%')
@@ -229,25 +235,17 @@ describe('results page', () => {
 
     const wrapper = await mountSuspended(ResultsPage)
 
-    const switchButton = wrapper
-      .findAll('button')
-      .find((button) => button.text().includes('Use this role instead'))
-
-    expect(switchButton).toBeDefined()
-    await switchButton!.trigger('click')
+    await wrapper.get('input[value="data-engineer"]').setValue(true)
     await flushPromises()
 
     // verify that createSession is not called yet on selection
     expect(createSessionMock).not.toHaveBeenCalled()
     expect(navigateToMock).not.toHaveBeenCalled()
 
-    // Selected role displays at the bottom should have changed to Data Engineer
-    expect(wrapper.text()).toContain('Continue with Data Engineer')
-
-    // Find and click the Continue button at the bottom
+    // The one action under the list follows the selection.
     const continueBtn = wrapper
       .findAll('button')
-      .find((button) => button.text().includes('Continue to skill assessment'))
+      .find((button) => button.text() === 'Continue with Data Engineer')
     expect(continueBtn).toBeDefined()
 
     await continueBtn!.trigger('click')
@@ -302,5 +300,34 @@ describe('results page', () => {
     expect(text).not.toContain('Data Engineer')
     expect(text).not.toContain('Builds the services behind the product.')
     expect(text).not.toContain('Systems Design')
+  })
+
+  it('lists the role_candidates the API names when it sends them', async () => {
+    const results = await getResultsMock()
+    const ml = {
+      slug: 'machine-learning-engineer',
+      name: 'Machine Learning Engineer',
+      fit_score: 0.7,
+      fit_share: 0.1,
+      top_supporting_pillars: ['Data'],
+    }
+    getResultsMock.mockResolvedValue({
+      ...results,
+      role_candidates: [results.ranked_roles[0], ml, results.ranked_roles[1]],
+    })
+    getResultsMock.mockClear()
+
+    const wrapper = await mountSuspended(ResultsPage)
+
+    expect(
+      wrapper
+        .findAll('input[type="radio"]')
+        .map((radio) => radio.attributes('value')),
+    ).toEqual([
+      'backend-engineer',
+      'data-engineer',
+      'machine-learning-engineer',
+    ])
+    expect(wrapper.text()).not.toContain('DevOps Engineer')
   })
 })

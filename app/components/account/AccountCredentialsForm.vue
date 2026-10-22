@@ -38,6 +38,17 @@ function handleSubmit() {
   emailError.value = email.value.trim() ? '' : t.value.emailRequired
   passwordError.value = password.value ? '' : t.value.passwordRequired
 
+  if (!emailError.value && emailInput.value?.validity.typeMismatch) {
+    emailError.value = t.value.emailInvalid
+  }
+  if (
+    !passwordError.value &&
+    props.mode === 'register' &&
+    password.value.length < 8
+  ) {
+    passwordError.value = t.value.passwordTooShort
+  }
+
   if (emailError.value) {
     emailInput.value?.focus()
     return
@@ -67,8 +78,7 @@ function handleSubmit() {
         required
         :aria-invalid="emailError ? 'true' : undefined"
         :aria-describedby="emailError ? 'email-error' : undefined"
-        class="w-full rounded-xl border border-border-subtle bg-surface-card px-4 py-3 text-base font-normal text-ink placeholder:text-ink-soft/50 transition focus-visible:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
-        :class="emailError ? 'border-error' : ''"
+        class="cx-input"
       />
       <p
         v-if="emailError"
@@ -93,8 +103,7 @@ function handleSubmit() {
         :minlength="mode === 'register' ? 8 : undefined"
         :aria-invalid="passwordError ? 'true' : undefined"
         :aria-describedby="passwordError ? 'password-error' : undefined"
-        class="w-full rounded-xl border border-border-subtle bg-surface-card px-4 py-3 text-base font-normal text-ink transition focus-visible:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
-        :class="passwordError ? 'border-error' : ''"
+        class="cx-input"
       />
       <p
         v-if="passwordError"
@@ -122,8 +131,9 @@ function handleSubmit() {
 
     <button
       type="submit"
-      class="cx-button-primary w-full disabled:cursor-not-allowed disabled:opacity-60"
+      class="cx-button-primary w-full"
       :disabled="isSubmitting"
+      :aria-busy="isSubmitting ? 'true' : undefined"
     >
       <span
         v-if="isSubmitting"

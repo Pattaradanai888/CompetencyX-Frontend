@@ -14,12 +14,14 @@ const { lastSessionRoute, resumeLabel } = useLastSession({
   en: 'Resume previous session',
 })
 
-const { data: roles } = await useAsyncData('catalog-roles', listRoles, {
-  default: () => [] as Role[],
-})
-
-const featuredRoles = computed(() =>
-  Array.isArray(roles.value) ? roles.value.slice(0, 3) : [],
+const { data: featuredRole } = await useAsyncData(
+  'home-featured-role',
+  listRoles,
+  {
+    transform: (roles): Pick<Role, 'name' | 'name_th'> | null =>
+      roles[0] ? { name: roles[0].name, name_th: roles[0].name_th } : null,
+    default: () => null,
+  },
 )
 
 const t = usePageI18n('index', isThai)
@@ -41,7 +43,7 @@ useSeoMeta({
 <template>
   <main id="main-content" class="page-wrap">
     <section
-      class="animate-fade-in-up grid gap-12 py-14 sm:py-16 lg:grid-cols-[1.05fr_0.85fr] lg:items-center lg:py-28 lg:min-h-[calc(88vh-8rem)]"
+      class="grid gap-12 py-14 sm:py-16 lg:grid-cols-[1.05fr_0.85fr] lg:items-center lg:py-28 lg:min-h-[calc(88vh-8rem)]"
     >
       <div>
         <p class="eyebrow">{{ t.heroEyebrow }}</p>
@@ -79,64 +81,52 @@ useSeoMeta({
       </div>
 
       <div class="relative mx-auto w-full max-w-md lg:max-w-none">
-        <div
-          class="absolute -inset-3 -z-10 rotate-2 rounded-[1.25rem] border border-accent/10 bg-accent/5"
-          aria-hidden="true"
-        />
         <div class="paper-panel p-6 md:p-7">
           <div class="flex items-center justify-between gap-3">
             <p class="eyebrow">
               {{ isThai ? 'ตัวอย่างผลลัพธ์' : 'Example result' }}
             </p>
             <span
-              class="rounded-full border border-accent/15 bg-accent/10 px-3 py-1 text-xs font-bold text-accent"
+              class="rounded-lg bg-accent-soft px-2.5 py-1 text-xs font-bold text-accent"
             >
               {{ isThai ? 'ปรับตามผู้ใช้' : 'Personalized' }}
             </span>
           </div>
           <p class="mt-3 font-display text-2xl font-semibold text-ink">
             {{
-              getRoleDisplayName(featuredRoles[0], isThai) ||
+              getRoleDisplayName(featuredRole, isThai) ||
               (isThai ? 'วิศวกรฝั่งเซิร์ฟเวอร์' : 'Backend Engineer')
             }}
           </p>
 
           <div class="mt-5 grid gap-3">
-            <div
-              class="rounded-xl border-l-4 border-l-blueprint bg-surface-card px-4 py-3"
-            >
+            <div class="rounded-xl border-2 border-border-subtle px-4 py-3">
               <div class="flex items-end justify-between gap-3">
-                <p
-                  class="text-[11px] font-bold uppercase tracking-[0.1em] text-blueprint"
-                >
+                <p class="text-sm font-bold text-blueprint">
                   {{ isThai ? 'ระดับปัจจุบัน' : 'Where you are' }}
                 </p>
                 <p class="data-value text-xl font-bold text-ink">58%</p>
               </div>
-              <div class="mt-2 h-1.5 rounded-full bg-ink/8">
-                <div class="h-1.5 w-[58%] rounded-full bg-blueprint" />
+              <div class="mt-2 h-2.5 rounded-full bg-border-subtle">
+                <div class="h-2.5 w-[58%] rounded-full bg-blueprint" />
               </div>
             </div>
 
-            <div
-              class="rounded-xl border-l-4 border-l-accent bg-surface-card px-4 py-3"
-            >
+            <div class="rounded-xl border-2 border-border-subtle px-4 py-3">
               <div class="flex items-end justify-between gap-3">
-                <p
-                  class="text-[11px] font-bold uppercase tracking-[0.1em] text-accent"
-                >
+                <p class="text-sm font-bold text-accent">
                   {{ isThai ? 'เป้าหมายของบทบาท' : 'Role target' }}
                 </p>
                 <p class="data-value text-xl font-bold text-accent">78%</p>
               </div>
-              <div class="mt-2 h-1.5 rounded-full bg-ink/8">
-                <div class="h-1.5 w-[78%] rounded-full bg-accent" />
+              <div class="mt-2 h-2.5 rounded-full bg-border-subtle">
+                <div class="h-2.5 w-[78%] rounded-full bg-accent" />
               </div>
             </div>
           </div>
 
           <p
-            class="mt-4 border-t border-border-subtle pt-4 text-xs leading-6 text-ink-soft"
+            class="mt-4 border-t-2 border-border-subtle pt-4 text-xs leading-6 text-ink-soft"
           >
             {{
               isThai
@@ -207,7 +197,7 @@ useSeoMeta({
           class="flex items-start gap-3"
         >
           <span
-            class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-accent/25 bg-accent/10 text-xs font-bold text-accent"
+            class="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-bold text-accent"
             aria-hidden="true"
           >
             ✓
@@ -239,7 +229,7 @@ useSeoMeta({
         <div
           v-for="role in t.roleFamilies"
           :key="role.name"
-          class="rounded-lg border border-border-subtle bg-surface-card p-5"
+          class="rounded-lg border-2 border-border-subtle bg-paper p-5"
         >
           <p class="font-bold text-ink">{{ role.name }}</p>
           <p class="mt-2 text-sm leading-6 text-ink-soft">
@@ -266,7 +256,7 @@ useSeoMeta({
           </p>
         </div>
         <div
-          class="mt-10 divide-y divide-border-subtle border-y border-border-subtle"
+          class="mt-10 divide-y-2 divide-border-subtle border-y-2 border-border-subtle"
         >
           <details v-for="item in t.faqs" :key="item.question" class="group">
             <summary
@@ -274,7 +264,7 @@ useSeoMeta({
             >
               <span>{{ item.question }}</span>
               <span
-                class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border-subtle bg-surface-elevated text-ink-soft transition group-open:rotate-180"
+                class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-border-subtle bg-paper text-ink-soft transition group-open:rotate-180"
                 aria-hidden="true"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

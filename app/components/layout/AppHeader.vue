@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BrandMark from '~/components/layout/BrandMark.vue'
 import LocaleToggler from '~/components/layout/LocaleToggler.vue'
 import { useCurrentAccount } from '~/composables/useCurrentAccount'
 import { useLocale } from '~/composables/useLocale'
@@ -46,41 +47,31 @@ const signInLink = computed(() => ({
       <NuxtLink
         to="/"
         class="app-header__brand"
-        :aria-label="isThai ? 'หน้าแรก CompetencyX' : 'CompetencyX home'"
+        :aria-label="isThai ? 'หน้าแรก Competency' : 'Competency home'"
       >
-        <span class="app-header__mark" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path
-              d="M9 2.25L15 5.6V12.4L9 15.75L3 12.4V5.6L9 2.25Z"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M6.25 9.1L8.2 11.05L12 7.25"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </span>
-        <span class="font-display text-lg font-bold text-ink">CompetencyX</span>
+        <BrandMark class="app-header__mark" />
+        <span
+          class="app-header__name"
+          :class="isSignedIn ? 'hidden sm:inline' : 'hidden min-[420px]:inline'"
+          >Competency</span
+        >
       </NuxtLink>
 
       <div class="app-header__actions">
         <div
           v-if="isSignedIn"
-          class="hidden items-center gap-2 text-xs text-ink-soft sm:flex"
+          class="flex items-center gap-2 text-xs text-ink-soft"
           data-testid="header-account"
         >
-          <span class="sr-only">{{ t.signedInAs }}</span>
-          <span class="max-w-[14rem] truncate font-semibold text-ink">
+          <span class="sr-only hidden sm:inline">{{ t.signedInAs }}</span>
+          <span
+            class="hidden max-w-[14rem] truncate font-semibold text-ink sm:inline"
+          >
             {{ account?.email ?? t.account }}
           </span>
           <button
             type="button"
-            class="editorial-link text-xs"
+            class="editorial-link min-h-11 text-xs"
             :disabled="isSigningOut"
             @click="handleSignOut"
           >
@@ -90,7 +81,7 @@ const signInLink = computed(() => ({
         <NuxtLink
           v-else
           :to="signInLink"
-          class="editorial-link text-xs font-semibold"
+          class="editorial-link inline-flex min-h-11 items-center whitespace-nowrap text-sm font-semibold"
           data-testid="header-sign-in"
         >
           {{ t.signIn }}

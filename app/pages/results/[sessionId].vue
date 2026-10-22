@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { motion } from 'motion-v'
+import { getRoleFamily } from '~/data/roleFamilies'
+import type { RoleFamily } from '~/data/roleFamilies'
 import {
   getRoleDisplayDescription,
   getRoleDisplayName,
@@ -11,11 +12,8 @@ import { useAssessmentSession } from '~/composables/useAssessmentSession'
 import { useLocale } from '~/composables/useLocale'
 import { useSessionCreate } from '~/composables/useSessionCreate'
 import { getErrorMessage } from '~/utils/api'
-import type {
-  ApiError,
-  RankedRoleInsight,
-  Role,
-} from '~~/shared/types/assessment'
+import { CELEBRATED_RESULT_KEY_PREFIX } from '~/utils/constants'
+import type { ApiError, Role } from '~~/shared/types/assessment'
 
 const route = useRoute('/results/[sessionId]')
 const sessionId = computed(() => route.params.sessionId as string)
@@ -66,25 +64,27 @@ if (
 }
 
 const results = ref(_fetchData.value?.resultsAttempt ?? null)
-const continueButton = ref<HTMLButtonElement | null>(null)
 const isContinuing = ref(false)
 
 const rankedRoles = computed(() =>
   sortRankedRolesDescending(results.value?.ranked_roles ?? []),
 )
 
-const primaryRankedRole = computed(() => rankedRoles.value[0] ?? null)
-const alternativeRoles = computed(() => rankedRoles.value.slice(1, 3))
-const primaryRole = computed(
+const primaryRole = computed<Role>(
   () =>
     results.value?.best_fit_role ??
-    results.value?.preferred_role ??
-    ({
+    results.value?.preferred_role ?? {
       id: 0,
-      slug: primaryRankedRole.value?.slug ?? 'recommended-role',
-      name: primaryRankedRole.value?.name ?? t.value.fallbackRole,
-      name_th: primaryRankedRole.value?.name_th,
-    } satisfies Role),
+      slug: rankedRoles.value[0]?.slug ?? 'recommended-role',
+      name: rankedRoles.value[0]?.name ?? t.value.fallbackRole,
+      name_th: rankedRoles.value[0]?.name_th,
+    },
+)
+
+const primaryRankedRole = computed(
+  () =>
+    rankedRoles.value.find((role) => role.slug === primaryRole.value.slug) ??
+    null,
 )
 
 const primaryRoleName = computed(
@@ -92,67 +92,78 @@ const primaryRoleName = computed(
     getRoleDisplayName(primaryRole.value, isThai.value) || t.value.fallbackRole,
 )
 
-const selectedRole = ref<RankedRoleInsight | Role | null>(null)
-
-watch(
-  primaryRole,
-  (newVal) => {
-    if (newVal && !selectedRole.value) {
-      selectedRole.value = newVal
-    }
-  },
-  { immediate: true },
-)
-
-const selectedRoleName = computed(
-  () =>
-    getRoleDisplayName(selectedRole.value ?? primaryRole.value, isThai.value) ||
-    t.value.selectedRole,
-)
-
-function selectRole(role: RankedRoleInsight | Role) {
-  selectedRole.value = role
-  // Picking a role swaps the card's select button for the confirmation
-  // panel, so focus moves on to the next action instead of dropping to
-  // <body>.
-  continueButton.value?.focus()
-}
-
-function getRoleDescription(role: RankedRoleInsight | Role | null): string {
-  if (!role) {
-    return t.value.fallbackDescription
-  }
-
-  if ('description' in role) {
-    const description = getRoleDisplayDescription(role, isThai.value)
-    if (description) return description
-  }
-
-  if ('top_supporting_pillars' in role) {
-    const pillars = getSupportingPillars(role, isThai.value)
-    if (pillars.length) {
-      return `${t.value.strongestSignals}: ${pillars.join(', ')}.`
-    }
-  }
-
-  return t.value.closeFitDescription
-}
-
-// The primary role's own description comes first; the ranked insight only
-// carries the strongest-signal pillars, which are the fallback.
 const primaryRoleDescription = computed(
   () =>
     getRoleDisplayDescription(primaryRole.value, isThai.value) ||
-    getRoleDescription(primaryRankedRole.value ?? primaryRole.value),
+    t.value.fallbackDescription,
+)
+
+const primaryFamily = computed(() => getRoleFamily(primaryRole.value.slug))
+
+const primaryPillars = computed(() =>
+  primaryRankedRole.value
+    ? getSupportingPillars(primaryRankedRole.value, isThai.value)
+    : [],
+)
+
+interface RoleChoice {
+  slug: string
+  name: string
+  family: RoleFamily
+  pillars: string[]
+}
+
+/** fit_score has no fixed scale, so the result is told by rank, never as a percent. */
+const bestMatchLabel = computed(() =>
+  rankedRoles.value.length > 1
+    ? t.value.bestMatchOf.replace('{n}', String(rankedRoles.value.length))
+    : t.value.bestMatch,
+)
+
+/** The best match first, then the next closest, three in all. */
+const choices = computed<RoleChoice[]>(() => {
+  const primary: RoleChoice = {
+    slug: primaryRole.value.slug,
+    name: primaryRoleName.value,
+    family: primaryFamily.value,
+    pillars: primaryPillars.value,
+  }
+  const candidates = results.value?.role_candidates?.length
+    ? sortRankedRolesDescending(results.value.role_candidates)
+    : rankedRoles.value
+  const others = candidates
+    .filter((role) => role.slug !== primary.slug)
+    .map((role) => ({
+      slug: role.slug,
+      name: getRoleDisplayName(role, isThai.value),
+      family: getRoleFamily(role.slug),
+      pillars: getSupportingPillars(role, isThai.value),
+    }))
+  return [primary, ...others].slice(0, 3)
+})
+
+const selectedSlug = ref(primaryRole.value.slug)
+
+const selectedChoice = computed(
+  () =>
+    choices.value.find((choice) => choice.slug === selectedSlug.value) ??
+    choices.value[0],
+)
+
+const continueLabel = computed(() =>
+  t.value.continueWith.replace(
+    '{role}',
+    selectedChoice.value?.name ?? primaryRoleName.value,
+  ),
 )
 
 async function handleContinue() {
-  const role = selectedRole.value
-  if (!role?.slug || isContinuing.value) {
+  const slug = selectedChoice.value?.slug
+  if (!slug || isContinuing.value) {
     return
   }
 
-  if (role.slug === primaryRole.value?.slug) {
+  if (slug === primaryRole.value.slug) {
     await navigateTo(`/roadmaps/${route.params.sessionId}`)
     return
   }
@@ -160,7 +171,7 @@ async function handleContinue() {
   isContinuing.value = true
   try {
     await createAndNavigate({
-      preferred_role_slug: role.slug,
+      preferred_role_slug: slug,
       language: sessionSnapshot?.language,
     })
   } catch (error) {
@@ -173,6 +184,30 @@ async function handleContinue() {
     isContinuing.value = false
   }
 }
+
+const BURST_PIECES = Array.from({ length: 14 }, (_, index) => {
+  const angle = (index / 14) * Math.PI * 2 + (index % 2 ? 0.2 : -0.1)
+  const distance = 70 + (index % 3) * 28
+  return {
+    '--dx': `${Math.round(Math.cos(angle) * distance)}px`,
+    '--dy': `${Math.round(Math.sin(angle) * distance)}px`,
+    '--turn': `${(index % 2 ? 1 : -1) * (90 + index * 15)}deg`,
+  }
+})
+
+const isCelebrating = ref(false)
+const prefersReduced = useReducedMotion()
+
+onMounted(() => {
+  const key = `${CELEBRATED_RESULT_KEY_PREFIX}${sessionId.value}`
+  try {
+    if (localStorage.getItem(key)) return
+    localStorage.setItem(key, '1')
+  } catch {
+    return
+  }
+  isCelebrating.value = !prefersReduced.value
+})
 
 useSeoMeta({
   title: computed(() =>
@@ -188,187 +223,112 @@ useSeoMeta({
 
 <template>
   <NuxtErrorBoundary>
-    <main v-if="results" id="main-content" class="page-wrap pb-16">
-      <motion.section
-        class="result-spotlight mx-auto max-w-5xl p-6 text-center md:p-8 lg:p-10"
-        :initial="{ opacity: 0, y: 20 }"
-        :animate="{ opacity: 1, y: 0 }"
-        :transition="{ duration: 0.4 }"
-        aria-labelledby="results-title"
-      >
-        <div class="mx-auto max-w-3xl">
-          <div
-            class="inline-flex items-center gap-2 rounded-full border border-accent/15 bg-accent/10 px-4 py-2 text-sm font-bold text-accent"
-          >
-            <span aria-hidden="true">✓</span>
-            {{ t.phaseComplete }}
-          </div>
-
-          <h1
-            id="results-title"
-            class="mx-auto mt-8 max-w-4xl font-display text-4xl font-semibold leading-tight text-ink md:text-6xl"
-          >
-            {{ primaryRoleName }} {{ t.titleSuffix }}
-          </h1>
-          <p class="mx-auto mt-5 max-w-2xl text-base leading-8 text-ink-soft">
-            {{ primaryRoleDescription }}
-          </p>
-        </div>
-
-        <section class="mt-10 grid gap-4 text-left md:grid-cols-3">
-          <!-- Primary role card -->
-          <article
-            :class="[
-              'result-role-card result-role-card--selectable relative flex flex-col justify-between p-5 md:p-6',
-              selectedRole?.slug === primaryRole.slug ? 'is-selected' : '',
-              isContinuing ? 'is-busy' : '',
-            ]"
-          >
-            <div>
-              <div
-                v-if="selectedRole?.slug === primaryRole.slug"
-                class="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-white text-xs font-bold shadow-sm"
-                aria-hidden="true"
-              >
-                ✓
-              </div>
-              <p class="eyebrow">{{ t.primaryRole }}</p>
-              <h2 class="mt-3 text-2xl font-bold text-ink">
-                {{ primaryRoleName }}
-              </h2>
-              <p class="mt-3 text-sm leading-7 text-ink-soft">
-                {{ primaryRoleDescription }}
-              </p>
-            </div>
-            <div class="mt-6">
-              <div
-                v-if="selectedRole?.slug === primaryRole.slug"
-                class="rounded-xl border border-accent/20 bg-accent/8 px-4 py-3"
-              >
-                <p
-                  class="text-xs font-bold uppercase tracking-[0.08em] text-accent"
-                >
-                  {{ t.defaultSelection }}
-                </p>
-                <p class="mt-2 text-sm leading-6 text-ink-soft">
-                  {{ t.skillAssessmentWillStartWith }}
-                  <span class="font-semibold text-ink">{{
-                    primaryRoleName
-                  }}</span
-                  >.
-                </p>
-              </div>
-              <button
-                v-else
-                type="button"
-                class="cx-button-secondary w-full"
-                :disabled="isContinuing"
-                @click="selectRole(primaryRole)"
-              >
-                {{ t.selectPrimaryRole }}
-              </button>
-            </div>
-          </article>
-
-          <!-- Alternative role cards -->
-          <article
-            v-for="(role, index) in alternativeRoles"
-            :key="role.slug"
-            :class="[
-              'result-role-card result-role-card--selectable relative flex flex-col justify-between p-5 md:p-6',
-              selectedRole?.slug === role.slug ? 'is-selected' : '',
-              isContinuing ? 'is-busy' : '',
-            ]"
-          >
-            <div>
-              <div
-                v-if="selectedRole?.slug === role.slug"
-                class="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-white text-xs font-bold shadow-sm"
-                aria-hidden="true"
-              >
-                ✓
-              </div>
-              <p class="eyebrow">{{ t.closeFit }} {{ index + 1 }}</p>
-              <h2 class="mt-3 text-2xl font-bold text-ink">
-                {{ getRoleDisplayName(role, isThai) }}
-              </h2>
-              <p class="mt-3 text-sm leading-7 text-ink-soft">
-                {{ getRoleDescription(role) }}
-              </p>
-            </div>
-            <div class="mt-6">
-              <div
-                v-if="selectedRole?.slug === role.slug"
-                class="rounded-xl border border-accent/20 bg-accent/8 px-4 py-3"
-              >
-                <p
-                  class="text-xs font-bold uppercase tracking-[0.08em] text-accent"
-                >
-                  {{ t.selected }}
-                </p>
-                <p class="mt-2 text-sm leading-6 text-ink-soft">
-                  {{ t.skillAssessmentWillStartWith }}
-                  <span class="font-semibold text-ink">{{
-                    getRoleDisplayName(role, isThai)
-                  }}</span
-                  >.
-                </p>
-              </div>
-              <button
-                v-else
-                type="button"
-                class="cx-button-secondary w-full"
-                :disabled="isContinuing"
-                @click="selectRole(role)"
-              >
-                {{ t.useThisRole }}
-              </button>
-            </div>
-          </article>
-        </section>
+    <main v-if="results" id="main-content" class="page-wrap">
+      <div class="results">
+        <p class="eyebrow">{{ t.eyebrow }}</p>
 
         <section
-          class="mt-8 rounded-xl border border-border-subtle bg-surface-elevated/90 p-5 text-left shadow-[0_18px_44px_rgba(74,54,35,0.08)] md:p-6"
+          class="result-reveal mt-4"
+          :class="[
+            `family-${primaryFamily}`,
+            { 'is-celebrating': isCelebrating },
+          ]"
+          aria-labelledby="results-title"
         >
-          <div class="flex flex-wrap items-center justify-between gap-4">
-            <div class="max-w-2xl">
-              <p class="eyebrow">{{ t.skillAssessment }}</p>
-              <h2 class="mt-3 text-2xl font-bold text-ink">
-                {{ t.continueWith }} {{ selectedRoleName }}
-              </h2>
-              <p class="mt-2 text-sm leading-7 text-ink-soft">
-                {{
-                  selectedRole?.slug === primaryRole?.slug
-                    ? t.defaultPath
-                    : t.alternativePath
-                }}
-              </p>
-            </div>
-            <div
-              class="rounded-full border border-border-subtle bg-paper-strong px-4 py-2"
-            >
-              <p
-                class="text-xs font-bold uppercase tracking-[0.08em] text-ink-soft"
+          <p class="result-reveal__badge">
+            {{ bestMatchLabel }}
+            <span v-if="isCelebrating" class="result-burst" aria-hidden="true">
+              <span
+                v-for="(piece, index) in BURST_PIECES"
+                :key="index"
+                :style="piece"
+              />
+            </span>
+          </p>
+          <p class="result-reveal__family mt-5">
+            {{ t.families[primaryFamily] }}
+          </p>
+          <h1 id="results-title" class="result-reveal__name">
+            {{ primaryRoleName }}
+          </h1>
+          <p class="result-reveal__copy">{{ primaryRoleDescription }}</p>
+          <div v-if="primaryPillars.length" class="mt-5">
+            <p class="text-sm font-bold">{{ t.strongestPillars }}</p>
+            <ul class="result-reveal__pillars mt-2">
+              <li
+                v-for="pillar in primaryPillars"
+                :key="pillar"
+                class="result-reveal__pillar"
               >
-                {{ t.selectedRole }}
-              </p>
-              <p class="mt-1 text-sm font-bold text-ink">
-                {{ selectedRoleName }}
-              </p>
-            </div>
+                {{ pillar }}
+              </li>
+            </ul>
           </div>
         </section>
 
-        <button
-          ref="continueButton"
-          type="button"
-          class="cx-button-primary mt-10 inline-flex items-center gap-2 justify-center disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="isContinuing"
-          @click="handleContinue"
-        >
-          {{ isContinuing ? t.preparing : t.continue }}
-        </button>
-      </motion.section>
+        <section class="mt-12" aria-labelledby="choose-title">
+          <h2
+            id="choose-title"
+            class="text-2xl font-extrabold leading-snug text-ink"
+          >
+            {{ t.chooseTitle }}
+          </h2>
+          <p class="mt-2 text-ink-soft">{{ t.chooseIntro }}</p>
+
+          <fieldset class="mt-6">
+            <legend class="sr-only">{{ t.chooseTitle }}</legend>
+            <div class="role-choice-list">
+              <label
+                v-for="(choice, index) in choices"
+                :key="choice.slug"
+                class="role-choice"
+                :class="`family-${choice.family}`"
+              >
+                <input
+                  v-model="selectedSlug"
+                  type="radio"
+                  name="role-choice"
+                  class="role-choice__input"
+                  :value="choice.slug"
+                  :aria-labelledby="`choice-${choice.slug}-name`"
+                  :aria-describedby="`choice-${choice.slug}-meta`"
+                  :disabled="isContinuing"
+                />
+                <span class="role-choice__rank" aria-hidden="true">
+                  {{ index + 1 }}
+                </span>
+                <span class="min-w-0">
+                  <span
+                    :id="`choice-${choice.slug}-name`"
+                    class="role-choice__name block"
+                  >
+                    {{ choice.name }}
+                  </span>
+                  <span
+                    :id="`choice-${choice.slug}-meta`"
+                    class="role-choice__meta block"
+                  >
+                    {{ t.families[choice.family] }}
+                    <template v-if="choice.pillars.length">
+                      · {{ choice.pillars.join(' · ') }}
+                    </template>
+                  </span>
+                </span>
+              </label>
+            </div>
+          </fieldset>
+
+          <button
+            type="button"
+            class="cx-button-primary mt-8 w-full"
+            :disabled="isContinuing"
+            :aria-busy="isContinuing ? 'true' : undefined"
+            @click="handleContinue"
+          >
+            {{ isContinuing ? t.preparing : continueLabel }}
+          </button>
+        </section>
+      </div>
     </main>
     <template #error="{ error, clearError }">
       <ErrorBoundaryFallback :error="error" @clear-error="clearError" />

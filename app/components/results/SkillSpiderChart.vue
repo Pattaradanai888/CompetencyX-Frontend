@@ -39,7 +39,6 @@ const showToBe = computed(
 const size = 520
 const center = size / 2
 const maxRadius = 132
-const scaleMax = 10
 const ringSteps = [0.2, 0.4, 0.6, 0.8, 1]
 
 function clampRatio(value: number) {
@@ -47,7 +46,7 @@ function clampRatio(value: number) {
 }
 
 function formatCapabilityScore(value: number) {
-  return Math.round(clampRatio(value) * scaleMax)
+  return Math.round(clampRatio(value) * 100)
 }
 
 function toPoint(index: number, ratio: number, total: number) {
@@ -67,8 +66,8 @@ function toPoint(index: number, ratio: number, total: number) {
 // ring keep them apart.
 const isCrowded = computed(() => props.dimensions.length > 10)
 const labelRadiusRatio = computed(() => (isCrowded.value ? 1.42 : 1.18))
-const labelFontSize = computed(() => (isCrowded.value ? 9 : 11))
-const labelLineHeight = computed(() => (isCrowded.value ? 10 : 13))
+const labelFontSize = computed(() => (isCrowded.value ? 10 : 12))
+const labelLineHeight = computed(() => (isCrowded.value ? 11.5 : 14))
 const maxLabelLineChars = computed(() => (isCrowded.value ? 13 : 16))
 
 // Thai runs carry no spaces and roadmap titles bundle long parenthesised
@@ -240,42 +239,8 @@ const viewBox = computed(() => {
 </script>
 
 <template>
-  <div
-    class="skill-spider rounded-[1.75rem] border border-border-subtle bg-surface-elevated/95 p-4 shadow-[0_24px_60px_rgba(29,42,39,0.08)] md:p-5"
-  >
-    <div class="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
-      <p
-        class="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft"
-      >
-        {{ t.capabilityScale }}
-      </p>
-      <p class="text-xs font-semibold text-ink">{{ t.capabilityScaleRange }}</p>
-    </div>
-    <div
-      class="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-border-subtle bg-surface-card px-3 py-2"
-      aria-hidden="true"
-    >
-      <span
-        v-for="step in ringSteps"
-        :key="`scale-chip-${step}`"
-        class="rounded-full bg-accent/12 px-2.5 py-1 text-[0.68rem] font-bold text-accent"
-      >
-        {{ Math.round(step * scaleMax) }}
-      </span>
-    </div>
-
-    <div
-      v-if="hasDimensions"
-      class="overflow-hidden rounded-[1.5rem] border border-border-subtle bg-surface-muted px-3 py-4 md:px-5"
-    >
-      <div
-        class="mx-auto mb-4 flex w-full max-w-[30rem] items-center justify-between gap-3 rounded-full border border-border-subtle bg-surface-elevated px-4 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-ink-soft"
-      >
-        <span>{{ t.liveBlend }}</span>
-        <span class="rounded-full bg-accent/14 px-2 py-1 text-accent">
-          {{ axes.length }} {{ t.dimensionsCount }}
-        </span>
-      </div>
+  <div class="skill-spider">
+    <div v-if="hasDimensions">
       <!--
         The view toggle lives outside the SVG on purpose: inside it, it sat at
         the top of the plot where the topmost axis label lands once the label
@@ -283,51 +248,51 @@ const viewBox = computed(() => {
       -->
       <div
         v-if="props.targetDimensions?.length"
-        class="mx-auto mb-3 flex w-fit flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-border-subtle bg-surface-card p-1 text-[0.68rem] font-semibold"
+        class="flex flex-wrap items-center justify-between gap-3"
       >
-        <button
-          type="button"
-          class="rounded-xl px-3 py-1.5 transition-colors"
-          :aria-pressed="viewMode === 'as-is'"
-          :class="
-            viewMode === 'as-is'
-              ? 'bg-accent/12 text-accent'
-              : 'text-ink-soft hover:text-ink'
-          "
-          @click="viewMode = 'as-is'"
-        >
-          {{ t.asIs }}
-        </button>
-        <button
-          type="button"
-          class="rounded-xl px-3 py-1.5 transition-colors"
-          :aria-pressed="viewMode === 'both'"
-          :class="
-            viewMode === 'both'
-              ? 'bg-accent/12 text-accent'
-              : 'text-ink-soft hover:text-ink'
-          "
-          @click="viewMode = 'both'"
-        >
-          {{ t.viewBoth }}
-        </button>
-        <button
-          type="button"
-          class="rounded-xl px-3 py-1.5 transition-colors"
-          :aria-pressed="viewMode === 'to-be'"
-          :class="
-            viewMode === 'to-be'
-              ? 'bg-accent/12 text-accent'
-              : 'text-ink-soft hover:text-ink'
-          "
-          @click="viewMode = 'to-be'"
-        >
-          {{ t.toBe }}
-        </button>
+        <div class="segmented" role="group" :aria-label="t.capabilityMap">
+          <button
+            type="button"
+            :aria-pressed="viewMode === 'as-is'"
+            @click="viewMode = 'as-is'"
+          >
+            {{ t.asIs }}
+          </button>
+          <button
+            type="button"
+            :aria-pressed="viewMode === 'both'"
+            @click="viewMode = 'both'"
+          >
+            {{ t.viewBoth }}
+          </button>
+          <button
+            type="button"
+            :aria-pressed="viewMode === 'to-be'"
+            @click="viewMode = 'to-be'"
+          >
+            {{ t.toBe }}
+          </button>
+        </div>
+        <ul class="flex flex-wrap gap-4 text-sm font-bold text-ink-soft">
+          <li class="flex items-center gap-2">
+            <span
+              class="inline-block h-1 w-5 rounded-full bg-blueprint"
+              aria-hidden="true"
+            />
+            {{ t.asIs }}
+          </li>
+          <li class="flex items-center gap-2">
+            <span
+              class="inline-block w-5 border-t-[3px] border-dashed border-accent"
+              aria-hidden="true"
+            />
+            {{ t.toBe }}
+          </li>
+        </ul>
       </div>
       <svg
         :viewBox="viewBox"
-        class="mx-auto h-auto w-full max-w-[36rem] md:max-w-[38rem]"
+        class="mx-auto mt-2 h-auto w-full max-w-[46rem]"
         role="img"
         :aria-label="t.capabilityMap"
       >
@@ -435,7 +400,7 @@ const viewBox = computed(() => {
             :fill="scoreColor"
             font-weight="800"
           >
-            {{ axis.score }}/10
+            {{ axis.score }}%
           </text>
         </g>
 
@@ -476,16 +441,13 @@ const viewBox = computed(() => {
                 (viewMode === 'to-be'
                   ? targetScoreByKey[axis.key]
                   : axis.score) ?? axis.score
-              }}/10
+              }}%
             </tspan>
           </text>
         </g>
       </svg>
     </div>
-    <p
-      v-else
-      class="rounded-md border border-border-subtle bg-surface-card p-4 text-sm leading-6 text-ink-soft"
-    >
+    <p v-else class="p-2 text-sm leading-6 text-ink-soft">
       {{ t.chartUnavailable }}
     </p>
   </div>
@@ -493,9 +455,9 @@ const viewBox = computed(() => {
 
 <style scoped>
 .skill-spider {
-  --chart-grid: rgba(47, 38, 31, 0.2);
-  --chart-axis: rgba(47, 38, 31, 0.18);
-  --chart-fill: rgba(29, 107, 87, 0.26);
+  --chart-grid: var(--color-border-strong);
+  --chart-axis: var(--color-border-subtle);
+  --chart-fill: color-mix(in srgb, var(--color-blueprint) 22%, transparent);
   --chart-label: var(--color-ink);
 }
 </style>

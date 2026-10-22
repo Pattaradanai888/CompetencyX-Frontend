@@ -79,7 +79,7 @@ function metaFor(role: Role): RoleExplorerMeta {
         autocomplete="off"
         :aria-label="t.searchPlaceholder"
         :placeholder="t.searchPlaceholder"
-        class="w-full rounded-full border border-border-subtle bg-surface-card py-2.5 pl-11 pr-4 text-sm text-ink placeholder:text-ink-soft/50 transition focus-visible:border-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-soft"
+        class="cx-input cx-input--icon"
       />
     </div>
 
@@ -116,16 +116,6 @@ function metaFor(role: Role): RoleExplorerMeta {
         <button
           type="button"
           class="option-card role-card group flex w-full flex-col text-left rounded-md p-3"
-          :class="
-            role.slug === preferredRoleSlug
-              ? 'border-accent bg-accent-soft/20 shadow-[0_16px_34px_rgba(234,112,31,0.14)]'
-              : ''
-          "
-          :aria-label="
-            isThai
-              ? `เลือก ${getRoleDisplayName(role, true)}`
-              : `Select ${role.name}`
-          "
           :aria-pressed="role.slug === preferredRoleSlug ? 'true' : 'false'"
           @click="emit('select-role', role.slug)"
         >
@@ -176,9 +166,7 @@ function metaFor(role: Role): RoleExplorerMeta {
             </div>
 
             <div class="role-details-section">
-              <h3
-                class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
-              >
+              <h3 class="text-sm font-bold text-ink">
                 {{ t.responsibilities }}
               </h3>
               <ul class="role-details-list mt-1.5">
@@ -193,9 +181,7 @@ function metaFor(role: Role): RoleExplorerMeta {
             </div>
 
             <div class="role-details-section">
-              <h3
-                class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
-              >
+              <h3 class="text-sm font-bold text-ink">
                 {{ t.skills }}
               </h3>
               <div class="role-details-tags mt-1.5">
@@ -210,9 +196,7 @@ function metaFor(role: Role): RoleExplorerMeta {
             </div>
 
             <div class="role-details-section">
-              <h3
-                class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
-              >
+              <h3 class="text-sm font-bold text-ink">
                 {{ t.roadmapPreview }}
               </h3>
               <div
@@ -244,16 +228,14 @@ function metaFor(role: Role): RoleExplorerMeta {
 
             <div class="grid grid-cols-2 gap-3 mt-2">
               <div v-if="metaFor(role).workStyle.length">
-                <h4
-                  class="text-[0.6rem] font-bold uppercase tracking-wider text-ink-soft"
-                >
+                <h4 class="text-sm font-bold text-ink">
                   {{ t.workStyle }}
                 </h4>
-                <div class="flex flex-wrap gap-1 mt-1">
+                <div class="mt-1.5 flex flex-wrap gap-1.5">
                   <span
                     v-for="style in metaFor(role).workStyle"
                     :key="style"
-                    class="bg-surface-elevated text-ink-soft text-[0.65rem] px-1.5 py-0.5 rounded border border-border-subtle"
+                    class="role-details-tag role-details-tag--sm"
                   >
                     {{ style }}
                   </span>
@@ -261,16 +243,14 @@ function metaFor(role: Role): RoleExplorerMeta {
               </div>
 
               <div v-if="metaFor(role).interests.length">
-                <h4
-                  class="text-[0.6rem] font-bold uppercase tracking-wider text-ink-soft"
-                >
+                <h4 class="text-sm font-bold text-ink">
                   {{ t.interests }}
                 </h4>
-                <div class="flex flex-wrap gap-1 mt-1">
+                <div class="mt-1.5 flex flex-wrap gap-1.5">
                   <span
                     v-for="interest in metaFor(role).interests"
                     :key="interest"
-                    class="bg-surface-elevated text-ink-soft text-[0.65rem] px-1.5 py-0.5 rounded border border-border-subtle"
+                    class="role-details-tag role-details-tag--sm"
                   >
                     {{ interest }}
                   </span>
@@ -278,16 +258,14 @@ function metaFor(role: Role): RoleExplorerMeta {
               </div>
 
               <div v-if="metaFor(role).careerAreas.length">
-                <h4
-                  class="text-[0.6rem] font-bold uppercase tracking-wider text-ink-soft"
-                >
+                <h4 class="text-sm font-bold text-ink">
                   {{ t.careerAreas }}
                 </h4>
-                <div class="flex flex-wrap gap-1 mt-1">
+                <div class="mt-1.5 flex flex-wrap gap-1.5">
                   <span
                     v-for="area in metaFor(role).careerAreas"
                     :key="area"
-                    class="bg-surface-elevated text-ink-soft text-[0.65rem] px-1.5 py-0.5 rounded border border-border-subtle"
+                    class="role-details-tag role-details-tag--sm"
                   >
                     {{ area }}
                   </span>
@@ -295,16 +273,14 @@ function metaFor(role: Role): RoleExplorerMeta {
               </div>
 
               <div v-if="metaFor(role).environment.length">
-                <h4
-                  class="text-[0.6rem] font-bold uppercase tracking-wider text-ink-soft"
-                >
+                <h4 class="text-sm font-bold text-ink">
                   {{ t.environment }}
                 </h4>
-                <div class="flex flex-wrap gap-1 mt-1">
+                <div class="mt-1.5 flex flex-wrap gap-1.5">
                   <span
                     v-for="env in metaFor(role).environment"
                     :key="env"
-                    class="bg-surface-elevated text-ink-soft text-[0.65rem] px-1.5 py-0.5 rounded border border-border-subtle"
+                    class="role-details-tag role-details-tag--sm"
                   >
                     {{ env }}
                   </span>
@@ -317,6 +293,7 @@ function metaFor(role: Role): RoleExplorerMeta {
                 type="button"
                 class="cx-button-primary w-full text-xs min-h-[2.5rem] py-2 px-4"
                 :disabled="!canStart"
+                :aria-busy="isSubmitting ? 'true' : undefined"
                 @click="emit('start')"
               >
                 <span

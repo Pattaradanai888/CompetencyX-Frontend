@@ -444,7 +444,10 @@ async function openFullRoadmap(wrapper: VueWrapper) {
 function roadmapNode(wrapper: VueWrapper, title: string) {
   const node = wrapper
     .findAll('[data-testid="roadmap-topic"]')
-    .find((article) => article.find('h3').text() === title)
+    .find(
+      (node) =>
+        node.find('[data-testid="roadmap-topic-title"]').text() === title,
+    )
   expect(node, `${title} should be on the roadmap`).toBeDefined()
   return node!
 }
@@ -490,9 +493,7 @@ describe('roadmaps page', () => {
       expect(wrapper.findAll('[data-testid="next-topic-item"]').length).toBe(0)
       expect(wrapper.text()).toContain('"Data storage"')
 
-      await wrapper
-        .findAll('.skill-assessment-scale__option')[1]!
-        .trigger('click')
+      await wrapper.findAll('button.quiz-answer')[1]!.trigger('click')
       await settleAnswer()
 
       expect(getSkillAssessmentNextQuestionMock).toHaveBeenLastCalledWith(
@@ -502,9 +503,7 @@ describe('roadmaps page', () => {
       expect(wrapper.text()).toContain('"Caching"')
       expect(saveSkillAssessmentStateMock).not.toHaveBeenCalled()
 
-      await wrapper
-        .findAll('.skill-assessment-scale__option')[4]!
-        .trigger('click')
+      await wrapper.findAll('button.quiz-answer')[4]!.trigger('click')
       await settleAnswer()
 
       expect(getSkillAssessmentNextQuestionMock).toHaveBeenLastCalledWith(
@@ -524,22 +523,18 @@ describe('roadmaps page', () => {
       expect(wrapper.text()).toContain('Data storage')
     })
 
-    it('reads progress from the backend: answered of up to the ceiling, and ready to review once settled', async () => {
+    it('reads progress from the backend: the next question number out of the ceiling', async () => {
       getSkillAssessmentNextQuestionMock
         .mockResolvedValueOnce(nextQuestion(DATABASES, 0))
         .mockResolvedValueOnce(nextQuestion(CACHING, 1, true))
 
       const wrapper = await mountSuspended(RoadmapsPage)
-      expect(wrapper.text()).toContain('0 answered of up to 18')
-      expect(wrapper.text()).toContain('Still calibrating')
+      expect(wrapper.text()).toContain('Question 1 · up to 18')
 
-      await wrapper
-        .findAll('.skill-assessment-scale__option')[1]!
-        .trigger('click')
+      await wrapper.findAll('button.quiz-answer')[1]!.trigger('click')
       await settleAnswer()
 
-      expect(wrapper.text()).toContain('1 answered of up to 18')
-      expect(wrapper.text()).toContain('Ready to review')
+      expect(wrapper.text()).toContain('Question 2 · up to 18')
       const progressbar = wrapper.get('[role="progressbar"]')
       // 1 of a ceiling of 18, not 1 of the 4 catalog items.
       expect(progressbar.attributes('aria-valuenow')).toBe('6')
@@ -554,9 +549,7 @@ describe('roadmaps page', () => {
       const wrapper = await mountSuspended(RoadmapsPage)
       expect(wrapper.text()).toContain('"Data storage"')
 
-      await wrapper
-        .findAll('.skill-assessment-scale__option')[1]!
-        .trigger('click')
+      await wrapper.findAll('button.quiz-answer')[1]!.trigger('click')
       await settleAnswer()
 
       expect(toastAddMock).toHaveBeenCalledWith(
@@ -570,9 +563,7 @@ describe('roadmaps page', () => {
       expect(wrapper.text()).toContain('"Data storage"')
       expect(saveSkillAssessmentStateMock).not.toHaveBeenCalled()
 
-      await wrapper
-        .findAll('.skill-assessment-scale__option')[2]!
-        .trigger('click')
+      await wrapper.findAll('button.quiz-answer')[2]!.trigger('click')
       await settleAnswer()
 
       expect(getSkillAssessmentNextQuestionMock).toHaveBeenLastCalledWith(
@@ -606,16 +597,21 @@ describe('roadmaps page', () => {
   })
 
   describe('the finished view', () => {
-    it('renders the segmented completed roadmap dashboard from the backend figures', async () => {
+    it('renders one roadmap page from the backend figures', async () => {
       const wrapper = await mountSuspended(RoadmapsPage)
 
-      expect(wrapper.text()).toContain('Assessment complete')
-      expect(wrapper.text()).toContain('Discovery result')
-      expect(wrapper.text()).toContain('Knowledge + personality fit')
-      expect(wrapper.text()).toContain('Strength distribution')
+      expect(wrapper.findAll('h1')).toHaveLength(1)
+      expect(wrapper.get('h1').text()).toBe('Your Backend Engineer roadmap')
+      expect(wrapper.text()).toContain('Start with these topics')
+      expect(wrapper.text()).toContain('Where you stand on each skill set')
+      expect(wrapper.text()).toContain('How you like to work')
       // readiness.overall_mastery and overall_target, not a client average.
-      expect(wrapper.text()).toContain('25%')
-      expect(wrapper.text()).toContain('60%')
+      const meter = wrapper.get('[data-testid="readiness-meter"]')
+      expect(meter.text()).toContain('25%')
+      expect(meter.text()).toContain('60%')
+      expect(meter.text()).toContain('35% to go to reach the role target')
+      // The session id is internal; it never reaches the screen.
+      expect(wrapper.text()).not.toContain('Session')
       // No PSP/SDLC tracks: the page describes the assessment taken.
       expect(wrapper.text()).not.toContain('PSP discipline')
       expect(wrapper.text()).not.toContain('SDLC delivery')
@@ -634,7 +630,9 @@ describe('roadmaps page', () => {
       const strengths = wrapper.get('[data-testid="strength-cards"]')
       expect(strengths.text()).toContain('Internet and web protocols')
       expect(strengths.text()).not.toContain('Data storage')
-      expect(wrapper.text()).toContain('Top gap areas: Data storage')
+      const gaps = wrapper.get('[data-testid="gap-areas"]')
+      expect(gaps.text()).toContain('Data storage')
+      expect(gaps.text()).not.toContain('Internet and web protocols')
     })
 
     it('says the suggestions settled when confidence is high', async () => {
@@ -710,9 +708,9 @@ describe('roadmaps page', () => {
     it('is one click away instead of the landing view, and marks nodes by the slugs the API carries', async () => {
       const wrapper = await mountSuspended(RoadmapsPage)
 
-      expect(wrapper.text()).not.toContain('Recommended learning sequence')
+      expect(wrapper.find('#full-roadmap').exists()).toBe(false)
       await openFullRoadmap(wrapper)
-      expect(wrapper.text()).toContain('Recommended learning sequence')
+      expect(wrapper.get('#full-roadmap').text()).toContain('Full roadmap')
 
       // Held: a node covered by a held set's node_slugs carries the
       // respondent's own statement, never a verdict.
@@ -739,11 +737,11 @@ describe('roadmaps page', () => {
       await openFullRoadmap(wrapper)
 
       const nodes = wrapper.findAll('[data-testid="roadmap-topic"]')
-      expect(nodes.map((node) => node.find('h3').text())).toEqual([
-        'Data storage',
-        'Caching',
-        'Version control',
-      ])
+      expect(
+        nodes.map((node) =>
+          node.find('[data-testid="roadmap-topic-title"]').text(),
+        ),
+      ).toEqual(['Data storage', 'Caching', 'Version control'])
       for (const node of nodes) {
         expect(node.text()).toContain('Priority')
       }

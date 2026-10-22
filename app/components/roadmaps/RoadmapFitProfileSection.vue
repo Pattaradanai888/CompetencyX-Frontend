@@ -1,136 +1,46 @@
 <script setup lang="ts">
-import { formatPillarScore, cleanPillarLabel } from '~/utils/roadmaps'
+import { cleanPillarLabel } from '~/utils/roadmaps'
 import { getPillarLabel } from '~/utils/assessment'
 import type { PillarInsight } from '~~/shared/types/assessment'
 
 const props = defineProps<{
-  overallCapabilityScore: number
-  topPersonalityPillars: PillarInsight[]
-  personalityFitRaw: number
-  personalityFitNarrative: string
-  hasRoleAnswers: boolean
+  topPillars: PillarInsight[]
+  summary: string
   isThai: boolean
 }>()
 
 const t = usePageI18n('roadmaps', () => props.isThai)
 
-// Formatted per the session's locale rather than a hardcoded toFixed pattern.
-const coherenceFormatter = computed(
-  () =>
-    new Intl.NumberFormat(props.isThai ? 'th-TH' : 'en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }),
+/** Pillar scores are shares of one profile, so each bar is read against the strongest. */
+const strongestScore = computed(() =>
+  Math.max(0, ...props.topPillars.map((pillar) => pillar.normalized_score)),
 )
+
+function relativeWidth(pillar: PillarInsight): string {
+  if (!strongestScore.value) return '0%'
+  return `${Math.round((pillar.normalized_score / strongestScore.value) * 100)}%`
+}
 </script>
 
 <template>
-  <section class="section-band mt-10 py-12 md:py-16">
-    <div class="mx-auto max-w-6xl">
-      <div class="max-w-3xl">
-        <p class="eyebrow">{{ t.section }} 2</p>
-        <h2 class="mt-4 font-display text-4xl text-ink md:text-5xl">
-          {{ hasRoleAnswers ? t.knowledgePersonalityFit : t.section2AltTitle }}
-        </h2>
-        <p class="mt-4 max-w-2xl text-sm leading-8 text-ink-soft md:text-base">
-          {{ hasRoleAnswers ? t.section2Copy : t.section2AltCopy }}
+  <section class="roadmap-section" aria-labelledby="work-style-title">
+    <h2 id="work-style-title" class="roadmap-section__title">
+      {{ t.workStyleTitle }}
+    </h2>
+    <p class="roadmap-section__intro">{{ summary }}</p>
+
+    <ul class="mt-6 grid max-w-xl gap-4" data-testid="work-style-pillars">
+      <li v-for="pillar in topPillars" :key="pillar.key">
+        <p class="font-bold text-ink">
+          {{ cleanPillarLabel(getPillarLabel(pillar, isThai)) }}
         </p>
-      </div>
-
-      <div
-        class="mt-10 grid gap-6"
-        :class="{ 'xl:grid-cols-2': hasRoleAnswers }"
-      >
-        <article class="paper-panel p-6 md:p-8 min-h-[320px]">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p class="eyebrow">{{ t.knowledgeFit }}</p>
-              <h3 class="mt-3 text-2xl font-bold text-ink">
-                {{ t.capabilityAlignment }}
-              </h3>
-            </div>
-            <div class="text-right">
-              <p class="data-value text-4xl font-bold text-ink">
-                {{ overallCapabilityScore }}%
-              </p>
-              <p
-                class="text-xs font-semibold uppercase tracking-[0.08em] text-ink-soft"
-              >
-                {{ t.currentReadiness }}
-              </p>
-            </div>
-          </div>
-
-          <p class="mt-4 max-w-xl text-sm leading-7 text-ink-soft">
-            {{ t.knowledgeFitCopy }}
-          </p>
-        </article>
-
-        <article
-          v-if="hasRoleAnswers"
-          class="paper-panel p-6 md:p-8 min-h-[320px]"
-        >
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p class="eyebrow">{{ t.personalityFit }}</p>
-              <h3 class="mt-3 text-2xl font-bold text-ink">
-                {{ t.behavioralAlignment }}
-              </h3>
-            </div>
-            <div class="shrink-0">
-              <div class="flex items-center gap-2">
-                <span
-                  class="text-xs font-semibold text-ink-soft whitespace-nowrap"
-                  >{{ t.profileCoherence }}</span
-                >
-                <span class="data-value text-lg font-bold text-ink"
-                  >{{ coherenceFormatter.format(personalityFitRaw)
-                  }}<span class="text-xs font-normal text-ink-soft"
-                    >/1</span
-                  ></span
-                >
-              </div>
-              <div class="mt-1 h-1.5 w-36 rounded-full bg-ink/8">
-                <div
-                  class="h-1.5 rounded-full bg-[linear-gradient(90deg,var(--color-blueprint),var(--color-accent))]"
-                  :style="{ width: `${(personalityFitRaw / 1) * 100}%` }"
-                />
-              </div>
-            </div>
-          </div>
-
-          <p class="mt-4 max-w-xl text-sm leading-7 text-ink-soft">
-            {{ t.behaviorCopy }}
-          </p>
-
-          <p
-            class="mt-8 max-w-xl rounded-2xl border border-border-subtle bg-surface-card px-5 py-4 text-sm leading-8 text-ink-soft"
-          >
-            {{ personalityFitNarrative }}
-          </p>
-
-          <div class="mt-8 space-y-4">
-            <div v-for="pillar in topPersonalityPillars" :key="pillar.key">
-              <div class="flex items-center justify-between gap-3">
-                <p class="text-sm font-semibold text-ink">
-                  {{ cleanPillarLabel(getPillarLabel(pillar, isThai)) }}
-                </p>
-                <p class="data-value text-sm font-bold text-accent">
-                  {{ formatPillarScore(pillar) }}
-                </p>
-              </div>
-              <div class="mt-2 h-2 rounded-full bg-ink/8">
-                <div
-                  class="h-2 rounded-full bg-[linear-gradient(90deg,var(--color-blueprint),var(--color-accent))]"
-                  :style="{
-                    width: `${Math.round(pillar.normalized_score * 100)}%`,
-                  }"
-                />
-              </div>
-            </div>
-          </div>
-        </article>
-      </div>
-    </div>
+        <div class="bar mt-2">
+          <div
+            class="bar__fill bar__fill--accent"
+            :style="{ width: relativeWidth(pillar) }"
+          />
+        </div>
+      </li>
+    </ul>
   </section>
 </template>

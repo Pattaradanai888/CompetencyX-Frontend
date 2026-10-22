@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatConfidencePercent,
-  getAlignmentLabel,
   getPillarLabel,
-  getQuestionTypeLabel,
   getRoleDisplayDescription,
   getRoleDisplayName,
   getSupportingPillars,
@@ -80,10 +78,7 @@ describe('assessment utils', () => {
     expect(isSessionComplete(result)).toBe(true)
   })
 
-  it('formats labels and percentages for presentation', () => {
-    expect(getQuestionTypeLabel('likert_5')).toBe('Agreement scale')
-    expect(getQuestionTypeLabel('ranked_choice')).toBe('Priority pick')
-    expect(getAlignmentLabel('mismatch')).toBe('Stretch path')
+  it('formats percentages for presentation', () => {
     expect(formatConfidencePercent(0.784)).toBe('78%')
   })
 

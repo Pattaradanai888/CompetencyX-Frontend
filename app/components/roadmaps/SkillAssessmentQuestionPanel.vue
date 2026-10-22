@@ -1,24 +1,27 @@
 <script setup lang="ts">
-import { motion } from 'motion-v'
+import type { RouteLocationRaw } from 'vue-router'
+import QuizAnswerList, {
+  type QuizAnswerOption,
+} from '~/components/quiz/QuizAnswerList.vue'
+import QuizShell from '~/components/quiz/QuizShell.vue'
 import { getRoadmapScaleLabel } from '~/utils/roadmaps'
 import type { SkillAssessmentScaleOption } from '~~/shared/types/assessment'
 
-const props = withDefaults(
-  defineProps<{
-    question: { id: string; prompt: string } | null
-    prompt: string
-    promptContext: string
-    microcopy: string
-    answerScale: SkillAssessmentScaleOption[]
-    selectedValue: number | null
-    isSaving: boolean
-    isAutoAdvancing: boolean
-    isFirstQuestion: boolean
-    isThai: boolean
-    prefersReduced?: boolean
-  }>(),
-  { prefersReduced: false },
-)
+const props = defineProps<{
+  question: { id: string; prompt: string } | null
+  prompt: string
+  context: string
+  count: string
+  progress: number
+  status: string
+  exitTo: RouteLocationRaw
+  answerScale: SkillAssessmentScaleOption[]
+  selectedValue: number | null
+  isSaving: boolean
+  isAutoAdvancing: boolean
+  isFirstQuestion: boolean
+  isThai: boolean
+}>()
 
 const emit = defineEmits<{
   select: [value: number]
@@ -27,122 +30,46 @@ const emit = defineEmits<{
 
 const t = usePageI18n('roadmaps', () => props.isThai)
 
-function getScaleLabel(option: SkillAssessmentScaleOption): string {
-  return getRoadmapScaleLabel(option, props.isThai)
-}
+const answerOptions = computed<QuizAnswerOption[]>(() =>
+  props.answerScale.map((option) => ({
+    key: option.value,
+    label: getRoadmapScaleLabel(option, props.isThai),
+  })),
+)
 </script>
 
 <template>
-  <section class="skill-assessment-panel">
-    <div class="skill-assessment-panel__chips">
-      <span class="skill-assessment-panel__eyebrow">{{
-        t.skillAssessmentChip
-      }}</span>
-      <span
-        class="skill-assessment-panel__chip skill-assessment-panel__chip--soft"
-      >
-        {{ t.agreementScaleChip }}
-      </span>
-    </div>
-
-    <motion.div
+  <QuizShell
+    :question-key="question?.id ?? 'resolving'"
+    :prompt="question ? prompt : t.resolvingQuestion"
+    :help="question ? (isFirstQuestion ? t.rateToday : '') : t.refreshPrompt"
+    :context="context"
+    :count="count"
+    :progress="progress"
+    :progress-label="t.assessmentProgress"
+    :exit-to="exitTo"
+    :exit-label="t.leaveAssessment"
+  >
+    <QuizAnswerList
       v-if="question"
-      :key="question.id"
-      class="skill-assessment-question-shell"
-      :initial="prefersReduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 18 }"
-      :animate="{ opacity: 1, y: 0 }"
-      :transition="prefersReduced ? { duration: 0 } : { duration: 0.28 }"
-    >
-      <div class="skill-assessment-question-card">
-        <div class="skill-assessment-question-card__frame">
-          <p class="skill-assessment-question-card__prompt-label">
-            {{ promptContext }}
-          </p>
-          <h2 class="skill-assessment-question-card__prompt">
-            {{ prompt }}
-          </h2>
-        </div>
+      :options="answerOptions"
+      :label="t.scaleGroupLabel"
+      :selected-key="selectedValue"
+      :disabled="isSaving || isAutoAdvancing"
+      @select="emit('select', Number($event.key))"
+    />
 
-        <fieldset
-          class="skill-assessment-scale"
-          :disabled="isSaving || isAutoAdvancing"
-        >
-          <legend class="sr-only">
-            {{
-              isThai
-                ? 'เลือกค่าตั้งแต่ ไม่เห็นด้วยอย่างยิ่ง ถึง เห็นด้วยอย่างยิ่ง'
-                : 'Choose a value from strongly disagree to strongly agree'
-            }}
-          </legend>
-
-          <div class="skill-assessment-scale__caption">
-            <span>{{
-              isThai ? 'ไม่เห็นด้วยอย่างยิ่ง' : 'Strongly disagree'
-            }}</span>
-            <span>{{ isThai ? 'เห็นด้วยอย่างยิ่ง' : 'Strongly agree' }}</span>
-          </div>
-
-          <div class="skill-assessment-scale__track">
-            <span class="skill-assessment-scale__rail" aria-hidden="true" />
-
-            <button
-              v-for="option in answerScale"
-              :key="`${question.id}-${option.value}`"
-              type="button"
-              class="skill-assessment-scale__option"
-              :class="
-                selectedValue === option.value
-                  ? 'skill-assessment-scale__option--selected'
-                  : ''
-              "
-              :aria-pressed="selectedValue === option.value"
-              :aria-label="getScaleLabel(option)"
-              :disabled="isSaving || isAutoAdvancing"
-              @click="emit('select', option.value)"
-            >
-              <span class="skill-assessment-scale__orb" aria-hidden="true">
-                <span class="skill-assessment-scale__orb-core" />
-              </span>
-              <span class="skill-assessment-scale__option-label">
-                {{ getScaleLabel(option) }}
-              </span>
-            </button>
-          </div>
-        </fieldset>
-      </div>
-
-      <div class="skill-assessment-panel__footer">
-        <p class="skill-assessment-panel__microcopy">
-          {{ microcopy }}
-        </p>
-        <div class="skill-assessment-panel__actions">
-          <button
-            type="button"
-            class="skill-assessment-button skill-assessment-button--ghost"
-            :disabled="isFirstQuestion"
-            @click="emit('previous')"
-          >
-            {{ t.previous }}
-          </button>
-        </div>
-      </div>
-    </motion.div>
-
-    <div
-      v-else
-      class="skill-assessment-question-card skill-assessment-question-card--empty"
-    >
-      <p class="skill-assessment-question-card__prompt-label">
-        {{ t.preparingPrompt }}
-      </p>
-      <h2
-        class="skill-assessment-question-card__prompt skill-assessment-question-card__prompt--compact"
+    <template #footer>
+      <button
+        v-if="question"
+        type="button"
+        class="cx-button-secondary"
+        :disabled="isFirstQuestion || isSaving || isAutoAdvancing"
+        @click="emit('previous')"
       >
-        {{ t.resolvingQuestion }}
-      </h2>
-      <p class="skill-assessment-panel__lead mt-4">
-        {{ t.refreshPrompt }}
-      </p>
-    </div>
-  </section>
+        {{ t.previous }}
+      </button>
+      <p class="quiz-status ml-auto" aria-live="polite">{{ status }}</p>
+    </template>
+  </QuizShell>
 </template>

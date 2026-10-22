@@ -24,7 +24,7 @@ export function useApiClient() {
 
     try {
       return await $fetch<T>(path, {
-        baseURL: config.public.apiBase,
+        baseURL: import.meta.dev ? '/' : config.public.apiBase,
         ...options,
         headers,
       })

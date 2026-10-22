@@ -117,16 +117,14 @@ const emit = defineEmits<{
             v-if="selectedMeta.workStyle && selectedMeta.workStyle.length"
             class="role-details-section mb-0"
           >
-            <h4
-              class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
-            >
+            <h4 class="text-sm font-bold text-ink">
               {{ t.workStyle }}
             </h4>
-            <div class="flex flex-wrap gap-1 mt-1">
+            <div class="mt-1.5 flex flex-wrap gap-1.5">
               <span
                 v-for="style in selectedMeta.workStyle"
                 :key="style"
-                class="bg-surface-elevated text-ink-soft text-[0.7rem] px-2 py-0.5 rounded border border-border-subtle"
+                class="role-details-tag role-details-tag--sm"
               >
                 {{ style }}
               </span>
@@ -137,16 +135,14 @@ const emit = defineEmits<{
             v-if="selectedMeta.interests && selectedMeta.interests.length"
             class="role-details-section mb-0"
           >
-            <h4
-              class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
-            >
+            <h4 class="text-sm font-bold text-ink">
               {{ t.interests }}
             </h4>
-            <div class="flex flex-wrap gap-1 mt-1">
+            <div class="mt-1.5 flex flex-wrap gap-1.5">
               <span
                 v-for="interest in selectedMeta.interests"
                 :key="interest"
-                class="bg-surface-elevated text-ink-soft text-[0.7rem] px-2 py-0.5 rounded border border-border-subtle"
+                class="role-details-tag role-details-tag--sm"
               >
                 {{ interest }}
               </span>
@@ -157,16 +153,14 @@ const emit = defineEmits<{
             v-if="selectedMeta.careerAreas && selectedMeta.careerAreas.length"
             class="role-details-section mb-0"
           >
-            <h4
-              class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
-            >
+            <h4 class="text-sm font-bold text-ink">
               {{ t.careerAreas }}
             </h4>
-            <div class="flex flex-wrap gap-1 mt-1">
+            <div class="mt-1.5 flex flex-wrap gap-1.5">
               <span
                 v-for="area in selectedMeta.careerAreas"
                 :key="area"
-                class="bg-surface-elevated text-ink-soft text-[0.7rem] px-2 py-0.5 rounded border border-border-subtle"
+                class="role-details-tag role-details-tag--sm"
               >
                 {{ area }}
               </span>
@@ -177,16 +171,14 @@ const emit = defineEmits<{
             v-if="selectedMeta.environment && selectedMeta.environment.length"
             class="role-details-section mb-0"
           >
-            <h4
-              class="text-[0.65rem] font-bold uppercase tracking-wider text-ink"
-            >
+            <h4 class="text-sm font-bold text-ink">
               {{ t.environment }}
             </h4>
-            <div class="flex flex-wrap gap-1 mt-1">
+            <div class="mt-1.5 flex flex-wrap gap-1.5">
               <span
                 v-for="env in selectedMeta.environment"
                 :key="env"
-                class="bg-surface-elevated text-ink-soft text-[0.7rem] px-2 py-0.5 rounded border border-border-subtle"
+                class="role-details-tag role-details-tag--sm"
               >
                 {{ env }}
               </span>
@@ -214,8 +206,9 @@ const emit = defineEmits<{
 
       <button
         type="button"
-        class="cx-button-primary w-full disabled:cursor-not-allowed disabled:opacity-60"
+        class="cx-button-primary w-full"
         :disabled="!canStart"
+        :aria-busy="isSubmitting ? 'true' : undefined"
         @click="emit('start')"
       >
         <span

@@ -136,6 +136,8 @@ export interface SessionMilestones {
   answered_role_questions: number
   answered_core_role_questions: number
   answered_tie_break_questions: number
+  /** The most Role Discovery will ask; it usually stops earlier (ADR-0006). */
+  max_role_questions?: number
 }
 
 export interface AssessmentSession {
@@ -184,6 +186,8 @@ export interface AssessmentResult extends Omit<
 > {
   pillar_profile: PillarInsight[]
   ranked_roles: RankedRoleInsight[]
+  /** The first three ranked roles, the candidates to show (ADR-0006). */
+  role_candidates?: RankedRoleInsight[]
 }
 
 export interface AssessmentInsights {

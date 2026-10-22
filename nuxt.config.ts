@@ -1,4 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+const apiBase = process.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:8000'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   css: ['~/assets/css/main.css'],
@@ -11,8 +13,8 @@ export default defineNuxtConfig({
   },
   fonts: {
     families: [
-      { name: 'Anuphan', provider: 'google', weights: [400, 500, 700] },
-      { name: 'Prompt', provider: 'google', weights: [500, 600, 700] },
+      { name: 'IBM Plex Mono', provider: 'google', weights: [400, 500] },
+      { name: 'Noto Sans Thai', provider: 'google', weights: [400, 700] },
     ],
   },
   routeRules: {
@@ -34,10 +36,23 @@ export default defineNuxtConfig({
     '/account/**': {
       headers: { 'cache-control': 'private, no-store' },
     },
+    '/fonts/**': {
+      headers: { 'cache-control': 'public, max-age=31536000, immutable' },
+    },
+  },
+  $development: {
+    routeRules: {
+      '/api/v1/**': { proxy: `${apiBase}/api/v1/**` },
+    },
   },
   runtimeConfig: {
     public: {
-      apiBase: process.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:8000',
+      apiBase,
+    },
+  },
+  vite: {
+    server: {
+      allowedHosts: ['p51jrjjz-3000.asse.devtunnels.ms'],
     },
   },
   ui: {

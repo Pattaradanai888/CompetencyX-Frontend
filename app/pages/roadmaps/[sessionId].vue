@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { defineAsyncComponent, hydrateOnVisible } from 'vue'
-import SkillAssessmentGuidanceCard from '~/components/roadmaps/SkillAssessmentGuidanceCard.vue'
 import SkillAssessmentQuestionPanel from '~/components/roadmaps/SkillAssessmentQuestionPanel.vue'
 import RoadmapNextTopics from '~/components/roadmaps/RoadmapNextTopics.vue'
+import RoadmapReadinessMeter from '~/components/roadmaps/RoadmapReadinessMeter.vue'
 import { useAssessmentResults } from '~/composables/useAssessmentResults'
 import { useAssessmentSession } from '~/composables/useAssessmentSession'
 import { useCatalogApi } from '~/composables/useCatalogApi'
@@ -16,15 +16,10 @@ import {
   useSkillAssessmentQuestions,
 } from '~/composables/useSkillAssessmentQuestions'
 import { getErrorMessage } from '~/utils/api'
-import { getPillarLabel, getRoleDisplayName } from '~/utils/assessment'
+import { getRoleDisplayName } from '~/utils/assessment'
 import { AUTO_ADVANCE_DELAY_MS } from '~/utils/constants'
-import {
-  buildRadarDimensions,
-  cleanPillarLabel,
-  getRoadmapScaleLabel,
-  getTopicEntryTitle,
-} from '~/utils/roadmaps'
-import type { DimensionCard, RadarDimension } from '~/utils/roadmaps'
+import { buildRadarDimensions, getTopicEntryTitle } from '~/utils/roadmaps'
+import type { RadarDimension } from '~/utils/roadmaps'
 import { fetchTopicResources, getRoadmapSlug } from '~/utils/roadmapTopics'
 import type {
   ApiError,
@@ -36,8 +31,8 @@ import type {
   SkillAssessmentSessionState,
 } from '~~/shared/types/assessment'
 
-const RoadmapCompletedOverview = defineAsyncComponent({
-  loader: () => import('~/components/roadmaps/RoadmapCompletedOverview.vue'),
+const RoadmapCapabilitySection = defineAsyncComponent({
+  loader: () => import('~/components/roadmaps/RoadmapCapabilitySection.vue'),
   hydrate: hydrateOnVisible(),
 })
 const RoadmapFitProfileSection = defineAsyncComponent({
@@ -281,42 +276,28 @@ const selectedScaleOption = computed(() => {
   )
 })
 
-const skillAssessmentGuidanceTitle = computed(() =>
+const skillAssessmentContext = computed(() =>
   preferredRoleName.value
     ? t.value.roleTrack.replace('{role}', preferredRoleName.value)
     : t.value.skillCalibration,
 )
 
-const skillAssessmentProgressSummary = computed(() => {
-  const calibrationState = progress.value?.settled
-    ? t.value.readyToReview
-    : answeredCount.value
-      ? t.value.buildingConfidence
-      : t.value.stillCalibrating
-  const progressState = isSavingSkillAssessment.value
-    ? t.value.saving
-    : t.value.inProgress
+const skillAssessmentCount = computed(() =>
+  t.value.questionCount
+    .replace('{n}', String(answeredCount.value + 1))
+    .replace('{max}', String(questionCeiling.value)),
+)
 
-  return `${answeredCount.value} ${t.value.answered} ${t.value.answeredOfUpTo} ${questionCeiling.value} • ${calibrationState} • ${progressState}`
-})
-
-const skillAssessmentMicrocopy = computed(() => {
-  if (isSavingSkillAssessment.value) return t.value.savingSignal
+const skillAssessmentStatus = computed(() => {
+  if (isSavingSkillAssessment.value) return t.value.saving
   if (
     (isAutoAdvancing.value || isResolvingNextQuestion.value) &&
     selectedScaleOption.value
   ) {
-    return `${getRoadmapScaleLabel(selectedScaleOption.value, isThai.value)}. ${t.value.movingNext}`
+    return t.value.movingNext
   }
-  if (selectedScaleOption.value) {
-    return `${getRoadmapScaleLabel(selectedScaleOption.value, isThai.value)}.`
-  }
-  return t.value.selectOne
+  return ''
 })
-
-const skillAssessmentPromptContext = computed(() =>
-  activeQuestion.value ? t.value.promptContext : t.value.preparingPrompt,
-)
 
 async function submitSkillAssessment() {
   isSavingSkillAssessment.value = true
@@ -464,25 +445,14 @@ const targetReadinessScore = computed<number | null>(() => {
   return overall ? Math.round(overall * 100) : null
 })
 
-const capabilityGap = computed<number | null>(() =>
-  targetReadinessScore.value === null
-    ? null
-    : Math.max(0, targetReadinessScore.value - overallCapabilityScore.value),
-)
-
-const isAtTarget = computed(
-  () =>
-    targetReadinessScore.value !== null &&
-    overallCapabilityScore.value >= targetReadinessScore.value,
-)
-
 const STRENGTH_THRESHOLD = 0.7
 const GAP_THRESHOLD = 0.5
-const MAX_STRENGTH_CARDS = 4
+const MAX_LISTED_DIMENSIONS = 4
 
 /**
- * One list behind both the strength count and the strength cards, so the
- * summary cannot say "1 area" while the cards below it list four.
+ * The sets at or above the strength threshold, strongest first. When none
+ * clears it, the single strongest set stands in, so the list is never empty
+ * while there is anything rated at all.
  */
 const strengthDimensions = computed(() => {
   if (!assessedDimensionsDesc.value.length) return []
@@ -492,38 +462,24 @@ const strengthDimensions = computed(() => {
   const selected = above.length
     ? above
     : assessedDimensionsDesc.value.slice(0, 1)
-  return selected.slice(0, MAX_STRENGTH_CARDS)
+  return selected.slice(0, MAX_LISTED_DIMENSIONS)
 })
 
-const recalculatedStrengths = computed(() =>
-  strengthDimensions.value.map((item) => item.label),
-)
-
-const recalculatedGrowthAreas = computed(() => {
-  if (!assessedDimensionsDesc.value.length) return []
-  const below = assessedDimensionsDesc.value.filter(
-    (dimension) => dimension.value < GAP_THRESHOLD,
+/** The sets below the gap threshold, weakest first; the weakest set when none is. */
+const growthDimensions = computed(() => {
+  const ascending = [...assessedDimensionsDesc.value].reverse()
+  const strengthKeys = new Set(strengthDimensions.value.map((item) => item.key))
+  const below = ascending.filter(
+    (dimension) =>
+      dimension.value < GAP_THRESHOLD && !strengthKeys.has(dimension.key),
   )
-  if (below.length > 0) return below.map((item) => item.label)
-  return assessedDimensionsDesc.value.slice(-1).map((item) => item.label)
+  const selected = below.length
+    ? below
+    : ascending
+        .filter((dimension) => !strengthKeys.has(dimension.key))
+        .slice(0, 1)
+  return selected.slice(0, MAX_LISTED_DIMENSIONS)
 })
-
-/**
- * The strength cards are the strength list: same sets, same count. The blurb
- * says what the score is -- a set only reaches the cards as the relatively
- * strongest when nothing cleared the threshold, and calling that "a strength
- * to maintain" would overstate it.
- */
-const strongestDimensionCards = computed<DimensionCard[]>(() =>
-  strengthDimensions.value.map((dimension) => ({
-    ...dimension,
-    percent: Math.round(dimension.value * 100),
-    description:
-      dimension.value >= STRENGTH_THRESHOLD
-        ? t.value.strengthHold
-        : t.value.relativeStrength,
-  })),
-)
 
 /** Whether the suggestions settled, or the assessment ended at the ceiling. */
 const confidenceNote = computed<string | null>(() => {
@@ -532,13 +488,6 @@ const confidenceNote = computed<string | null>(() => {
   if (confidence === 'low') return t.value.confidenceLow
   return null
 })
-
-const suggestedPriorityTopics = computed(() =>
-  suggestedTopics.value.map((entry) => ({
-    topic_slug: entry.topic_slug,
-    topic_title: getTopicEntryTitle(entry, isThai.value),
-  })),
-)
 
 const {
   canMarkHeld,
@@ -561,53 +510,15 @@ const personalityPillars = computed(() => result.value?.pillar_profile ?? [])
 const topPersonalityPillars = computed(() =>
   [...personalityPillars.value]
     .sort((left, right) => right.normalized_score - left.normalized_score)
-    .slice(0, 4),
+    .slice(0, 3),
 )
 
-const personalityFitRaw = computed(() => {
-  if (!personalityPillars.value.length) return 0
-  return Math.max(
-    ...personalityPillars.value.map((pillar) => pillar.normalized_score),
-  )
-})
-
-const personalityFitNarrative = computed(() => {
-  const roleName = skillAssessmentRoleTitle.value
-  const labels = topPersonalityPillars.value
-    .slice(0, 3)
-    .map((pillar) => cleanPillarLabel(getPillarLabel(pillar, isThai.value)))
-
-  const pillarSummary =
-    labels.length >= 2
-      ? isThai.value
-        ? `โปรไฟล์ของคุณเน้นไปที่ “${labels[0]}” โดยมี “${labels[1]}” เป็นองค์ประกอบเสริม`
-        : `Your profile leans most on “${labels[0]}”, complemented by “${labels[1]}”`
-      : labels.length === 1
-        ? isThai.value
-          ? `โปรไฟล์ของคุณถูกขับเคลื่อนโดย “${labels[0]}” เป็นหลัก`
-          : `Your profile is primarily driven by “${labels[0]}”`
-        : isThai.value
-          ? 'ยังไม่มีข้อมูลบุคลิกภาพที่เพียงพอ'
-          : 'Not enough personality data yet.'
-
-  const aligned = result.value?.role_alignment_status === 'aligned'
-  const alignmentContext = aligned
-    ? isThai.value
-      ? `รูปแบบนี้สอดคล้องกับทิศทางของ ${roleName} — จุดแข็งตามธรรมชาติของคุณตรงกับสิ่งที่บทบาทนี้ต้องการ`
-      : `This pattern aligns with the ${roleName} direction — your natural tendencies match what this role typically demands.`
-    : isThai.value
-      ? `รูปแบบนี้ยังมีจุดที่แตกต่างจากทิศทางของ ${roleName} — ใช้ข้อมูลนี้เป็นแนวทางในการปรับทิศทางการพัฒนา`
-      : `This pattern has some differences from the ${roleName} direction — use this as a guide for where to focus your growth.`
-
-  const guidanceSummary = aligned
-    ? isThai.value
-      ? 'เสริมจุดแข็งที่มีอยู่แล้วโดยต่อยอดจากเสาหลักที่โดดเด่น และใช้เสาหลักที่ต่ำกว่าเป็นพื้นที่พัฒนาใหม่'
-      : 'Build on existing momentum by doubling down on your strongest pillars while using lower ones as deliberate growth areas.'
-    : isThai.value
-      ? 'ลองสำรวจว่าเสาหลักที่สูงของคุณสามารถปรับใช้กับบทบาทนี้ได้หรือไม่ หรือลองพิจารณาบทบาทอื่นที่สอดคล้องกับธรรมชาติของคุณมากกว่า'
-      : 'Explore whether your higher pillars could be applied to this direction, or consider other roles that may better fit your natural style.'
-
-  return `${pillarSummary}. ${alignmentContext} ${guidanceSummary}`
+const workStyleSummary = computed(() => {
+  const template =
+    result.value?.role_alignment_status === 'aligned'
+      ? t.value.workStyleAligned
+      : t.value.workStyleNotAligned
+  return template.replace('{role}', skillAssessmentRoleTitle.value)
 })
 
 // ---------------------------------------------------------------------------
@@ -758,9 +669,9 @@ async function openFullRoadmap() {
 }
 
 useSeoMeta({
-  // `app.vue` appends "| CompetencyX" through its titleTemplate, so the brand
+  // `app.vue` appends "| Competency" through its titleTemplate, so the brand
   // is left off here rather than printed at both ends of the tab title.
-  title: computed(() => (isThai.value ? 'แผนเส้นทางพัฒนา' : 'Roadmaps')),
+  title: computed(() => (isThai.value ? 'แผนพัฒนา' : 'Roadmap')),
   description: computed(() =>
     isThai.value
       ? 'ความพร้อมต่อบทบาทจากการประเมินทักษะ พร้อมหัวข้อที่ควรเรียนต่อไปและแผนเส้นทางเฉพาะบุคคล'
@@ -770,94 +681,55 @@ useSeoMeta({
 </script>
 
 <template>
-  <main
-    id="main-content"
-    :class="[
-      'page-wrap',
-      !isSkillAssessmentComplete ? 'skill-assessment-assessment-page' : '',
-    ]"
-  >
-    <div class="flex flex-wrap items-center justify-between gap-4">
+  <main id="main-content" class="page-wrap">
+    <SkillAssessmentQuestionPanel
+      v-if="!isSkillAssessmentComplete"
+      :question="activeQuestion"
+      :prompt="localizedPrompt || activeQuestion?.prompt || ''"
+      :context="skillAssessmentContext"
+      :count="skillAssessmentCount"
+      :progress="skillAssessmentProgressPercent"
+      :status="skillAssessmentStatus"
+      :exit-to="hasRoleAnswers ? `/results/${route.params.sessionId}` : '/'"
+      :answer-scale="answerScale"
+      :selected-value="activeQuestionAnswer"
+      :is-saving="isSavingSkillAssessment"
+      :is-auto-advancing="isAutoAdvancing || isResolvingNextQuestion"
+      :is-first-question="askedQuestionIds.length === 0"
+      :is-thai="isThai"
+      @select="selectAnswer"
+      @previous="goToPreviousQuestion"
+    />
+
+    <div v-else class="mx-auto w-full max-w-4xl">
       <NuxtLink
         v-if="hasRoleAnswers"
         :to="`/results/${route.params.sessionId}`"
-        class="editorial-link text-sm"
+        class="editorial-link inline-flex min-h-11 items-center text-sm"
       >
-        {{ t.backToRoleDiscovery }}
+        ← {{ t.backToRoleDiscovery }}
       </NuxtLink>
-      <p class="text-sm text-ink-soft">
-        {{ t.session }} {{ route.params.sessionId }}
-      </p>
-    </div>
 
-    <section
-      v-if="isSkillAssessmentComplete"
-      class="glass-panel mt-6 p-6 md:p-8"
-    >
-      <p class="eyebrow">{{ t.finalDashboard }}</p>
-      <h1 class="mt-4 font-display text-4xl leading-tight text-ink md:text-6xl">
-        {{ skillAssessmentRoleTitle }} {{ t.readinessRoadmap }}
-      </h1>
-      <p class="mt-4 max-w-3xl text-sm leading-7 text-ink-soft">
-        {{ t.completeIntro }}
-      </p>
-      <p
-        v-if="confidenceNote"
-        data-testid="confidence-note"
-        class="mt-3 max-w-3xl rounded-lg border border-blueprint/15 bg-blueprint/5 px-3 py-2 text-xs leading-6 text-blueprint/80"
-      >
-        {{ confidenceNote }}
-      </p>
-      <div class="mt-5 flex flex-wrap items-center gap-2">
-        <span
-          v-if="preferredRoleName"
-          class="rounded-full border border-border-subtle bg-surface-card px-3 py-1 text-xs font-semibold uppercase tracking-[0.06em] text-ink"
+      <header class="mt-4">
+        <h1 class="text-4xl font-extrabold leading-tight text-ink md:text-5xl">
+          {{ t.title.replace('{role}', skillAssessmentRoleTitle) }}
+        </h1>
+        <p class="mt-3 max-w-2xl leading-7 text-ink-soft">{{ t.intro }}</p>
+        <p
+          v-if="confidenceNote"
+          data-testid="confidence-note"
+          class="mt-2 max-w-2xl text-sm leading-6 text-ink-soft"
         >
-          {{ t.knownRole }}: {{ preferredRoleName }}
-        </span>
-        <span
-          v-if="bestFitRoleName"
-          class="rounded-full border border-accent-soft bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.06em] text-accent"
-        >
-          {{ t.discoveryResult }}: {{ bestFitRoleName }}
-        </span>
-      </div>
-    </section>
+          {{ confidenceNote }}
+        </p>
+      </header>
 
-    <section
-      v-if="!isSkillAssessmentComplete"
-      class="mt-8 grid gap-6 lg:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)] lg:items-start"
-      aria-live="polite"
-    >
-      <aside class="lg:sticky lg:top-8">
-        <SkillAssessmentGuidanceCard
-          :title="skillAssessmentGuidanceTitle"
-          :progress-summary="skillAssessmentProgressSummary"
-          :progress-percent="skillAssessmentProgressPercent"
-          :prompt-context="skillAssessmentPromptContext"
-          :preferred-role-name="preferredRoleName"
-          :is-thai="isThai"
-        />
-      </aside>
-
-      <SkillAssessmentQuestionPanel
-        :question="activeQuestion"
-        :prompt="localizedPrompt || activeQuestion?.prompt || ''"
-        :prompt-context="skillAssessmentPromptContext"
-        :microcopy="skillAssessmentMicrocopy"
-        :answer-scale="answerScale"
-        :selected-value="activeQuestionAnswer"
-        :is-saving="isSavingSkillAssessment"
-        :is-auto-advancing="isAutoAdvancing || isResolvingNextQuestion"
-        :is-first-question="askedQuestionIds.length === 0"
+      <RoadmapReadinessMeter
+        :score="overallCapabilityScore"
+        :target="targetReadinessScore"
         :is-thai="isThai"
-        :prefers-reduced="prefersReduced ?? false"
-        @select="selectAnswer"
-        @previous="goToPreviousQuestion"
       />
-    </section>
 
-    <template v-if="isSkillAssessmentComplete">
       <RoadmapNextTopics
         :topics="suggestedTopics"
         :is-thai="isThai"
@@ -868,35 +740,26 @@ useSeoMeta({
         @unmark="unmarkTopicHeld"
       />
 
-      <RoadmapCompletedOverview
-        :role-title="skillAssessmentRoleTitle"
-        :overall-capability-score="overallCapabilityScore"
-        :recalculated-strengths="recalculatedStrengths"
-        :recalculated-growth-areas="recalculatedGrowthAreas"
-        :strongest-dimension-cards="strongestDimensionCards"
-        :target-score="targetReadinessScore"
-        :target-by-dimension="targetByDimension"
-        :is-at-target="isAtTarget"
-        :capability-gap="capabilityGap"
-        :priority-topics="suggestedPriorityTopics"
+      <RoadmapCapabilitySection
         :dimensions="dimensions"
-        :has-role-answers="hasRoleAnswers"
+        :target-by-dimension="targetByDimension"
+        :target-score="targetReadinessScore"
+        :strengths="strengthDimensions"
+        :gaps="growthDimensions"
         :is-thai="isThai"
       />
 
       <RoadmapFitProfileSection
-        :overall-capability-score="overallCapabilityScore"
-        :top-personality-pillars="topPersonalityPillars"
-        :personality-fit-raw="personalityFitRaw"
-        :personality-fit-narrative="personalityFitNarrative"
-        :has-role-answers="hasRoleAnswers"
+        v-if="hasRoleAnswers && topPersonalityPillars.length"
+        :top-pillars="topPersonalityPillars"
+        :summary="workStyleSummary"
         :is-thai="isThai"
       />
 
-      <div class="mt-10 flex justify-center">
+      <div class="roadmap-section">
         <button
           type="button"
-          class="inline-flex items-center gap-2 rounded-full border border-border-subtle bg-surface-elevated/70 px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-accent/40 hover:bg-accent/5 hover:text-accent"
+          class="cx-button-secondary w-full sm:w-auto"
           :aria-expanded="showFullRoadmap"
           aria-controls="full-roadmap"
           @click="toggleFullRoadmap"
@@ -914,6 +777,6 @@ useSeoMeta({
           :held-topic-ids="heldDisplayTopicIds"
         />
       </div>
-    </template>
+    </div>
   </main>
 </template>
