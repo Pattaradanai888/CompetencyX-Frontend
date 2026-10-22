@@ -78,6 +78,10 @@ const answerOptions = computed<QuizAnswerOption[]>(() =>
       })),
 )
 
+const questionCeiling = computed(
+  () => props.session.milestones.max_role_questions ?? null,
+)
+
 const questionNumber = computed(
   () => props.session.milestones.answered_role_questions + 1,
 )
@@ -126,8 +130,12 @@ function handleSelect(answer: QuizAnswerOption) {
     :count="
       currentQuestion
         ? isThai
-          ? `ข้อ ${questionNumber}`
-          : `Question ${questionNumber}`
+          ? questionCeiling
+            ? `ข้อ ${questionNumber} · ไม่เกิน ${questionCeiling} ข้อ`
+            : `ข้อ ${questionNumber}`
+          : questionCeiling
+            ? `Question ${questionNumber} · up to ${questionCeiling}`
+            : `Question ${questionNumber}`
         : ''
     "
   >

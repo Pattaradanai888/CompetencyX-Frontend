@@ -301,4 +301,33 @@ describe('results page', () => {
     expect(text).not.toContain('Builds the services behind the product.')
     expect(text).not.toContain('Systems Design')
   })
+
+  it('lists the role_candidates the API names when it sends them', async () => {
+    const results = await getResultsMock()
+    const ml = {
+      slug: 'machine-learning-engineer',
+      name: 'Machine Learning Engineer',
+      fit_score: 0.7,
+      fit_share: 0.1,
+      top_supporting_pillars: ['Data'],
+    }
+    getResultsMock.mockResolvedValue({
+      ...results,
+      role_candidates: [results.ranked_roles[0], ml, results.ranked_roles[1]],
+    })
+    getResultsMock.mockClear()
+
+    const wrapper = await mountSuspended(ResultsPage)
+
+    expect(
+      wrapper
+        .findAll('input[type="radio"]')
+        .map((radio) => radio.attributes('value')),
+    ).toEqual([
+      'backend-engineer',
+      'data-engineer',
+      'machine-learning-engineer',
+    ])
+    expect(wrapper.text()).not.toContain('DevOps Engineer')
+  })
 })

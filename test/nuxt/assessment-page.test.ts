@@ -248,6 +248,19 @@ describe('assessment page', () => {
     wrapper.unmount()
   })
 
+  it('shows the question ceiling when the session carries max_role_questions', async () => {
+    const capped = makeSession({
+      milestones: { ...baseSession.milestones, max_role_questions: 25 },
+    })
+    sessionState.value = capped
+    getSessionMock.mockResolvedValue(capped)
+
+    const wrapper = await mountSuspended(AssessmentPage)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Question 2 · up to 25')
+  })
+
   it('shows the question count and exit control in Thai in a Thai session', async () => {
     const thaiSession = makeSession({ language: 'th' })
     sessionState.value = thaiSession
@@ -257,6 +270,7 @@ describe('assessment page', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('ข้อ 2')
+    expect(wrapper.text()).not.toContain('ไม่เกิน')
     expect(
       wrapper.get('a[aria-label="ออกจากแบบประเมิน"]').attributes('href'),
     ).toBe('/')

@@ -4,18 +4,11 @@ export type AssessmentStatus = 'in_progress' | 'completed'
 /** Only Role Discovery asks through the session; the Skill Assessment has its own endpoints. */
 export type QuestionStage = 'role'
 export type QuestionType =
-  | 'yes_no'
-  | 'yes_no_maybe'
-  | 'single_choice'
-  | 'ranked_choice'
-  | 'likert_5'
+  'yes_no' | 'yes_no_maybe' | 'single_choice' | 'ranked_choice' | 'likert_5'
 export type ConfidenceIndicator = 'low' | 'medium' | 'high'
 export type RoleAlignmentStatus = 'unknown' | 'aligned' | 'mismatch'
 export type RoleResolutionStatus =
-  | 'unknown'
-  | 'in_progress'
-  | 'resolved'
-  | 'low_confidence'
+  'unknown' | 'in_progress' | 'resolved' | 'low_confidence'
 export type LikertScaleValue = -2 | -1 | 0 | 1 | 2
 
 export interface Role {
@@ -142,6 +135,8 @@ export interface SessionMilestones {
   answered_role_questions: number
   answered_core_role_questions: number
   answered_tie_break_questions: number
+  /** The most Role Discovery will ask; it usually stops earlier (ADR-0006). */
+  max_role_questions?: number
 }
 
 export interface AssessmentSession {
@@ -190,6 +185,8 @@ export interface AssessmentResult extends Omit<
 > {
   pillar_profile: PillarInsight[]
   ranked_roles: RankedRoleInsight[]
+  /** The first three ranked roles, the candidates to show (ADR-0006). */
+  role_candidates?: RankedRoleInsight[]
 }
 
 export interface AssessmentInsights {
@@ -352,8 +349,7 @@ export interface LikertAnswerSubmitPayload extends BaseAnswerSubmitPayload {
 }
 
 export type AnswerSubmitPayload =
-  | OptionAnswerSubmitPayload
-  | LikertAnswerSubmitPayload
+  OptionAnswerSubmitPayload | LikertAnswerSubmitPayload
 
 export interface ApiError {
   statusCode: number

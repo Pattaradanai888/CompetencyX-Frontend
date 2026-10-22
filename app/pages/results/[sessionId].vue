@@ -128,7 +128,10 @@ const choices = computed<RoleChoice[]>(() => {
     family: primaryFamily.value,
     pillars: primaryPillars.value,
   }
-  const others = rankedRoles.value
+  const candidates = results.value?.role_candidates?.length
+    ? sortRankedRolesDescending(results.value.role_candidates)
+    : rankedRoles.value
+  const others = candidates
     .filter((role) => role.slug !== primary.slug)
     .map((role) => ({
       slug: role.slug,
