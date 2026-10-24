@@ -27,10 +27,24 @@ export default defineNuxtConfig({
         'x-frame-options': 'DENY',
       },
     },
-    // Session-bound pages: always render fresh, never shared-cache.
-    '/assessment/**': { ssr: true },
-    '/results/**': { ssr: true },
-    '/roadmaps/**': { ssr: true },
+    // Page HTML includes cookie-dependent language and account state. Keep it
+    // out of shared CDN caches; hashed static assets retain their own caching.
+    '/': { headers: { 'cache-control': 'private, no-store' } },
+    '/assessment/**': {
+      ssr: true,
+      headers: { 'cache-control': 'private, no-store' },
+    },
+    '/results/**': {
+      ssr: true,
+      headers: { 'cache-control': 'private, no-store' },
+    },
+    '/roadmaps/**': {
+      ssr: true,
+      headers: { 'cache-control': 'private, no-store' },
+    },
+    '/account/**': {
+      headers: { 'cache-control': 'private, no-store' },
+    },
     '/fonts/**': {
       headers: { 'cache-control': 'public, max-age=31536000, immutable' },
     },

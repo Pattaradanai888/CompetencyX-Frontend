@@ -11,14 +11,14 @@ pre-commit:
       exclude:
         - openapi.json
         - frontend-integration.md
-      run: pnpm exec prettier --write --ignore-unknown {staged_files}
+      run: corepack pnpm exec prettier --write --ignore-unknown {staged_files}
       stage_fixed: true
 
     eslint:
       glob: '*.{js,jsx,ts,tsx,mjs,cjs,vue}'
       # --no-warn-ignored keeps vendored .agents scripts (ESLint-ignored by
       # design) from failing the hook if they are ever staged.
-      run: pnpm exec eslint --no-warn-ignored {staged_files}
+      run: corepack pnpm exec eslint --no-warn-ignored {staged_files}
 
 # Lefthook substitutes {staged_files} into the command line directly. Commits
 # touching many hundreds of files can exceed the Windows ~32k character
@@ -30,6 +30,6 @@ pre-commit:
 pre-push:
   commands:
     typecheck:
-      run: pnpm typecheck
+      run: corepack pnpm typecheck
     knip:
-      run: pnpm knip
+      run: corepack pnpm knip

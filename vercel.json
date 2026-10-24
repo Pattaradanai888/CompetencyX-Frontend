@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nuxtjs",
+  "regions": ["sin1"],
+  "git": {
+    "deploymentEnabled": {
+      "*": false,
+      "release": true
+    }
+  },
+  "installCommand": "corepack pnpm install --frozen-lockfile",
+  "buildCommand": "corepack pnpm build"
+}

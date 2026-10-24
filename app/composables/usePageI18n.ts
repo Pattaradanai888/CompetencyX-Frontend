@@ -4,7 +4,7 @@ import en from '~/i18n/en'
 import th from '~/i18n/th'
 import { useLocale } from '~/composables/useLocale'
 
-export type Messages = typeof en
+type Messages = typeof en
 export type PageKey = keyof Messages
 
 export function usePageI18n<K extends PageKey>(

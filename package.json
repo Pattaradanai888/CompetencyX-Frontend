@@ -2,7 +2,7 @@
   "name": "nuxt-app",
   "type": "module",
   "private": true,
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "pnpm@12.14.0+sha512.c18ba6d87993d3d164cb5e8948f32b2c06ee854487e06cd8d86781342fb3e5bb4634367034711e86802baa9c37bea906ce1929ad08d70884c97d801df13389a6",
   "engines": {
     "node": ">=22"
   },
@@ -28,21 +28,13 @@
     "@nuxt/ui": "^4.7.0",
     "@vueuse/core": "^14.3.0",
     "motion-v": "^2.2.1",
-    "nuxt": "^4.4.5",
+    "nuxt": "^4.6.2",
     "tailwindcss": "^4.3.0",
     "vue": "^3.5.34",
     "vue-router": "^5.0.6"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "@parcel/watcher",
-      "lefthook",
-      "unrs-resolver"
-    ]
-  },
   "devDependencies": {
-    "@nuxt/eslint": "1.15.2",
+    "@nuxt/eslint": "1.17.0",
     "@nuxt/test-utils": "^4.0.3",
     "@vue/test-utils": "^2.4.10",
     "@vueuse/nuxt": "^14.3.0",
