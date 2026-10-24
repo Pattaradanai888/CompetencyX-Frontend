@@ -1,5 +1,7 @@
 # Nuxt dev/build outputs
 .output
+.vercel
+.netlify
 .data
 .nuxt
 .nitro

@@ -35,6 +35,27 @@ describe('account credentials form', () => {
     ).toBe('email-error')
   })
 
+  it('keeps hints and errors out of the field labels', async () => {
+    const wrapper = await mountForm({ mode: 'register' })
+    const email = wrapper.get('input[name="email"]')
+    const password = wrapper.get('input[name="password"]')
+
+    expect(wrapper.find('label input').exists()).toBe(false)
+    expect(wrapper.get(`label[for="${email.attributes('id')}"]`).text()).toBe(
+      'Email',
+    )
+    expect(
+      wrapper.get(`label[for="${password.attributes('id')}"]`).text(),
+    ).toBe('Password')
+    expect(password.attributes('aria-describedby')).toBe('password-hint')
+
+    await email.setValue('invalid-email')
+    await password.setValue('1234567')
+    await wrapper.get('form').trigger('submit')
+    expect(password.attributes('aria-describedby')).toBe('password-error')
+    expect(wrapper.find('label p').exists()).toBe(false)
+  })
+
   it.each([false, true])(
     'requires eight characters for registration (Thai: %s)',
     async (isThai) => {

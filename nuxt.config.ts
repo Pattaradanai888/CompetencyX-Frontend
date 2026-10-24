@@ -5,6 +5,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   css: ['~/assets/css/main.css'],
   devtools: { enabled: true },
+  features: { inlineStyles: true },
   modules: ['@nuxt/ui', '@nuxt/eslint', '@vueuse/nuxt', 'motion-v/nuxt'],
   nitro: {
     // Pre-compress static assets (JS/CSS/fonts) so the node server can serve
@@ -18,6 +19,14 @@ export default defineNuxtConfig({
     ],
   },
   routeRules: {
+    '/**': {
+      headers: {
+        'content-security-policy': "frame-ancestors 'none'",
+        'referrer-policy': 'strict-origin-when-cross-origin',
+        'x-content-type-options': 'nosniff',
+        'x-frame-options': 'DENY',
+      },
+    },
     // Session-bound pages: always render fresh, never shared-cache.
     '/assessment/**': { ssr: true },
     '/results/**': { ssr: true },
@@ -26,25 +35,9 @@ export default defineNuxtConfig({
       headers: { 'cache-control': 'public, max-age=31536000, immutable' },
     },
   },
-  // SWR caching is production-only: in dev the Nitro cache driver writes to
-  // .nuxt/cache (breaks on Windows) and cached routes trigger _payload.json
-  // fetches on every client navigation.
   $development: {
     routeRules: {
       '/api/v1/**': { proxy: `${apiBase}/api/v1/**` },
-    },
-  },
-  $production: {
-    routeRules: {
-      // Public pages: SWR-cache the SSR HTML, keyed by cookie because the
-      // rendered language depends on the cx-locale cookie.
-      '/': { cache: { swr: true, maxAge: 3600, varies: ['cookie'] } },
-      '/assessment/start': {
-        cache: { swr: true, maxAge: 3600, varies: ['cookie'] },
-      },
-      '/assessment/preferred-role': {
-        cache: { swr: true, maxAge: 3600, varies: ['cookie'] },
-      },
     },
   },
   runtimeConfig: {

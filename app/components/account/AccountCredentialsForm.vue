@@ -22,6 +22,11 @@ const passwordError = ref('')
 const emailInput = ref<HTMLInputElement | null>(null)
 const passwordInput = ref<HTMLInputElement | null>(null)
 
+const passwordDescribedBy = computed(() => {
+  if (passwordError.value) return 'password-error'
+  return props.mode === 'register' ? 'password-hint' : undefined
+})
+
 const actionLabel = computed(() =>
   props.mode === 'register' ? t.value.registerAction : t.value.signInAction,
 )
@@ -65,9 +70,12 @@ function handleSubmit() {
 
 <template>
   <form class="grid gap-5" novalidate @submit.prevent="handleSubmit">
-    <label class="grid gap-2 text-sm font-semibold text-ink">
-      <span>{{ t.email }}</span>
+    <div class="grid gap-2">
+      <label for="email-input" class="text-sm font-semibold text-ink">{{
+        t.email
+      }}</label>
       <input
+        id="email-input"
         ref="emailInput"
         v-model="email"
         name="email"
@@ -87,11 +95,14 @@ function handleSubmit() {
       >
         {{ emailError }}
       </p>
-    </label>
+    </div>
 
-    <label class="grid gap-2 text-sm font-semibold text-ink">
-      <span>{{ t.password }}</span>
+    <div class="grid gap-2">
+      <label for="password-input" class="text-sm font-semibold text-ink">{{
+        t.password
+      }}</label>
       <input
+        id="password-input"
         ref="passwordInput"
         v-model="password"
         name="password"
@@ -102,7 +113,7 @@ function handleSubmit() {
         required
         :minlength="mode === 'register' ? 8 : undefined"
         :aria-invalid="passwordError ? 'true' : undefined"
-        :aria-describedby="passwordError ? 'password-error' : undefined"
+        :aria-describedby="passwordDescribedBy"
         class="cx-input"
       />
       <p
@@ -112,13 +123,14 @@ function handleSubmit() {
       >
         {{ passwordError }}
       </p>
-      <span
+      <p
         v-else-if="mode === 'register'"
+        id="password-hint"
         class="text-xs font-normal leading-6 text-ink-soft"
       >
         {{ t.passwordHint }}
-      </span>
-    </label>
+      </p>
+    </div>
 
     <p
       v-if="error"
