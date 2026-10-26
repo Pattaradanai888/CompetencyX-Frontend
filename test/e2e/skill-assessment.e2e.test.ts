@@ -43,7 +43,7 @@ const STEP_TIMEOUT_MS = 30_000
 const MAX_ANSWERS = 25
 
 const ROLE_NAME = 'AI and Data Scientist'
-const ROLE_CARD = new RegExp(`^(Select|เลือก) ${ROLE_NAME}$`)
+const ROLE_CARD = new RegExp(`^${ROLE_NAME}\\b`)
 const START_BUTTON = /start skill assessment|เริ่มประเมิน/i
 const MARK_BUTTON = /I already know this|ฉันทำส่วนนี้ได้แล้ว/i
 const UNDO_BUTTON = /Undo mark|ยกเลิกการระบุ/i
@@ -65,7 +65,7 @@ async function saveScreenshot(page: Page | undefined, name: string) {
 
 /** The second scale option: a low rating keeps every set a gap, so the suggestions are never empty. */
 function enabledLowOption(page: Page) {
-  return page.locator('.skill-assessment-scale__option:not([disabled])').nth(1)
+  return page.locator('.quiz-answer:not([disabled])').nth(1)
 }
 
 /** Choose the role on the start page, as a respondent would, then start. */
@@ -88,7 +88,7 @@ async function startAssessment(page: Page) {
  */
 async function answerUntilFinished(page: Page): Promise<number> {
   const finished = page.getByTestId('next-topics')
-  const prompt = page.locator('.skill-assessment-question-card__prompt')
+  const prompt = page.locator('.quiz-prompt')
   const promptText = () =>
     prompt
       .first()
@@ -131,7 +131,7 @@ async function nextTopicTitles(page: Page) {
 async function markedTopicTitles(page: Page) {
   return await page
     .getByTestId('recently-marked-list')
-    .locator('li .font-semibold')
+    .getByTestId('held-topic-title')
     .allInnerTexts()
 }
 

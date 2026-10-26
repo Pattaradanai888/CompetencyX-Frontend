@@ -154,7 +154,9 @@ function topicStatement(topic: SkillAssessmentTopicEntry): string {
             </svg>
           </span>
           <p class="min-w-0 flex-1 text-sm leading-6 text-ink-soft">
-            <span class="font-bold text-ink">{{ topicTitle(entry) }}</span>
+            <span class="font-bold text-ink" data-testid="held-topic-title">{{
+              topicTitle(entry)
+            }}</span>
             — {{ topicStatement(entry) }}
           </p>
           <button

@@ -28,6 +28,7 @@ export default defineConfig({
           name: 'nuxt',
           include: ['test/nuxt/*.{test,spec}.ts'],
           environment: 'nuxt',
+          setupFiles: ['test/setup/mark-canceled-animations-handled.ts'],
           testTimeout: 20000,
           // Each file's first mount compiles the page it tests. Five files
           // doing that at once on a small machine or a CI runner pushes the

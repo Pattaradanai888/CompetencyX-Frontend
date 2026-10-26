@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [main, release]
+    tags: ['v*']
   pull_request:
 
 permissions:
@@ -17,7 +18,7 @@ env:
   # The backend the end-to-end job checks out and runs. Override with
   # repository variables to pin a branch or a fork.
   BACKEND_REPOSITORY: ${{ vars.BACKEND_REPOSITORY || 'Pattaradanai888/CompetencyX-Backend' }}
-  BACKEND_REF: ${{ vars.BACKEND_REF || ((github.ref_name == 'release' || github.base_ref == 'release') && 'release' || 'main') }}
+  BACKEND_REF: ${{ vars.BACKEND_REF || ((github.ref_name == 'release' || github.base_ref == 'release' || github.ref_type == 'tag') && 'release' || 'main') }}
 
 jobs:
   checks:

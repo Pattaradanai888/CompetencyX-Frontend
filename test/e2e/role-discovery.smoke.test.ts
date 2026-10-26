@@ -17,6 +17,7 @@ const baseUrl = process.env.E2E_BASE_URL?.replace(/\/$/, '')
 const apiBase = process.env.E2E_API_BASE?.replace(/\/$/, '')
 
 const SESSION_URL = /\/assessment\/[0-9a-f-]{36}$/
+const AGREEMENT_SCALE = /^(Agreement, from strongly disagree|ระดับความเห็น)/
 const NAVIGATION_TIMEOUT_MS = 30_000
 
 async function saveScreenshot(page: Page, name: string) {
@@ -68,11 +69,11 @@ describe.skipIf(!baseUrl)(
         await page.waitForURL(SESSION_URL, { timeout: NAVIGATION_TIMEOUT_MS })
 
         // The first Role Discovery item is a five-point agreement statement.
-        const scale = page.locator('fieldset.likert-spectrum')
+        const scale = page.getByRole('group', { name: AGREEMENT_SCALE })
         await scale.waitFor()
         const prompt = page.locator('main h1').first()
         await expect.poll(() => prompt.innerText()).not.toBe('')
-        expect(await scale.locator('input[type=radio]').count()).toBe(5)
+        expect(await scale.getByRole('button').count()).toBe(5)
       } catch (error) {
         await saveScreenshot(page, 'role-discovery-start')
         throw error
@@ -84,14 +85,18 @@ describe.skipIf(!baseUrl)(
         const prompt = page.locator('main h1').first()
         const before = await prompt.innerText()
 
-        await page.locator('fieldset.likert-spectrum label').first().click()
+        await page
+          .getByRole('group', { name: AGREEMENT_SCALE })
+          .getByRole('button')
+          .first()
+          .click()
 
         await expect
           .poll(() => prompt.innerText(), { timeout: NAVIGATION_TIMEOUT_MS })
           .not.toBe(before)
         await expect
           .poll(() => page.locator('main').innerText())
-          .toMatch(/Q1|ตอบแล้ว/)
+          .toMatch(/Question 2|ข้อ 2/)
       } catch (error) {
         await saveScreenshot(page, 'role-discovery-answer')
         throw error
